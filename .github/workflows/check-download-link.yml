@@ -1,0 +1,56 @@
+name: Check APK download link
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-link:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check configured download URL without saving the APK
+        env:
+          DOWNLOAD_URL: ${{ secrets.DOWNLOAD_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p report
+          if [ -z "${DOWNLOAD_URL:-}" ]; then
+            echo "DOWNLOAD_URL secret is missing." | tee report/result.txt
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          import os, urllib.parse
+          u = urllib.parse.urlparse(os.environ["DOWNLOAD_URL"])
+          if u.scheme != "https" or not u.hostname:
+              raise SystemExit("Only HTTPS URLs are accepted.")
+          print(f"Configured host: {u.hostname}")
+          PY
+
+          # Do not print the URL or its token to logs.
+          status="$(curl --location --silent --show-error --output /dev/null \
+            --write-out '%{http_code}' --max-time 90 --range 0-0 \
+            "$DOWNLOAD_URL" || true)"
+          {
+            echo "HTTP status: ${status:-request_failed}"
+            echo "This workflow only checks reachability; it does not download or redistribute the APK."
+            echo "If the server returns 403, it is blocking automated access."
+          } | tee report/result.txt
+
+          case "$status" in
+            2*|3*) ;;
+            *) exit 1 ;;
+          esac
+
+      - name: Upload check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-link-check-report
+          path: report/result.txt
+          if-no-files-found: warn
+          retention-days: 3
