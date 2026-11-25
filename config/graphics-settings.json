@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "project": "Bright Memory: Infinite Android graphics research",
+  "device_target": {
+    "model": "Samsung Galaxy M14 4G",
+    "android": "15",
+    "abi": "arm64-v8a",
+    "gpu": "Adreno 610"
+  },
+  "settings": [
+    {"id":"render_scale","label":"Render Scale","type":"number","status":"needs_engine_verification"},
+    {"id":"upscaler","label":"Upscaling Method","type":"enum","options":["SGSR1","SGSR2","MWSR","FSR Lite","Nearest","Bilinear"],"status":"needs_engine_verification"},
+    {"id":"upscale_sharpness","label":"Upscale Sharpness","type":"number","status":"needs_engine_verification"},
+    {"id":"upscale_preset","label":"Upscale Preset","type":"enum","options":["Ultra Performance","Performance","Balanced","Quality","Ultra Quality"],"status":"method_dependent"},
+    {"id":"amd_cas","label":"AMD CAS","type":"boolean","status":"needs_engine_verification"},
+    {"id":"cas_sharpness","label":"CAS Sharpness","type":"number","status":"depends_on_amd_cas"},
+    {"id":"low_latency","label":"Low Latency","type":"boolean","status":"needs_engine_verification"},
+    {"id":"queue_mode","label":"Queue Mode","type":"enum","options":["Default","Low Queue","No Queue"],"status":"renderer_dependent"},
+    {"id":"frame_pacing","label":"Frame Pacing","type":"boolean","status":"needs_engine_verification"},
+    {"id":"fps_limit","label":"FPS Limit","type":"enum","options":[30,60,90,120,144,180],"status":"device_and_game_dependent"},
+    {"id":"frame_generation","label":"Frame Generation","type":"enum","options":["Off","x2","x3","x4"],"status":"requires_real_implementation"},
+    {"id":"performance_hud","label":"Performance HUD","type":"object","fields":["fps","frame_time_ms","one_percent_low","cpu_usage","gpu_usage"],"status":"telemetry_dependent"}
+  ],
+  "implementation_note": "These are requested research targets, not verified in-game capabilities. Do not expose a control until its implementation is confirmed."
+}
