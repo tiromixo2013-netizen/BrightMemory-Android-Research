@@ -1,0 +1,38 @@
+name: Check 5Play game page
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check public 5Play listing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p report
+          url='https://5play.world/bright-memory-infinite'
+          status="$(curl --location --silent --show-error --output /dev/null \
+            --write-out '%{http_code}' --max-time 60 "$url" || true)"
+          {
+            echo "Checked host: 5play.world"
+            echo "HTTP status: ${status:-request_failed}"
+            echo "This workflow checks the public listing page only; it does not download the APK."
+          } | tee report/5play-check.txt
+          case "$status" in
+            2*) ;;
+            *) exit 1 ;;
+          esac
+
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 5play-page-check
+          path: report/5play-check.txt
+          retention-days: 3
