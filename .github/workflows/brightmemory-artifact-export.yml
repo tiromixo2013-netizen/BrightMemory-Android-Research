@@ -27,10 +27,9 @@ jobs:
           echo "APK=$apk" >> "$GITHUB_ENV"
           echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  $apk" | sha256sum -c -
           mkdir -p chunks
-          split -b 400M -d -a 2 "$apk" chunks/part-
+          split -b 350M -d -a 2 "$apk" chunks/part-
           test "$(find chunks -type f | wc -l)" -eq 7
           sha256sum chunks/part-* > chunks/SHA256SUMS
-          cp -a recovered/. chunks/
       - name: Upload APK chunk 00
         uses: actions/upload-artifact@v4
         with:
