@@ -2,6 +2,9 @@ name: Bright Memory MEGA restore and inspection
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/brightmemory-mega-restore.yml'
 
 permissions:
   contents: read
