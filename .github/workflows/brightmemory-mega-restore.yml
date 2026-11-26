@@ -39,7 +39,13 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+          # sdkmanager exits after accepting the final license; the yes process
+          # can receive SIGPIPE. Do not let that harmless producer exit fail the job.
+          set +o pipefail
           yes | sdkmanager --licenses
+          sdkmanager_status=${PIPESTATUS[1]}
+          set -o pipefail
+          test "$sdkmanager_status" -eq 0
           sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653" "cmake;3.22.1"
           java -version
           adb version
