@@ -27,10 +27,11 @@
       "section": "Upscaling",
       "label": "Render Scale",
       "type": "number",
-      "integration_point": "FSceneRenderer::ApplyResolutionFraction @ 0x79e5ba0; FSceneRenderer::GetDesiredInternalBufferSize @ 0x79e5c10",
-      "status": "engine_hook_verified_not_implemented",
+      "integration_point": "UGameUserSettings::SetResolutionScaleValue @ 0x8735a9c; SetResolutionScaleValueEx @ 0x8735b40; FSceneRenderer::ApplyResolutionFraction @ 0x79e5ba0",
+      "status": "native_engine_api_verified",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "note": "Game already has native resolution-scale setters; wire the unified menu to the existing GameUserSettings path instead of adding a second scale system."
     },
     {
       "id": "upscaler",
@@ -47,16 +48,20 @@
       ],
       "integration_point": "AddMobilePostProcessingPasses @ 0x78870c0; ISpatialUpscaler::AddDefaultUpscalePass @ 0x78fae30",
       "methods": {
-        "SGSR1": "official_qualcomm_ue4_27_plugin_source_available_port_and_register_required",
-        "SGSR2": "official_qualcomm_ue4_27_plugin_source_available_temporal_inputs_and_port_required",
+        "SGSR1": "official_UE4_27_source_verified_view_extension_and_RDG_spatial_upscaler; CVar r.Qualcomm.SGSR.Enabled; plugin absent from target libUE4.so strings",
+        "SGSR2": "official_UE4_27_source_verified_variants_2passNoAlpha_2pass_fs_taau_3pass; requires TAA_temporal_upsampling_and_project_configuration; plugin absent from target binary",
         "MWSR": "algorithm_source_not_verified",
-        "FSR Lite": "algorithm_source_not_verified",
+        "FSR Lite": "not an official name verified; Mobile FSR plugin/CVars absent from target binary strings",
         "Nearest": "custom_spatial_sampler_pass_required",
         "Bilinear": "custom_spatial_sampler_pass_required"
       },
-      "status": "dispatch_hook_verified_methods_not_integrated",
+      "status": "official_SGSR1_and_SGSR2_sources_verified_not_built_into_target",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "integration_requirements": [
+        "SGSR1: add official plugin to UE4.27.1+ project/engine and rebuild cooked shaders and libUE4.so",
+        "SGSR2: choose UE4.27 2pass variant only after confirming temporal AA/motion-vector path and target Android packaging"
+      ]
     },
     {
       "id": "upscale_sharpness",
@@ -133,10 +138,11 @@
       "section": "Frame Pacing",
       "label": "Frame Pacing",
       "type": "boolean",
-      "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; Swappy symbols present",
-      "status": "engine_path_and_swappy_symbols_verified_not_user_controlled",
+      "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; FAndroidPlatformRHIFramePacer::GetFramePace @ 0x67dac90; Swappy symbols present",
+      "status": "native_pacing_and_swappy_code_verified_controls_not_yet_exposed",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "note": "SwappyGL exports alone do not prove Vulkan path uses Swappy; Vulkan Present has its own RenderThreadPacing path."
     },
     {
       "id": "fps_limit",
@@ -151,8 +157,8 @@
         144,
         180
       ],
-      "integration_point": "UGameUserSettings::SetFrameRateLimit @ 0x87359dc; UGameUserSettings::GetFramePace @ 0x8735500; Swappy",
-      "status": "engine_api_verified_device_and_game_supported_values_only",
+      "integration_point": "UGameUserSettings::SetFrameRateLimit(float) @ 0x87359dc stores limit; SetFrameRateLimitCVar(float) @ 0x87340ec forwards to GameUserSettings interface vtable slot +0x2e8; GetFramePace @ 0x8735500 delegates to FAndroidPlatformRHIFramePacer",
+      "status": "native_limit_setting_path_verified_actual_supported_rates_need_runtime_check",
       "ui_control_defined": true,
       "expose_control": false
     },
@@ -168,9 +174,9 @@
         "x4"
       ],
       "integration_point": "separate_interpolation_stage_before_present; requires real motion estimation/interpolation and frame pacing coordination",
-      "status": "blocked_no_compatible_open_implementation_verified_for_adreno_610",
+      "status": "blocked_no_UE4_27_Adreno610_compatible_FG_verified",
       "expose_control": false,
-      "note": "Do not use frame duplication or generated-looking overlays as frame generation. SGSR2 is temporal upscaling, not frame generation.",
+      "note": "Qualcomm Adreno Neural Fusion provides Frame Generation only in UE5 plugin branches (UE5.0–5.8), not UE4.27. Do not transplant UE5 plugin into this UE4.27 game.",
       "ui_control_defined": true
     },
     {
@@ -213,11 +219,13 @@
       "integration_evidence": [
         "GAverageFPS global symbol present",
         "GPerformanceTrackingSystem global symbol present",
-        "FPerformanceTrackingSystem::AnalyzeFrame @ 0x852dd6c"
+        "FPerformanceTrackingSystem::AnalyzeFrame @ 0x852dd6c",
+        "FPerformanceTrackingSystem::AnalyzeFrame(float) @ 0x852dd6c uses clock_gettime and maintains frame-duration samples"
       ],
-      "status": "engine_performance_symbols_verified_hud_not_implemented",
+      "status": "frame_timing_source_verified_hud_not_implemented",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "note": "CPU/GPU utilization require separate Android/vendor telemetry; GAverageFPS and frame timing internals are not a complete GPU utilization API."
     }
   ],
   "verified_binary_evidence": {
@@ -232,14 +240,24 @@
       "FVulkanSwapChain::Present": "0x626aea8",
       "UGameUserSettings::GetFramePace": "0x8735500",
       "UGameUserSettings::SetFrameRateLimit": "0x87359dc",
-      "FPerformanceTrackingSystem::AnalyzeFrame": "0x852dd6c"
+      "FPerformanceTrackingSystem::AnalyzeFrame": "0x852dd6c",
+      "UGameUserSettings::SetResolutionScaleValue": "0x8735a9c",
+      "UGameUserSettings::SetResolutionScaleValueEx": "0x8735b40",
+      "UGameUserSettings::SetFrameRateLimitCVar": "0x87340ec",
+      "FAndroidPlatformRHIFramePacer::GetFramePace": "0x67dac90",
+      "UGameUserSettings::SetSyncIntervalCVar": "0x8734110"
     },
     "other_symbols": [
       "SwappyGL_*",
       "GAverageFPS",
       "GPerformanceTrackingSystem",
       "GTemporalUpscaler"
-    ]
+    ],
+    "qualcomm_sources": {
+      "SGSR1": "https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/4.27/Plugins/SGSR",
+      "SGSR1_view_extension": "https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/blob/engine/4.27/Plugins/SGSR/Source/SGSRSpatialUpscaling/Private/SGSRViewExtension.cpp",
+      "SGSR2": "https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine/tree/engine/4.27/Plugins/SGSR2"
+    }
   },
   "implementation_policy": {
     "one_unified_settings_menu": true,
@@ -249,5 +267,12 @@
     "never_claim_algorithm_support_from_repository_readme_alone": true,
     "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true
   },
-  "implementation_note": "The unified menu contract and verified binary integration map are committed. No controls are yet active in-game: expose_control remains false until each native hook/shader is implemented, compiled, and validated. This file is not a claim that native hooks, shaders, or frame generation have already been compiled into the game."
+  "implementation_note": "Updated with verified official Qualcomm UE4.27 plugin source locations and target binary API evidence. This remains an integration plan; no native hook, plugin binary, shader package, or modified APK has been built.",
+  "integration_constraints": [
+    "The game binary identifies its build source path as UE4.27Plus; exact engine patch version still needs confirmation.",
+    "Target libUE4.so does not contain SGSR1, SGSR2, or Mobile FSR plugin CVar strings searched; plugin integration is not already present.",
+    "A plugin built for UE4.27 requires matching engine/project build and cooked shader integration; a loose plugin folder or menu toggle cannot add its native renderer code to an already shipped APK.",
+    "No game project source/UE4 build environment is present in this research repository, so a valid modified libUE4.so/APK cannot be produced from static analysis alone.",
+    "Keep all controls hidden until native implementation is compiled and tested."
+  ]
 }
