@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "project": "Bright Memory: Infinite Android graphics integration",
   "device_target": {
     "model": "Samsung Galaxy M14 4G",
@@ -9,19 +9,43 @@
     "engine": "Unreal Engine 4.27"
   },
   "menu_order": [
+    "display_resolution",
     "render_scale",
     "upscaler",
     "upscale_sharpness",
     "upscale_preset",
     "amd_cas",
     "cas_sharpness",
-    "low_latency",
     "frame_pacing",
+    "low_latency",
     "fps_limit",
     "frame_generation",
     "performance_hud"
   ],
   "settings": [
+    {
+      "id": "display_resolution",
+      "section": "Display",
+      "label": "Output Resolution",
+      "type": "enum",
+      "options": [
+        "Auto / Native",
+        "720p",
+        "1080p",
+        "1440p",
+        "2160p"
+      ],
+      "device_native_reference": {
+        "model": "Samsung Galaxy M14 4G",
+        "width": 1080,
+        "height": 2408
+      },
+      "behavior": "select output resolution only from modes supported by the active game renderer and Android display; clamp or hide unsupported modes; never force unsupported output dimensions",
+      "integration_point": "UE4 RHI output extent / Android surface mode; distinct from UGameUserSettings resolution scale",
+      "status": "ui_specified_runtime_supported_modes_not_yet_enumerated",
+      "ui_control_defined": true,
+      "expose_control": false
+    },
     {
       "id": "render_scale",
       "section": "Upscaling",
@@ -31,7 +55,13 @@
       "status": "native_engine_api_verified",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "Game already has native resolution-scale setters; wire the unified menu to the existing GameUserSettings path instead of adding a second scale system."
+      "note": "Independent of Output Resolution. Controls internal scene render percentage; final output resolution remains separately selected/clamped.",
+      "range": [
+        25,
+        100
+      ],
+      "default": 100,
+      "unit": "%"
     },
     {
       "id": "upscaler",
@@ -74,7 +104,8 @@
       ],
       "status": "method_dependent_not_implemented",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "note": "Per-upscaler sharpness; disabled/ignored when the selected method has no adjustable sharpening control. Avoid double sharpening when SGSR1's integrated sharpening is active."
     },
     {
       "id": "upscale_preset",
@@ -86,9 +117,10 @@
         "Performance",
         "Balanced",
         "Quality",
-        "Ultra Quality"
+        "Ultra Quality",
+        "Custom"
       ],
-      "behavior": "map_each_preset_to_the_selected_upscaler_supported_render_scale_and_parameters",
+      "behavior": "one unified preset selector; each upscaler maps the named presets to its own supported input scale/parameters; Custom exposes Render Scale directly and does not overwrite Output Resolution",
       "status": "configuration_mapping_required",
       "ui_control_defined": true,
       "expose_control": false
@@ -125,13 +157,19 @@
       "options": [
         "Off",
         "On",
-        "Ultra (No Queue)"
+        "Ultra"
       ],
       "integration_point": "Vulkan render/present synchronization; inspect queue depth and frame ownership before changing",
       "status": "renderer_path_verified_safe_modes_not_implemented",
       "safety": "never_insert_vkQueueWaitIdle_per_frame_or_force_zero_queue_without_validation",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "behavior": {
+        "Off": "engine default queueing",
+        "On": "reduce queue depth conservatively while preserving safe synchronization",
+        "Ultra": "target zero queued frames; only enable if the backend supports safe zero-queue presentation without deadlock or frame starvation"
+      },
+      "note": "Ultra is the user-facing label; do not display 'No Queue'. Runtime may refuse Ultra and fall back to On if true zero-queue cannot be safely achieved."
     },
     {
       "id": "frame_pacing",
@@ -142,7 +180,8 @@
       "status": "native_pacing_and_swappy_code_verified_controls_not_yet_exposed",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "SwappyGL exports alone do not prove Vulkan path uses Swappy; Vulkan Present has its own RenderThreadPacing path."
+      "note": "Independent user toggle. When Frame Generation is enabled, activate the minimum required pacing/scheduling coordination automatically; this does not silently change the user's independent Frame Pacing preference.",
+      "frame_generation_dependency": "automatic_required_pacing_layer_when_frame_generation_enabled"
     },
     {
       "id": "fps_limit",
@@ -176,7 +215,7 @@
       "integration_point": "separate_interpolation_stage_before_present; requires real motion estimation/interpolation and frame pacing coordination",
       "status": "blocked_no_UE4_27_Adreno610_compatible_FG_verified",
       "expose_control": false,
-      "note": "Qualcomm Adreno Neural Fusion provides Frame Generation only in UE5 plugin branches (UE5.0–5.8), not UE4.27. Do not transplant UE5 plugin into this UE4.27 game.",
+      "note": "Real interpolated intermediate frames only. Enabling FG automatically activates its required pacing coordination; no fake duplication or screen-overlay-only output.",
       "ui_control_defined": true
     },
     {
@@ -265,9 +304,13 @@
     "performance_hud_section_last": true,
     "hide_unimplemented_controls": true,
     "never_claim_algorithm_support_from_repository_readme_alone": true,
-    "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true
+    "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true,
+    "output_resolution_separate_from_render_scale": true,
+    "custom_preset_controls_render_scale": true,
+    "unified_upscale_preset": true,
+    "frame_generation_auto_enables_required_pacing": true
   },
-  "implementation_note": "Updated with verified official Qualcomm UE4.27 plugin source locations and target binary API evidence. This remains an integration plan; no native hook, plugin binary, shader package, or modified APK has been built.",
+  "implementation_note": "Schema v3 records the user's clarified separation of output resolution and internal render scale, unified per-upscaler presets including Custom, and Ultra queue target naming. This is a settings specification only; no plugin binaries or game renderer changes have been compiled.",
   "integration_constraints": [
     "The game binary identifies its build source path as UE4.27Plus; exact engine patch version still needs confirmation.",
     "Target libUE4.so does not contain SGSR1, SGSR2, or Mobile FSR plugin CVar strings searched; plugin integration is not already present.",
