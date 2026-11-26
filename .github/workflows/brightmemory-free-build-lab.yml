@@ -1,0 +1,17 @@
+name: Bright Memory free build lab
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  branch-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Select the prepared build-lab branch
+        run: |
+          echo "This is the default-branch entry point only."
+          echo "In the Run workflow menu, select branch: brightmemory-free-build-lab"
+          echo "The full restore/build environment is defined on that branch."
