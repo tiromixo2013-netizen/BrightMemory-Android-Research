@@ -47,12 +47,12 @@ Official UE4 plugin guide: https://gpuopen.com/learn/ue4-fsr/
 
 ### CAS
 
-AMD CAS is a sharpening pass, not a replacement for the selected upscaler. Implement it as a separate post-upscale pass with a 0–1 strength control. Avoid double sharpening with SGSR1 and FSR1 RCAS; default CAS OFF.
+AMD CAS is a sharpening pass, not a replacement for the selected upscaler. The FidelityFX CAS algorithm is designed to be integrated as a full-screen shader pass; AMD describes it as a small engine-side shader integration with no separate subsystem or motion-vector resources. Source guide: https://gpuopen.com/learn/integrating-fidelityfx-ego-engine/ . Implement it as a separate post-upscale pass with a 0–1 strength control. Avoid double sharpening with SGSR1 and FSR1 RCAS; default CAS OFF. An older community UE4 CAS plugin exists, but its README says it was developed/tested on UE4.24 Windows and requires renderer source modification for its custom upsample callback, so it is not a drop-in Android plugin for this game.
 
 ## Lightweight spatial methods
 
 - Nearest and Bilinear are small RDG screen passes sampling the scene-color texture to the selected output extent. They do not need a vendor plugin.
-- MWSR is not yet identified by a verifiable UE4.27 source/package in this research. Keep it as an adapter slot; integrate its shader as a spatial RDG pass once the exact algorithm/source is identified. Do not label an unrelated filter as MWSR.
+- MWSR is not yet identified by a verifiable UE4.27 source/package in this research. Public search returns unrelated uses of the acronym, so its intended algorithm/source cannot be safely inferred. Keep it as an adapter slot; integrate its shader as a spatial RDG pass once the exact algorithm/source is identified. Do not label an unrelated filter as MWSR.
 - "FSR Lite" is a project UI label, not the official name of AMD's UE4 FSR1 plugin. It must refer to a defined mobile-tuned FSR1 configuration, not a fictitious separate AMD algorithm.
 
 ## Resolution and preset policy
