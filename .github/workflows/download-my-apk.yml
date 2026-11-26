@@ -1,0 +1,43 @@
+name: Download my APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_url:
+        description: "Paste your direct HTTPS download link"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download file
+        env:
+          PACKAGE_URL: ${{ inputs.package_url }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, urllib.parse, sys
+          url = os.environ["PACKAGE_URL"].strip()
+          parsed = urllib.parse.urlparse(url)
+          if parsed.scheme != "https" or not parsed.netloc:
+              raise SystemExit("Please provide a valid direct HTTPS URL.")
+          PY
+          curl --location --fail --silent --show-error \
+            --retry 2 --retry-delay 3 --max-filesize 2147483648 \
+            --output downloaded-package.apk "$PACKAGE_URL"
+          test -s downloaded-package.apk
+          echo "Downloaded size: $(stat -c%s downloaded-package.apk) bytes"
+          sha256sum downloaded-package.apk
+
+      - name: Save download as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: downloaded-apk
+          path: downloaded-package.apk
+          if-no-files-found: error
+          retention-days: 3
