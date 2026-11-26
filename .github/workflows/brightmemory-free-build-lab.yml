@@ -1,0 +1,94 @@
+name: Bright Memory free build lab
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    # Public repository: use GitHub-hosted standard runner, not paid private minutes.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Free disk and install native analysis tools
+        run: |
+          set -euxo pipefail
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk /opt/hostedtoolcache/CodeQL
+          sudo apt-get update
+          sudo apt-get install -y rclone unzip zip file binutils llvm clang cmake ninja-build python3 python3-pip openjdk-17-jdk apktool
+          df -h
+
+      - name: Install Android SDK build environment
+        uses: android-actions/setup-android@v3
+      - name: Install SDK, NDK and CMake
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653" "cmake;3.22.1"
+          java -version
+          adb version
+          ndk-build --version || true
+          cmake --version
+          ninja --version
+
+      - name: Configure MEGA remote and restore verified source package
+        env:
+          MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
+          MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
+          MEGA_2FA: ${{ secrets.MEGA_2FA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$MEGA_EMAIL"
+          test -n "$MEGA_PASSWORD"
+          export RCLONE_CONFIG_MEGA_TYPE=mega
+          export RCLONE_CONFIG_MEGA_USER="$MEGA_EMAIL"
+          export RCLONE_CONFIG_MEGA_PASS="$(rclone obscure "$MEGA_PASSWORD")"
+          if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
+          mkdir -p archives parts workspace/reports
+          remote="mega:BrightMemory-Private/BrightMemory-Android-v1.34"
+          names=(brightmemory-v1.34-part-00-artifact.zip brightmemory-v1.34-part-01-artifact.zip brightmemory-v1.34-part-02-artifact.zip brightmemory-v1.34-part-03-artifact.zip brightmemory-v1.34-part-04-artifact.zip brightmemory-v1.34-part-05-artifact.zip)
+          hashes=(1bb049386561d55f5f3119e420ff16cd5fb405890e053950ac1840bc5325037e fd3d372bb7a3f2bf80c70f42451afbb0b9f857f244f6cdf2d0cec723d1a2f4e9 fd60c05a9211f9f2b1d2e7bc5ea3df4b49521b473888dbc55171820824dea9de 5615bb1c9a8dcb88463d556079d2fdbb3d0c06b0d94112aac44630d06054b889 f856fb69e2b5349793d5bfda7d1b37472f80ada5b0fefaee4909690fb36fad55 a4eb149cf09a095b4fd61f0de3b5db91097b12ab69d53d713fd67c8f614b7ce1)
+          for i in ${!names[@]}; do
+            rclone copyto "$remote/${names[$i]}" "archives/${names[$i]}" --retries 5
+            echo "${hashes[$i]}  archives/${names[$i]}" | sha256sum -c -
+            unzip -tq "archives/${names[$i]}"
+            unzip -oq "archives/${names[$i]}" -d "parts/$i"
+          done
+          cat parts/0/downloaded-package.part-00 parts/1/downloaded-package.part-01 parts/2/downloaded-package.part-02 parts/3/downloaded-package.part-03 parts/4/downloaded-package.part-04 parts/5/downloaded-package.part-05 > workspace/bright-memory-infinite-v1.34.apk
+          test "$(stat -c%s workspace/bright-memory-infinite-v1.34.apk)" = 2431306902
+          echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  workspace/bright-memory-infinite-v1.34.apk" | sha256sum -c -
+
+      - name: Inspect package and extract native engine
+        run: |
+          set -euo pipefail
+          apk="workspace/bright-memory-infinite-v1.34.apk"
+          unzip -tq "$apk" > workspace/reports/zip-integrity.txt
+          unzip -l "$apk" > workspace/reports/apk-file-index.txt
+          unzip -p "$apk" lib/arm64-v8a/libUE4.so > workspace/libUE4.so
+          readelf -h workspace/libUE4.so > workspace/reports/libUE4-elf.txt
+          sha256sum workspace/libUE4.so > workspace/reports/libUE4-sha256.txt
+          strings -a workspace/libUE4.so | grep -Ei 'SGSR|FSR|FidelityFX|Upscaler|AddMobilePostProcessingPasses|CAS|Vulkan|OpenGL' | sort -u > workspace/reports/graphics-symbols.txt || true
+          apktool d -f -s "$apk" -o workspace/decoded-apk
+          cp workspace/decoded-apk/AndroidManifest.xml workspace/reports/AndroidManifest.xml
+          df -h
+          du -sh workspace
+
+      - name: Save verified package and reports back to MEGA
+        env:
+          MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
+          MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
+          MEGA_2FA: ${{ secrets.MEGA_2FA }}
+        run: |
+          set -euo pipefail
+          export RCLONE_CONFIG_MEGA_TYPE=mega
+          export RCLONE_CONFIG_MEGA_USER="$MEGA_EMAIL"
+          export RCLONE_CONFIG_MEGA_PASS="$(rclone obscure "$MEGA_PASSWORD")"
+          if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
+          tar -czf workspace/reports/inspection-reports.tar.gz workspace/reports
+          dest="mega:BrightMemory-Private/Restored-v1.34"
+          rclone mkdir "$dest"
+          rclone copy workspace/reports "$dest/reports" --retries 5
+          rclone copyto workspace/bright-memory-infinite-v1.34.apk "$dest/bright-memory-infinite-v1.34.apk" --retries 5
+          rclone ls "$dest"
