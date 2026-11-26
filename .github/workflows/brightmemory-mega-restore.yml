@@ -16,7 +16,13 @@ jobs:
           set -euxo pipefail
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk /opt/hostedtoolcache/CodeQL
           sudo apt-get update
-          sudo apt-get install -y rclone unzip zip file binutils llvm clang cmake ninja-build python3 python3-pip openjdk-17-jdk apktool
+          sudo apt-get install -y curl unzip zip file binutils llvm clang cmake ninja-build python3 python3-pip openjdk-17-jdk apktool
+          curl -fsSL https://downloads.rclone.org/rclone-current-linux-amd64.zip -o /tmp/rclone.zip
+          mkdir -p /tmp/rclone-unpack
+          unzip -q /tmp/rclone.zip -d /tmp/rclone-unpack
+          sudo install -m 755 /tmp/rclone-unpack/rclone-*-linux-amd64/rclone /usr/local/bin/rclone
+          rclone version
+          rclone help backends | grep -i mega
           df -h
 
       - name: Configure preinstalled Android SDK
@@ -97,6 +103,17 @@ jobs:
           cp workspace/decoded-apk/AndroidManifest.xml workspace/reports/AndroidManifest.xml
           df -h
           du -sh workspace
+
+      - name: Preserve reconstructed APK and reports as GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-v1.34-restored-full-apk
+          path: |
+            workspace/bright-memory-infinite-v1.34.apk
+            workspace/libUE4.so
+            workspace/reports/
+          compression-level: 0
+          retention-days: 7
 
       - name: Upload verified APK and inspection reports to MEGA
         env:
