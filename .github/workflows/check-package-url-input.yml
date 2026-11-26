@@ -1,0 +1,38 @@
+name: Check package link
+on:
+  workflow_dispatch:
+    inputs:
+      package_url:
+        description: "Direct URL to a package you are authorized to access"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check link response (no file download)
+        env:
+          PACKAGE_URL: ${{ inputs.package_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, urllib.request
+          url = os.environ["PACKAGE_URL"].strip()
+          if not url.startswith(("https://", "http://")):
+              raise SystemExit("Please provide an http:// or https:// URL.")
+          req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "GitHub-Actions-Link-Check"})
+          try:
+              with urllib.request.urlopen(req, timeout=20) as r:
+                  print("HTTP status:", r.status)
+                  print("Content-Type:", r.headers.get("Content-Type", "unknown"))
+                  print("Content-Length:", r.headers.get("Content-Length", "unknown"))
+                  print("This workflow checks link metadata only; it does not download the file.")
+          except Exception as e:
+              print("Link check failed:", type(e).__name__, str(e))
+              raise
+          PY
