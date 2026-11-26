@@ -1,0 +1,97 @@
+name: Bright Memory export restored APK in small artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/brightmemory-artifact-export.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Download previously verified restored APK artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download 45908333558 --repo "${GITHUB_REPOSITORY}" --name brightmemory-v1.34-restored-full-apk --dir recovered
+          apk="$(find recovered -type f -name 'bright-memory-infinite-v1.34.apk' -print -quit)"
+          test -n "$apk"
+          test "$(stat -c%s "$apk")" = 2431306902
+          echo "APK=$apk" >> "$GITHUB_ENV"
+          echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  $apk" | sha256sum -c -
+          mkdir -p chunks
+          split -b 400M -d -a 2 "$apk" chunks/part-
+          test "$(find chunks -type f | wc -l)" -eq 7
+          sha256sum chunks/part-* > chunks/SHA256SUMS
+          cp -a recovered/. chunks/
+      - name: Upload APK chunk 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-00
+          path: chunks/part-00
+          compression-level: 0
+          retention-days: 7
+      - name: Upload APK chunk 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-01
+          path: chunks/part-01
+          compression-level: 0
+          retention-days: 7
+      - name: Upload APK chunk 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-02
+          path: chunks/part-02
+          compression-level: 0
+          retention-days: 7
+      - name: Upload APK chunk 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-03
+          path: chunks/part-03
+          compression-level: 0
+          retention-days: 7
+      - name: Upload APK chunk 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-04
+          path: chunks/part-04
+          compression-level: 0
+          retention-days: 7
+      - name: Upload APK chunk 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-05
+          path: chunks/part-05
+          compression-level: 0
+          retention-days: 7
+      - name: Upload APK chunk 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-06
+          path: chunks/part-06
+          compression-level: 0
+          retention-days: 7
+      - name: Upload reports and chunk checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-v1.34-reports-and-checksums
+          path: |
+            chunks/SHA256SUMS
+            recovered/**/reports/**
+          compression-level: 6
+          retention-days: 7
+      - name: Verify chunk concatenation
+        run: |
+          set -euo pipefail
+          cat chunks/part-* > /tmp/reassembled.apk
+          test "$(stat -c%s /tmp/reassembled.apk)" = 2431306902
+          echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  /tmp/reassembled.apk" | sha256sum -c -
