@@ -21,14 +21,14 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os, urllib.parse, sys
+          import os, urllib.parse
           url = os.environ["PACKAGE_URL"].strip()
           parsed = urllib.parse.urlparse(url)
           if parsed.scheme != "https" or not parsed.netloc:
               raise SystemExit("Please provide a valid direct HTTPS URL.")
           PY
           curl --location --fail --silent --show-error \
-            --retry 2 --retry-delay 3 --max-filesize 2147483648 \
+            --retry 2 --retry-delay 3 --max-filesize 8589934592 \
             --output downloaded-package.apk "$PACKAGE_URL"
           test -s downloaded-package.apk
           echo "Downloaded size: $(stat -c%s downloaded-package.apk) bytes"
