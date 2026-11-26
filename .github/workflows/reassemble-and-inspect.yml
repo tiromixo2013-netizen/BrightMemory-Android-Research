@@ -1,0 +1,57 @@
+name: Reassemble and inspect downloaded APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the six parts from the successful run
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 45728055093
+          pattern: downloaded-apk-part-*
+          path: parts
+          merge-multiple: true
+
+      - name: Reassemble and inspect package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -lh parts/
+          test "$(find parts -maxdepth 1 -type f -name 'downloaded-package.part-*' | wc -l)" -eq 6
+          cat parts/downloaded-package.part-* > BrightMemory-v1.34.apk
+          sha256sum BrightMemory-v1.34.apk
+          python3 - <<'PY'
+          import hashlib, json, pathlib, zipfile
+          p = pathlib.Path("BrightMemory-v1.34.apk")
+          report = {
+              "file": p.name,
+              "bytes": p.stat().st_size,
+              "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
+          }
+          with zipfile.ZipFile(p) as z:
+              names = z.namelist()
+              report["zip_entries"] = len(names)
+              report["abis"] = sorted({x.split("/")[1] for x in names if x.startswith("lib/") and len(x.split("/")) > 2})
+              report["native_libraries"] = [x for x in names if x.startswith("lib/") and x.endswith(".so")]
+              report["ue4_libraries"] = [x for x in names if x.endswith("libUE4.so")]
+              report["pak_files"] = [x for x in names if x.lower().endswith(".pak")]
+              report["obb_files"] = [x for x in names if x.lower().endswith(".obb")]
+          pathlib.Path("package-report.json").write_text(json.dumps(report, indent=2))
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Upload inspection results
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-v1.34-inspection
+          path: package-report.json
+          retention-days: 7
