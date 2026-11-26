@@ -1,0 +1,57 @@
+name: Backup Bright Memory artifacts to MEGA (free runner)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Install rclone
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          rclone version
+
+      - name: Download and verify the six original artifact ZIPs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          download_verify() {
+            id="$1"
+            name="$2"
+            expected="$3"
+            echo "Downloading $name"
+            curl --fail --silent --show-error --location \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/$id/zip" \
+              -o "backup/$name.zip"
+            echo "$expected  backup/$name.zip" | sha256sum --check -
+          }
+          download_verify 15074908510 brightmemory-part-00 1bb049386561d55f5f3119e420ff16cd5fb405890e053950ac1840bc5325037e
+          download_verify 15074759168 brightmemory-part-01 fd3d372bb7a3f2bf80c70f42451afbb0b9f857f244f6cdf2d0cec723d1a2f4e9
+          download_verify 15076065137 brightmemory-part-02 fd60c05a9211f9f2b1d2e7bc5ea3df4b49521b473888dbc55171820824dea9de
+          download_verify 15075611297 brightmemory-part-03 5615bb1c9a8dcb88463d556079d2fdbb3d0c06b0d94112aac44630d06054b889
+          download_verify 15075336701 brightmemory-part-04 f856fb69e2b5349793d5bfda7d1b37472f80ada5b0fefaee4909690fb36fad55
+          download_verify 15075441932 brightmemory-part-05 a4eb149cf09a095b4fd61f0de3b5db91097b12ab69d53d713fd67c8f614b7ce1
+
+      - name: Upload verified ZIPs to MEGA
+        env:
+          MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
+          MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
+          MEGA_2FA: ${{ secrets.MEGA_2FA }}
+        run: |
+          set -euo pipefail
+          test -n "$MEGA_EMAIL"
+          test -n "$MEGA_PASSWORD"
+          rclone config create mega mega user "$MEGA_EMAIL" pass "$(rclone obscure "$MEGA_PASSWORD")" --non-interactive
+          rclone mkdir mega:BrightMemory-Private
+          rclone copy backup mega:BrightMemory-Private --progress --transfers 2 --checkers 4
+          rclone lsf mega:BrightMemory-Private
