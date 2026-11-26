@@ -1,25 +1,168 @@
 {
-  "schema_version": 1,
-  "project": "Bright Memory: Infinite Android graphics research",
+  "schema_version": 2,
+  "project": "Bright Memory: Infinite Android graphics integration",
   "device_target": {
     "model": "Samsung Galaxy M14 4G",
     "android": "15",
     "abi": "arm64-v8a",
-    "gpu": "Adreno 610"
+    "gpu": "Adreno 610",
+    "engine": "Unreal Engine 4.27"
   },
-  "settings": [
-    {"id":"render_scale","label":"Render Scale","type":"number","status":"needs_engine_verification"},
-    {"id":"upscaler","label":"Upscaling Method","type":"enum","options":["SGSR1","SGSR2","MWSR","FSR Lite","Nearest","Bilinear"],"status":"needs_engine_verification"},
-    {"id":"upscale_sharpness","label":"Upscale Sharpness","type":"number","status":"needs_engine_verification"},
-    {"id":"upscale_preset","label":"Upscale Preset","type":"enum","options":["Ultra Performance","Performance","Balanced","Quality","Ultra Quality"],"status":"method_dependent"},
-    {"id":"amd_cas","label":"AMD CAS","type":"boolean","status":"needs_engine_verification"},
-    {"id":"cas_sharpness","label":"CAS Sharpness","type":"number","status":"depends_on_amd_cas"},
-    {"id":"low_latency","label":"Low Latency","type":"boolean","status":"needs_engine_verification"},
-    {"id":"queue_mode","label":"Queue Mode","type":"enum","options":["Default","Low Queue","No Queue"],"status":"renderer_dependent"},
-    {"id":"frame_pacing","label":"Frame Pacing","type":"boolean","status":"needs_engine_verification"},
-    {"id":"fps_limit","label":"FPS Limit","type":"enum","options":[30,60,90,120,144,180],"status":"device_and_game_dependent"},
-    {"id":"frame_generation","label":"Frame Generation","type":"enum","options":["Off","x2","x3","x4"],"status":"requires_real_implementation"},
-    {"id":"performance_hud","label":"Performance HUD","type":"object","fields":["fps","frame_time_ms","one_percent_low","cpu_usage","gpu_usage"],"status":"telemetry_dependent"}
+  "menu_order": [
+    "render_scale",
+    "upscaler",
+    "upscale_sharpness",
+    "upscale_preset",
+    "amd_cas",
+    "cas_sharpness",
+    "low_latency",
+    "frame_pacing",
+    "fps_limit",
+    "frame_generation",
+    "performance_hud"
   ],
-  "implementation_note": "These are requested research targets, not verified in-game capabilities. Do not expose a control until its implementation is confirmed."
+  "settings": [
+    {
+      "id": "render_scale",
+      "section": "Upscaling",
+      "label": "Render Scale",
+      "type": "number",
+      "integration_point": "FSceneRenderer::ApplyResolutionFraction @ 0x79e5ba0; FSceneRenderer::GetDesiredInternalBufferSize @ 0x79e5c10",
+      "status": "engine_hook_verified_not_implemented"
+    },
+    {
+      "id": "upscaler",
+      "section": "Upscaling",
+      "label": "Upscaling Method",
+      "type": "enum",
+      "options": ["SGSR1", "SGSR2", "MWSR", "FSR Lite", "Nearest", "Bilinear"],
+      "integration_point": "AddMobilePostProcessingPasses @ 0x78870c0; ISpatialUpscaler::AddDefaultUpscalePass @ 0x78fae30",
+      "methods": {
+        "SGSR1": "official_qualcomm_ue4_27_plugin_source_available_port_and_register_required",
+        "SGSR2": "official_qualcomm_ue4_27_plugin_source_available_temporal_inputs_and_port_required",
+        "MWSR": "algorithm_source_not_verified",
+        "FSR Lite": "algorithm_source_not_verified",
+        "Nearest": "custom_spatial_sampler_pass_required",
+        "Bilinear": "custom_spatial_sampler_pass_required"
+      },
+      "status": "dispatch_hook_verified_methods_not_integrated"
+    },
+    {
+      "id": "upscale_sharpness",
+      "section": "Upscaling",
+      "label": "Upscale Sharpness",
+      "type": "number",
+      "range": [0, 1],
+      "status": "method_dependent_not_implemented"
+    },
+    {
+      "id": "upscale_preset",
+      "section": "Upscaling",
+      "label": "Upscale Preset",
+      "type": "enum",
+      "options": ["Ultra Performance", "Performance", "Balanced", "Quality", "Ultra Quality"],
+      "behavior": "map_each_preset_to_the_selected_upscaler_supported_render_scale_and_parameters",
+      "status": "configuration_mapping_required"
+    },
+    {
+      "id": "amd_cas",
+      "section": "Sharpening",
+      "label": "AMD CAS",
+      "type": "boolean",
+      "integration_point": "separate_RDG_post_upscale_pass; do_not_stack_on_SGSR1_sharpening_by_default",
+      "status": "shader_port_and_RDG_registration_required"
+    },
+    {
+      "id": "cas_sharpness",
+      "section": "Sharpening",
+      "label": "CAS Sharpness",
+      "type": "number",
+      "range": [0, 1],
+      "depends_on": "amd_cas",
+      "status": "requires_CAS_pass"
+    },
+    {
+      "id": "low_latency",
+      "section": "Latency",
+      "label": "Low Latency",
+      "type": "enum",
+      "options": ["Off", "On", "Ultra (No Queue)"],
+      "integration_point": "Vulkan render/present synchronization; inspect queue depth and frame ownership before changing",
+      "status": "renderer_path_verified_safe_modes_not_implemented",
+      "safety": "never_insert_vkQueueWaitIdle_per_frame_or_force_zero_queue_without_validation"
+    },
+    {
+      "id": "frame_pacing",
+      "section": "Frame Pacing",
+      "label": "Frame Pacing",
+      "type": "boolean",
+      "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; Swappy symbols present",
+      "status": "engine_path_and_swappy_symbols_verified_not_user_controlled"
+    },
+    {
+      "id": "fps_limit",
+      "section": "Frame Pacing",
+      "label": "FPS Limit",
+      "type": "enum",
+      "options": [30, 60, 90, 120, 144, 180],
+      "integration_point": "UGameUserSettings::SetFrameRateLimit @ 0x87359dc; UGameUserSettings::GetFramePace @ 0x8735500; Swappy",
+      "status": "engine_api_verified_device_and_game_supported_values_only"
+    },
+    {
+      "id": "frame_generation",
+      "section": "Frame Generation",
+      "label": "Frame Generation",
+      "type": "enum",
+      "options": ["Off", "x2", "x3", "x4"],
+      "integration_point": "separate_interpolation_stage_before_present; requires real motion estimation/interpolation and frame pacing coordination",
+      "status": "blocked_no_compatible_open_implementation_verified_for_adreno_610",
+      "expose_control": false,
+      "note": "Do not use frame duplication or generated-looking overlays as frame generation. SGSR2 is temporal upscaling, not frame generation."
+    },
+    {
+      "id": "performance_hud",
+      "section": "Performance",
+      "label": "Performance HUD",
+      "type": "object",
+      "fields": [
+        {"id": "fps", "label": "FPS", "status": "engine_average_fps_symbol_present"},
+        {"id": "frame_time_ms", "label": "Frame Time (ms)", "status": "derive_from_frame_timestamps"},
+        {"id": "one_percent_low", "label": "1% Low", "status": "derive_from_frame_time_history"},
+        {"id": "cpu_usage", "label": "CPU Usage", "status": "android_process_telemetry_required"},
+        {"id": "gpu_usage", "label": "GPU Usage", "status": "vendor_telemetry_required_may_be_unavailable"},
+        {"id": "gpu_frame_time_ms", "label": "GPU Frame Time (ms)", "status": "device_and_vulkan_counter_dependent"}
+      ],
+      "integration_evidence": [
+        "GAverageFPS global symbol present",
+        "GPerformanceTrackingSystem global symbol present",
+        "FPerformanceTrackingSystem::AnalyzeFrame @ 0x852dd6c"
+      ],
+      "status": "engine_performance_symbols_verified_hud_not_implemented"
+    }
+  ],
+  "verified_binary_evidence": {
+    "library": "lib/arm64-v8a/libUE4.so",
+    "sha256_apk": "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4",
+    "symbols": {
+      "AddMobilePostProcessingPasses": "0x78870c0",
+      "ISpatialUpscaler::AddDefaultUpscalePass": "0x78fae30",
+      "FSceneRenderer::ApplyResolutionFraction": "0x79e5ba0",
+      "FSceneRenderer::GetDesiredInternalBufferSize": "0x79e5c10",
+      "FVulkanSwapChain::RenderThreadPacing": "0x626acb8",
+      "FVulkanSwapChain::Present": "0x626aea8",
+      "UGameUserSettings::GetFramePace": "0x8735500",
+      "UGameUserSettings::SetFrameRateLimit": "0x87359dc",
+      "FPerformanceTrackingSystem::AnalyzeFrame": "0x852dd6c"
+    },
+    "other_symbols": ["SwappyGL_*", "GAverageFPS", "GPerformanceTrackingSystem", "GTemporalUpscaler"]
+  },
+  "implementation_policy": {
+    "one_unified_settings_menu": true,
+    "frame_generation_section_after_frame_pacing": true,
+    "performance_hud_section_last": true,
+    "hide_unimplemented_controls": true,
+    "never_claim_algorithm_support_from_repository_readme_alone": true,
+    "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true
+  },
+  "implementation_note": "This file records verified binary hook locations and the unified UI contract. It is not a claim that native hooks, shaders, or frame generation have already been compiled into the game."
 }
