@@ -28,14 +28,23 @@
       "label": "Render Scale",
       "type": "number",
       "integration_point": "FSceneRenderer::ApplyResolutionFraction @ 0x79e5ba0; FSceneRenderer::GetDesiredInternalBufferSize @ 0x79e5c10",
-      "status": "engine_hook_verified_not_implemented"
+      "status": "engine_hook_verified_not_implemented",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "upscaler",
       "section": "Upscaling",
       "label": "Upscaling Method",
       "type": "enum",
-      "options": ["SGSR1", "SGSR2", "MWSR", "FSR Lite", "Nearest", "Bilinear"],
+      "options": [
+        "SGSR1",
+        "SGSR2",
+        "MWSR",
+        "FSR Lite",
+        "Nearest",
+        "Bilinear"
+      ],
       "integration_point": "AddMobilePostProcessingPasses @ 0x78870c0; ISpatialUpscaler::AddDefaultUpscalePass @ 0x78fae30",
       "methods": {
         "SGSR1": "official_qualcomm_ue4_27_plugin_source_available_port_and_register_required",
@@ -45,24 +54,39 @@
         "Nearest": "custom_spatial_sampler_pass_required",
         "Bilinear": "custom_spatial_sampler_pass_required"
       },
-      "status": "dispatch_hook_verified_methods_not_integrated"
+      "status": "dispatch_hook_verified_methods_not_integrated",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "upscale_sharpness",
       "section": "Upscaling",
       "label": "Upscale Sharpness",
       "type": "number",
-      "range": [0, 1],
-      "status": "method_dependent_not_implemented"
+      "range": [
+        0,
+        1
+      ],
+      "status": "method_dependent_not_implemented",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "upscale_preset",
       "section": "Upscaling",
       "label": "Upscale Preset",
       "type": "enum",
-      "options": ["Ultra Performance", "Performance", "Balanced", "Quality", "Ultra Quality"],
+      "options": [
+        "Ultra Performance",
+        "Performance",
+        "Balanced",
+        "Quality",
+        "Ultra Quality"
+      ],
       "behavior": "map_each_preset_to_the_selected_upscaler_supported_render_scale_and_parameters",
-      "status": "configuration_mapping_required"
+      "status": "configuration_mapping_required",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "amd_cas",
@@ -70,26 +94,39 @@
       "label": "AMD CAS",
       "type": "boolean",
       "integration_point": "separate_RDG_post_upscale_pass; do_not_stack_on_SGSR1_sharpening_by_default",
-      "status": "shader_port_and_RDG_registration_required"
+      "status": "shader_port_and_RDG_registration_required",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "cas_sharpness",
       "section": "Sharpening",
       "label": "CAS Sharpness",
       "type": "number",
-      "range": [0, 1],
+      "range": [
+        0,
+        1
+      ],
       "depends_on": "amd_cas",
-      "status": "requires_CAS_pass"
+      "status": "requires_CAS_pass",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "low_latency",
       "section": "Latency",
       "label": "Low Latency",
       "type": "enum",
-      "options": ["Off", "On", "Ultra (No Queue)"],
+      "options": [
+        "Off",
+        "On",
+        "Ultra (No Queue)"
+      ],
       "integration_point": "Vulkan render/present synchronization; inspect queue depth and frame ownership before changing",
       "status": "renderer_path_verified_safe_modes_not_implemented",
-      "safety": "never_insert_vkQueueWaitIdle_per_frame_or_force_zero_queue_without_validation"
+      "safety": "never_insert_vkQueueWaitIdle_per_frame_or_force_zero_queue_without_validation",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "frame_pacing",
@@ -97,27 +134,44 @@
       "label": "Frame Pacing",
       "type": "boolean",
       "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; Swappy symbols present",
-      "status": "engine_path_and_swappy_symbols_verified_not_user_controlled"
+      "status": "engine_path_and_swappy_symbols_verified_not_user_controlled",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "fps_limit",
       "section": "Frame Pacing",
       "label": "FPS Limit",
       "type": "enum",
-      "options": [30, 60, 90, 120, 144, 180],
+      "options": [
+        30,
+        60,
+        90,
+        120,
+        144,
+        180
+      ],
       "integration_point": "UGameUserSettings::SetFrameRateLimit @ 0x87359dc; UGameUserSettings::GetFramePace @ 0x8735500; Swappy",
-      "status": "engine_api_verified_device_and_game_supported_values_only"
+      "status": "engine_api_verified_device_and_game_supported_values_only",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "frame_generation",
       "section": "Frame Generation",
       "label": "Frame Generation",
       "type": "enum",
-      "options": ["Off", "x2", "x3", "x4"],
+      "options": [
+        "Off",
+        "x2",
+        "x3",
+        "x4"
+      ],
       "integration_point": "separate_interpolation_stage_before_present; requires real motion estimation/interpolation and frame pacing coordination",
       "status": "blocked_no_compatible_open_implementation_verified_for_adreno_610",
       "expose_control": false,
-      "note": "Do not use frame duplication or generated-looking overlays as frame generation. SGSR2 is temporal upscaling, not frame generation."
+      "note": "Do not use frame duplication or generated-looking overlays as frame generation. SGSR2 is temporal upscaling, not frame generation.",
+      "ui_control_defined": true
     },
     {
       "id": "performance_hud",
@@ -125,19 +179,45 @@
       "label": "Performance HUD",
       "type": "object",
       "fields": [
-        {"id": "fps", "label": "FPS", "status": "engine_average_fps_symbol_present"},
-        {"id": "frame_time_ms", "label": "Frame Time (ms)", "status": "derive_from_frame_timestamps"},
-        {"id": "one_percent_low", "label": "1% Low", "status": "derive_from_frame_time_history"},
-        {"id": "cpu_usage", "label": "CPU Usage", "status": "android_process_telemetry_required"},
-        {"id": "gpu_usage", "label": "GPU Usage", "status": "vendor_telemetry_required_may_be_unavailable"},
-        {"id": "gpu_frame_time_ms", "label": "GPU Frame Time (ms)", "status": "device_and_vulkan_counter_dependent"}
+        {
+          "id": "fps",
+          "label": "FPS",
+          "status": "engine_average_fps_symbol_present"
+        },
+        {
+          "id": "frame_time_ms",
+          "label": "Frame Time (ms)",
+          "status": "derive_from_frame_timestamps"
+        },
+        {
+          "id": "one_percent_low",
+          "label": "1% Low",
+          "status": "derive_from_frame_time_history"
+        },
+        {
+          "id": "cpu_usage",
+          "label": "CPU Usage",
+          "status": "android_process_telemetry_required"
+        },
+        {
+          "id": "gpu_usage",
+          "label": "GPU Usage",
+          "status": "vendor_telemetry_required_may_be_unavailable"
+        },
+        {
+          "id": "gpu_frame_time_ms",
+          "label": "GPU Frame Time (ms)",
+          "status": "device_and_vulkan_counter_dependent"
+        }
       ],
       "integration_evidence": [
         "GAverageFPS global symbol present",
         "GPerformanceTrackingSystem global symbol present",
         "FPerformanceTrackingSystem::AnalyzeFrame @ 0x852dd6c"
       ],
-      "status": "engine_performance_symbols_verified_hud_not_implemented"
+      "status": "engine_performance_symbols_verified_hud_not_implemented",
+      "ui_control_defined": true,
+      "expose_control": false
     }
   ],
   "verified_binary_evidence": {
@@ -154,7 +234,12 @@
       "UGameUserSettings::SetFrameRateLimit": "0x87359dc",
       "FPerformanceTrackingSystem::AnalyzeFrame": "0x852dd6c"
     },
-    "other_symbols": ["SwappyGL_*", "GAverageFPS", "GPerformanceTrackingSystem", "GTemporalUpscaler"]
+    "other_symbols": [
+      "SwappyGL_*",
+      "GAverageFPS",
+      "GPerformanceTrackingSystem",
+      "GTemporalUpscaler"
+    ]
   },
   "implementation_policy": {
     "one_unified_settings_menu": true,
@@ -164,5 +249,5 @@
     "never_claim_algorithm_support_from_repository_readme_alone": true,
     "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true
   },
-  "implementation_note": "This file records verified binary hook locations and the unified UI contract. It is not a claim that native hooks, shaders, or frame generation have already been compiled into the game."
+  "implementation_note": "The unified menu contract and verified binary integration map are committed. No controls are yet active in-game: expose_control remains false until each native hook/shader is implemented, compiled, and validated. This file is not a claim that native hooks, shaders, or frame generation have already been compiled into the game."
 }
