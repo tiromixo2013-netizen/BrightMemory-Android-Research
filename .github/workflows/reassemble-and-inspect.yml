@@ -49,9 +49,23 @@ jobs:
           print(json.dumps(report, indent=2))
           PY
 
+      - name: Extract engine and Android entry points
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p analysis
+          unzip -p BrightMemory-v1.34.apk AndroidManifest.xml > analysis/AndroidManifest.xml
+          unzip -p BrightMemory-v1.34.apk lib/arm64-v8a/libUE4.so > analysis/libUE4.so
+          file analysis/libUE4.so
+          (readelf -h -d -Ws analysis/libUE4.so || true) > analysis/readelf.txt
+          (nm -D -C analysis/libUE4.so || true) > analysis/dynamic-symbols.txt
+          strings -a analysis/libUE4.so | grep -Ei 'JNI_OnLoad|ANativeActivity_onCreate|android_main|eglSwapBuffers|vkQueuePresentKHR|FAndroid|GLES|Vulkan|SwapBuffers|Present' | sort -u > analysis/render-entry-candidates.txt || true
+          unzip -Z1 BrightMemory-v1.34.apk | grep -Ei '(^|/)(main\.[0-9]+\..*\.obb|.*\.obb|.*pak|.*utoc|.*ucas)$|AssetPack|assets/' > analysis/assets-index.txt || true
       - name: Upload inspection results
         uses: actions/upload-artifact@v4
         with:
-          name: brightmemory-v1.34-inspection
-          path: package-report.json
+          name: brightmemory-v1.34-engine-analysis
+          path: |
+            package-report.json
+            analysis/
           retention-days: 7
