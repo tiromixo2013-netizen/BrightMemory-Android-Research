@@ -47,8 +47,8 @@ jobs:
           export RCLONE_CONFIG_MEGA_PASS="$(rclone obscure "$MEGA_PASSWORD")"
           if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
           mkdir -p archives parts workspace/reports
-          remote="mega:BrightMemory-Private/BrightMemory-Android-v1.34"
-          names=(brightmemory-v1.34-part-00-artifact.zip brightmemory-v1.34-part-01-artifact.zip brightmemory-v1.34-part-02-artifact.zip brightmemory-v1.34-part-03-artifact.zip brightmemory-v1.34-part-04-artifact.zip brightmemory-v1.34-part-05-artifact.zip)
+          remote="mega:BrightMemory-Private"
+          names=(brightmemory-part-00.zip brightmemory-part-01.zip brightmemory-part-02.zip brightmemory-part-03.zip brightmemory-part-04.zip brightmemory-part-05.zip)
           hashes=(1bb049386561d55f5f3119e420ff16cd5fb405890e053950ac1840bc5325037e fd3d372bb7a3f2bf80c70f42451afbb0b9f857f244f6cdf2d0cec723d1a2f4e9 fd60c05a9211f9f2b1d2e7bc5ea3df4b49521b473888dbc55171820824dea9de 5615bb1c9a8dcb88463d556079d2fdbb3d0c06b0d94112aac44630d06054b889 f856fb69e2b5349793d5bfda7d1b37472f80ada5b0fefaee4909690fb36fad55 a4eb149cf09a095b4fd61f0de3b5db91097b12ab69d53d713fd67c8f614b7ce1)
           for i in ${!names[@]}; do
             rclone copyto "$remote/${names[$i]}" "archives/${names[$i]}" --retries 5
