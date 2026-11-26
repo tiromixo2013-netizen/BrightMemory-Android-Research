@@ -34,10 +34,57 @@ jobs:
           echo "Downloaded size: $(stat -c%s downloaded-package.apk) bytes"
           sha256sum downloaded-package.apk
 
-      - name: Save download as artifact
+      - name: Split APK into 400 MB parts
+        run: |
+          set -euo pipefail
+          split --bytes=400M --numeric-suffixes=0 --suffix-length=2 \
+            downloaded-package.apk downloaded-package.part-
+          ls -lh downloaded-package.part-*
+
+      - name: Save part 00
         uses: actions/upload-artifact@v4
         with:
-          name: downloaded-apk
-          path: downloaded-package.apk
+          name: downloaded-apk-part-00
+          path: downloaded-package.part-00
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Save part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: downloaded-apk-part-01
+          path: downloaded-package.part-01
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Save part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: downloaded-apk-part-02
+          path: downloaded-package.part-02
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Save part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: downloaded-apk-part-03
+          path: downloaded-package.part-03
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Save part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: downloaded-apk-part-04
+          path: downloaded-package.part-04
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Save part 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: downloaded-apk-part-05
+          path: downloaded-package.part-05
           if-no-files-found: error
           retention-days: 3
