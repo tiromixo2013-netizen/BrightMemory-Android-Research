@@ -9,7 +9,8 @@
       "Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessUpscale.h": "a5b978c4d217dae4661cd0f99adcd49f4185bde6",
       "Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessUpscale.cpp": "d7c121c5777ef2ea04b7fda8fe95e93528cb6fca",
       "Engine/Source/Runtime/Renderer/Private/ScreenPass.h": "fddc351c56a2b181647c2a701fc73f84056cac08"
-    }
+    },
+    "qualification": "Reference signatures and RDG examples are from jsuk10/UE4.27plus_Custom; exact identity with Bright Memory v1.34 engine snapshot is unverified."
   },
   "verified_contract": {
     "view_extension_base": "FSceneViewExtensionBase",
@@ -58,6 +59,16 @@
       "Bilinear"
     ],
     "default_enabled": false,
-    "renderer_patch_path": "engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch"
+    "renderer_patch_path": "engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch",
+    "android_opengles_validation": false,
+    "fsr_mobile_adapter_registered": false,
+    "fsr_mobile_shader_compiled": false
+  },
+  "target_rhi": {
+    "platform": "Android",
+    "api": "OpenGL ES",
+    "vulkan_enabled": false,
+    "evidence": "DefaultEngine.ini and Android device profile inspection",
+    "shader_validation": "not_run"
   }
 }
