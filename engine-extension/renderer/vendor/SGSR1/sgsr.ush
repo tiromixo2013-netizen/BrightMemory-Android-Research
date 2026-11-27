@@ -186,11 +186,12 @@ SGSR_H2 weightY(SGSR_H1 dx, SGSR_H1 dy, SGSR_H1 c, SGSR_H1 std)
 void SgsrYuvH(
 	out SGSR_H4 pix,
 	SGSR_F2 uv,
-	SGSR_F4 con1)
+	SGSR_F4 con1,
+    SGSR_F1 sharpness)
 {
 	//int mode = SGSR_MODE;
 	SGSR_H1 edgeThreshold = SGSR_EDGE_THRESHOLD;
-	SGSR_H1 edgeSharpness = SGSR_EDGE_SHARPNESS;
+	SGSR_H1 edgeSharpness = sharpness;
 
 	//if(mode == 1)
 		pix.xyz = SGSRRGBH(uv).xyz;
@@ -361,11 +362,12 @@ SGSR_H4 textureGatherMode(SGSR_F2 coord/*, int mode*/){
 void SgsrYuvH(
 	out SGSR_H4 pix,
 	SGSR_F2 uv,
-	SGSR_F4 con1){
+	SGSR_F4 con1,
+    SGSR_F1 sharpness){
 	//int mode = 0;
 
 	SGSR_H1 edgeThreshold = 4.0 / 255.0;
-	SGSR_H1 edgeSharpness = 2.0;
+	SGSR_H1 edgeSharpness = sharpness;
 
     //if(mode == 1)
 	//	pix.xyz = SGSRRGBH(uv).xyz;
