@@ -10,7 +10,7 @@
 
 static TAutoConsoleVariable<int32> CVarEnableSGSR(
 	TEXT("r.Qualcomm.SGSR.Enabled"),
-	1,
+	0,
 	TEXT("Enable SGSR for Primary Upscale"),
 	ECVF_RenderThreadSafe);
 
@@ -52,7 +52,11 @@ void FSGSRViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewFamily)
 
 		if (!IsTemporalUpscalingRequested)
 		{
-			InViewFamily.SetPrimarySpatialUpscalerInterface(new FSGSRSpatialUpscaler(ESGSRMode::UpscalingOnly, ViewData));
+            // Do not replace another extension's primary spatial upscaler.
+            if (InViewFamily.GetPrimarySpatialUpscalerInterface() == nullptr)
+            {
+			    InViewFamily.SetPrimarySpatialUpscalerInterface(new FSGSRSpatialUpscaler(ESGSRMode::UpscalingOnly, ViewData));
+            }
 			if (!IsSGSRTheLastPass()){
 				InViewFamily.SetSecondarySpatialUpscalerInterface(new FSGSRSpatialUpscaler(ESGSRMode::PostProcessingOnly, ViewData));
 			}
