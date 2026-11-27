@@ -150,6 +150,11 @@ jobs:
             FSceneViewStateReference_AllocateAll:0x8b349a0:68
             FSceneViewStateReference_DestroyAll:0x8b3495c:68
             FSceneViewState_OnStartRender:0x79e7240:288
+            FSceneView_Ctor_FromInitOptions:0x8b35598:3424
+            FSceneView_CopyCtor:0x7981330:1272
+            FSceneView_MoveCtor:0x79b6988:996
+            ULocalPlayer_CalcSceneViewInitOptions:0x884a708:780
+            FSceneViewFamily_Ctor:0x8b3b840:728
           SPECS
           } > reports/complete-hook-disassembly.txt
           echo "Scanning the complete ELF text for memory operations using displacement 0xc0 and nearby pointer-field candidates."
