@@ -19,6 +19,9 @@ required = [
     "SetCAS",
     "SetCASSharpness",
     "SetLowLatency",
+    "SetFramePacing",
+    "r.Vulkan.CPURenderthreadFramePacer",
+    "r.Vulkan.CPURHIThreadFramePacer",
     "r.OneFrameThreadLag",
     "SetFrameRateLimit",
 ]
@@ -41,7 +44,10 @@ for symbol in [
 config = json.loads((root / "config/graphics-settings.json").read_text())
 ids = [item["id"] for item in config["settings"]]
 upscaler_config = next(item for item in config["settings"] if item["id"] == "upscaler")
-assert "SGSR1_official_UE4_27_module" in upscaler_config["status"]
+assert "MWSR_HLSL_source_vendored_reference" in upscaler_config["status"]
+assert upscaler_config["options"] == ["SGSR1", "SGSR2", "MWSR", "FSR Mobile", "Nearest", "Bilinear"]
+assert "MIT" in upscaler_config["methods"]["MWSR"]
+assert "atyuwen" in upscaler_config["methods"]["FSR Mobile"]
 assert "AddDefaultUpscalePass" in upscaler_config["methods"]["Nearest"]
 assert "AddDefaultUpscalePass" in upscaler_config["methods"]["Bilinear"]
 assert any("BMISpatialUpscaler.h/.cpp" in x for x in upscaler_config["integration_requirements"])
@@ -156,16 +162,22 @@ assert "r.Qualcomm.SGSR.Sharpness" in sgsr_scaler
 assert "PassParameters->SGSR.Sharpness" in sgsr_scaler
 cas_vendor = root / "engine-extension/renderer/vendor/AMD-CAS"
 assert (cas_vendor / "ffx_a.h").exists() and (cas_vendor / "ffx_cas.h").exists()
+mwsr_vendor = root / "engine-extension/renderer/vendor/MWSR"
+assert (mwsr_vendor / "mwsr-up.hlsl").exists() and (mwsr_vendor / "LICENSE").exists()
+fsrmobile_vendor = root / "engine-extension/renderer/vendor/FSR-Mobile"
+for rel in ["opt_fsr.fxh", "ffx_a.h", "ffx_fsr1.h", "AMD-LICENSE.txt"]:
+    assert (fsrmobile_vendor / rel).exists(), f"Missing FSR Mobile source dependency: {rel}"
+assert "FsrMobile(" in (fsrmobile_vendor / "opt_fsr.fxh").read_text()
 
 
 blueprint_header = (root / "engine-extension/Source/BMIGraphicsRuntime/Public/BMIGraphicsSettingsLibrary.h").read_text()
 blueprint_source = (root / "engine-extension/Source/BMIGraphicsRuntime/Private/BMIGraphicsSettingsLibrary.cpp").read_text()
 for method in ["SetResolutionController", "SetGraphicsQuality", "SetRenderScale",
                "SetUpscaler", "SetUpscaleSharpness", "SetUpscalePreset",
-               "SetAMDCAS", "SetCASSharpness", "SetLowLatency", "SetFrameLimit"]:
+               "SetAMDCAS", "SetCASSharpness", "SetLowLatency", "SetFramePacing", "SetFrameLimit"]:
     assert f"static bool {method}(" in blueprint_header, f"Missing Blueprint setting API: {method}"
     assert f"UBMIGraphicsSettingsLibrary::{method}(" in blueprint_source, f"Missing Blueprint implementation: {method}"
 assert "UBlueprintFunctionLibrary" in blueprint_header
 assert "GEngine->Exec(nullptr" in blueprint_source
 
-print("PASS: runtime settings bridge, Blueprint-callable controls, SGSR1 plugin identity/shader mapping, AMD CAS source provenance, renderer API audit, low-latency safety gates and settings schema")
+print("PASS: runtime bridge, Blueprint API, SGSR1/MWSR/FSR Mobile source presence, Vulkan frame-pacing bindings, renderer API audit and settings schema")
