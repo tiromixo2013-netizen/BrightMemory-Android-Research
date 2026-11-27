@@ -89,12 +89,14 @@ void FBMIUnifiedUpscalerViewExtension::BeginRenderViewFamily(FSceneViewFamily& I
  if (CVarBMIPipelineEnabled.GetValueOnGameThread() == 0) return;
  const int32 Method = FMath::Clamp(CVarBMIMethod.GetValueOnGameThread(), 0, 5);
  if ((CVarBMIRegisteredMask.GetValueOnGameThread() & (1 << Method)) == 0) return;
- // BMI is explicitly selected by the user through bmi.SetUpscaler.
- // Once enabled, it must become the primary spatial upscaler even when UE
- // already supplied its default interface; otherwise the registered passes
- // would never run. The guard above keeps the game's original path untouched
- // until an actually registered method is selected.
- InViewFamily.SetPrimarySpatialUpscalerInterface(new FBMIUnifiedSpatialUpscaler());
+ // UE4.27's SetPrimarySpatialUpscalerInterface is assign-once and asserts
+ // when a primary interface is already present. Never attempt to replace it
+ // from a view extension. The matching Renderer integration must install BMI
+ // at the engine's original primary-upscaler assignment point.
+ if (InViewFamily.GetPrimarySpatialUpscalerInterface() == nullptr)
+ {
+  InViewFamily.SetPrimarySpatialUpscalerInterface(new FBMIUnifiedSpatialUpscaler());
+ }
 }
 void FBMIUnifiedUpscalerViewExtension::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList,FSceneViewFamily& InViewFamily) {}
 void FBMIUnifiedUpscalerViewExtension::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList,FSceneView& InView) {}
