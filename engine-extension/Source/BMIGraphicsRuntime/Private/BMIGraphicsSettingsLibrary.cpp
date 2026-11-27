@@ -26,7 +26,7 @@ bool UBMIGraphicsSettingsLibrary::SetResolutionController(int32 Choice)
 
 bool UBMIGraphicsSettingsLibrary::SetGraphicsQuality(int32 QualityLevel)
 {
-    if (QualityLevel < 0 || QualityLevel > 4) return false;
+    if (QualityLevel < 0 || QualityLevel > 5) return false;
     return RunBMICommand(TEXT("bmi.SetGraphicsQuality"), IntArg(QualityLevel));
 }
 
