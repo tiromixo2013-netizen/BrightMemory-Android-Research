@@ -123,3 +123,18 @@ What remains unproven:
 This source can be used to develop and compile an UE4.27.2 engine-side implementation and to study the correct RDG / spatial-upscaler integration path. It does **not** by itself reproduce the Bright Memory game build: the game project, its plugins, configuration, cooked assets/shaders, and compatible build setup are still missing.
 
 Do not treat a loose plugin or a rebuilt generic UE4.27.2 library as a drop-in replacement for the game's `libUE4.so`.
+
+## Additional public evidence: official BMI mod kit version
+
+A public Bright Memory: Infinite mod-development guide from Playism points users to the BMI_ModDevelopmentKit_V1.0 and explicitly instructs them to use Unreal Engine **4.26.2** for that kit. It describes content-only model/asset modding and PAK packaging, not rebuilding the Android renderer or the shipping Android engine.
+
+Source: https://steamcommunity.com/sharedfiles/filedetails/?id=3053538813
+
+This is a version discrepancy, not proof that the Android v1.34 binary was built with 4.26.2. The Android binary's embedded `UE4.27Plus` paths and the renderer/GameUserSettings structural matches still make the public UE4.27.2 fork a stronger engine-source candidate for the Android target. The mod kit is useful for understanding BMI asset layout and cooking conventions, but it is not a substitute for the Android engine source or the missing mobile game project.
+
+## Current source-search conclusion
+
+- **Best available engine source candidate:** `jsuk10/UE4.27plus_Custom`, commit `2e6b53c74a8290ffefe72cf36ac2b051687cc544`.
+- **Public BMI mod kit:** UE4.26.2 content-mod workflow; not the matching Android engine source.
+- **Exact Android source snapshot:** not found in public evidence yet. The private project/plugin source path embedded in the binary (`BMI_Mobile_Android 4.27`) is not contained in the public engine fork.
+- Next validation: compare more renderer, VulkanRHI, and GameUserSettings function bodies against the Android binary before treating the fork as a build base. Do not overwrite the target engine binary until ABI/build compatibility is demonstrated.
