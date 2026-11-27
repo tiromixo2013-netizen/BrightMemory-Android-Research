@@ -37,8 +37,8 @@
         "980P",
         "1080P"
       ],
-      "integration_point": "existing BMI_Graphics_Screen UMG and r.MobileContentScaleFactor; native display metrics required",
-      "status": "existing_menu_scale_commands_verified_runtime_mapping_pending",
+      "integration_point": "bmi.SetResolutionController 0..6 -> r.MobileContentScaleFactor using existing game values",
+      "status": "runtime_command_source_added_game_cvar_binding_uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
       "note": "Native must preserve physical display resolution, aspect ratio, orientation and Android system DPI."
@@ -57,7 +57,7 @@
         "Extreme"
       ],
       "integration_point": "UGameUserSettings scalability categories and supported mobile CVars",
-      "status": "engine_scalability_setters_verified_full_visual_mapping_pending",
+      "status": "runtime_command_source_added_UE4_scalability_groups_uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
       "note": "Each tier must change actual shadow, view distance, effects, texture, foliage, shading and post-processing settings where supported; do not expose until visual validation."
@@ -68,7 +68,7 @@
       "label": "Render Scale",
       "type": "number",
       "integration_point": "UGameUserSettings::SetResolutionScaleValue @ 0x8735a9c; SetResolutionScaleValueEx @ 0x8735b40; FSceneRenderer::ApplyResolutionFraction @ 0x79e5ba0",
-      "status": "native_engine_api_verified",
+      "status": "runtime_command_source_added_GameUserSettings_SetResolutionScaleValueEx_uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
       "note": "Game already has native resolution-scale setters; wire the unified menu to the existing GameUserSettings path instead of adding a second scale system."
@@ -88,21 +88,21 @@
       ],
       "integration_point": "AddMobilePostProcessingPasses @ 0x78870c0; ISpatialUpscaler::AddDefaultUpscalePass @ 0x78fae30",
       "methods": {
-        "SGSR1": "official_UE4_27_source_verified_view_extension_and_RDG_spatial_upscaler; CVar r.Qualcomm.SGSR.Enabled; plugin absent from target libUE4.so strings",
-        "SGSR2": "official_UE4_27_source_verified_variants_2passNoAlpha_2pass_fs_taau_3pass; requires TAA_temporal_upsampling_and_project_configuration; plugin absent from target binary",
-        "MWSR": "algorithm_source_not_verified",
-        "FSR Lite": "not an official name verified; Mobile FSR plugin/CVars absent from target binary strings",
-        "Nearest": "implemented_in_renderer_bridge_source_via_UE4_27_ISpatialUpscaler_AddDefaultUpscalePass; mobile permutation compile support verified; not integrated into target engine",
-        "Bilinear": "implemented_in_renderer_bridge_source_via_UE4_27_ISpatialUpscaler_AddDefaultUpscalePass; mobile permutation compile support verified; not integrated into target engine"
+        "SGSR1": "official_Qualcomm_UE4_27_plugin_source_and_mobile_shader_vendored_under_engine-extension/renderer/vendor/SGSR1; opt-in CVar; runtime sharpness slider wired to shader parameter; not compiled into Bright Memory",
+        "SGSR2": "official temporal algorithm source exists upstream; not integrated; requires motion vectors, history and UE4.27 temporal pipeline integration",
+        "MWSR": "algorithm source and UE4.27 integration not verified; unavailable",
+        "FSR Lite": "not an official AMD feature name; FSR1 source/integration not yet ported; unavailable",
+        "Nearest": "native Renderer bridge source; uses UE4.27 AddDefaultUpscalePass; not compiled into target",
+        "Bilinear": "native Renderer bridge source; uses UE4.27 AddDefaultUpscalePass; not compiled into target"
       },
-      "status": "renderer_bridge_source_authored_nearest_bilinear_only_target_engine_integration_pending",
+      "status": "SGSR1_official_UE4_27_module_and_shader_vendored_sharpness_parameter_added_native_nearest_bilinear_bridge_source_only_uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
       "integration_requirements": [
-        "Add BMISpatialUpscaler.h/.cpp to Engine/Source/Runtime/Renderer/Private",
-        "Call RegisterBMISpatialUpscaler() once from FRendererModule::StartupModule",
-        "Compile the exact Bright Memory Android engine target and validate Vulkan output before exposing the control",
-        "SGSR1, SGSR2, MWSR and FSR Lite remain unimplemented in the target"
+        "Install vendored SGSR1 plugin as Engine/Plugins/Runtime/SGSR (folder name must be SGSR because plugin shader mapping looks up FindPlugin('SGSR')) and enable SGSR1.uplugin in the game project",
+        "Copy BMISpatialUpscaler.h/.cpp into Engine/Source/Runtime/Renderer/Private and apply 0001-register-bmi-spatial-upscaler.patch",
+        "Compile exact Bright Memory Android UE4.27 target and validate Vulkan before exposing menu controls",
+        "SGSR2, MWSR and FSR Lite remain unavailable until their complete renderer passes are ported"
       ]
     },
     {
@@ -114,7 +114,7 @@
         0,
         1
       ],
-      "status": "method_dependent_not_implemented",
+      "status": "SGSR1_runtime_shader_parameter_added_source_not_compiled_other_algorithms_method_dependent",
       "ui_control_defined": true,
       "expose_control": false
     },
@@ -131,7 +131,7 @@
         "Ultra Quality"
       ],
       "behavior": "map_each_preset_to_the_selected_upscaler_supported_render_scale_and_parameters",
-      "status": "configuration_mapping_required",
+      "status": "runtime_render_scale_preset_command_added_source_uncompiled_algorithm_specific_mapping_pending",
       "ui_control_defined": true,
       "expose_control": false
     },
@@ -141,7 +141,7 @@
       "label": "AMD CAS",
       "type": "boolean",
       "integration_point": "separate_RDG_post_upscale_pass; do_not_stack_on_SGSR1_sharpening_by_default",
-      "status": "shader_port_and_RDG_registration_required",
+      "status": "official_AMD_CAS_headers_vendored_only_RDG_pass_and_shader_binding_not_implemented",
       "ui_control_defined": true,
       "expose_control": false
     },
@@ -155,7 +155,7 @@
         1
       ],
       "depends_on": "amd_cas",
-      "status": "requires_CAS_pass",
+      "status": "blocked_until_AMD_CAS_RDG_pass_is_implemented",
       "ui_control_defined": true,
       "expose_control": false
     },
@@ -197,9 +197,9 @@
         "On",
         "Ultra (No Queue)"
       ],
-      "integration_point": "Vulkan render/present synchronization; inspect queue depth and frame ownership before changing",
-      "status": "renderer_path_verified_safe_modes_not_implemented",
-      "safety": "never_insert_vkQueueWaitIdle_per_frame_or_force_zero_queue_without_validation",
+      "integration_point": "bmi.SetLowLatency 0=Off, 1=UE4 r.OneFrameThreadLag 0 supported low-latency thread sync, 2=Ultra No Queue rejected until Vulkan queue depth control is verified",
+      "status": "runtime_command_source_added_r.OneFrameThreadLag_on_off_ultra_no_queue_rejected_uncompiled",
+      "safety": "No vkQueueWaitIdle per frame; Ultra No Queue is not enabled or claimed",
       "ui_control_defined": true,
       "expose_control": false
     },
@@ -309,7 +309,7 @@
     "never_claim_algorithm_support_from_repository_readme_alone": true,
     "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true
   },
-  "implementation_note": "Schema corrected to the user's final 12-section order. This is configuration/specification only; it does not implement native hooks, renderer passes, shaders, or a modified APK.",
+  "implementation_note": "Source integration work is in progress. Resolution controller, graphics quality, render scale, preset selection, SGSR1 vendor source/sharpness and safe UE4 low-latency command bindings have source changes. SGSR2/MWSR/FSR Lite and AMD CAS still require native renderer passes; nothing is compiled into the Bright Memory APK.",
   "integration_constraints": [
     "The game binary identifies its build source path as UE4.27Plus; exact engine patch version still needs confirmation.",
     "Target libUE4.so does not contain SGSR1, SGSR2, or Mobile FSR plugin CVar strings searched; plugin integration is not already present.",
