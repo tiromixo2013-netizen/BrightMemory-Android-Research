@@ -133,10 +133,22 @@ namespace BMIGraphicsRuntime
             UE_LOG(LogTemp, Error, TEXT("Requested upscaler has no registered renderer pass; selection rejected."));
             return;
         }
+        // Keep the renderer extension opt-in: never replace the game's
+        // original spatial path until both renderer CVars are present and a
+        // registered method has passed the availability-mask check.
+        IConsoleVariable* SelectedMethod = FindCVar(TEXT("bmi.Pipeline.Upscaler"));
+        IConsoleVariable* PipelineEnabled = FindCVar(TEXT("bmi.Pipeline.Enabled"));
+        if (!SelectedMethod || !PipelineEnabled)
+        {
+            UE_LOG(LogTemp, Error, TEXT("BMI unified renderer pipeline is not installed; keeping the game's original upscaler."));
+            return;
+        }
+        SelectedMethod->Set(Method, ECVF_SetByGameSetting);
+        PipelineEnabled->Set(1, ECVF_SetByGameSetting);
+
         // One primary Renderer RDG pipeline owns all spatial methods.
         SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
         SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 0);
-        SetCVarIntIfPresent(TEXT("bmi.Pipeline.Upscaler"), Method);
     }
 
     static void SetUpscaleSharpness(const TArray<FString>& Args)
