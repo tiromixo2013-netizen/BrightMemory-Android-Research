@@ -159,6 +159,13 @@ jobs:
             FSceneViewInitOptions_MoveCtor:0x79b6d6c:348
             FRendererModule_AllocateViewState:0x79a1cc4:44
             FRendererModule_CreateAndInitSingleView:0x79e85e8:124
+            FRendererModule_BeginRenderingViewFamily:0x79e8664:4792
+            FModuleManager_LoadModule:0x64d55e0:316
+            FModuleManager_LoadModuleWithFailureReason:0x64d5814:860
+            FAndroidPlatformProcess_GetDllHandle:0x62ab068:2792
+            FAndroidPlatformProcess_GetDllExport:0x62abb54:1444
+            FSceneViewExtensionBase_IsActiveThisFrame:0x8b3be44:240
+            FSceneViewExtensions_NewExtension_DefaultXR:0x74bd288:572
           SPECS
           } > reports/complete-hook-disassembly.txt
           echo "Scanning the complete ELF text for memory operations using displacements 0xb0, 0xb8, 0xc0, 0xc8, and 0xd0."
