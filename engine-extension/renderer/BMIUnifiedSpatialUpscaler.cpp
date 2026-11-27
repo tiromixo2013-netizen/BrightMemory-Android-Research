@@ -10,7 +10,7 @@ namespace {
  FBMIHudPass GHudPass;
  TAutoConsoleVariable<int32> CVarBMIMethod(TEXT("bmi.Pipeline.Upscaler"),5,TEXT("0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile, 4 Nearest, 5 Bilinear."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<float> CVarBMIUpscaleSharpness(TEXT("bmi.Pipeline.UpscaleSharpness"),0.5f,TEXT("Selected spatial method sharpness 0..1."),ECVF_RenderThreadSafe);
- TAutoConsoleVariable<int32> CVarBMIRegisteredMask(TEXT("bmi.Pipeline.RegisteredUpscalerMask"),48,TEXT("Bit mask of available upscalers; Nearest/Bilinear are built in."),ECVF_ReadOnly);
+ TAutoConsoleVariable<int32> CVarBMIRegisteredMask(TEXT("bmi.Pipeline.RegisteredUpscalerMask"),48,TEXT("Bit mask of available upscalers; Nearest/Bilinear are built in."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<int32> CVarBMICASAvailable(TEXT("bmi.Pipeline.CASAvailable"),0,TEXT("1 when a real CAS RDG pass is registered."),ECVF_ReadOnly);
  TAutoConsoleVariable<int32> CVarBMICASEnabled(TEXT("bmi.Pipeline.CAS"),0,TEXT("Append registered CAS pass after spatial reconstruction."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<float> CVarBMICASSSharpness(TEXT("bmi.Pipeline.CASSharpness"),0.5f,TEXT("CAS sharpness 0..1."),ECVF_RenderThreadSafe);
@@ -39,8 +39,24 @@ FScreenPassTexture FBMIUnifiedSpatialUpscaler::AddPasses(FRDGBuilder& GraphBuild
   UE_LOG(LogRenderer,Error,TEXT("BMI method %d is not registered; using safe Bilinear fallback."),Method);
   Output=ISpatialUpscaler::AddDefaultUpscalePass(GraphBuilder,View,PassInputs,EUpscaleMethod::Bilinear,FPaniniProjectionConfig());
  }
- if (bCAS) { FBMICASPass Pass=FindCAS(); if(Pass) Output=Pass(GraphBuilder,View,Output,CASSharpness); else UE_LOG(LogRenderer,Warning,TEXT("CAS requested but no CAS RDG pass is registered; skipped.")); }
- if (bHud) { FBMIHudPass Pass=FindHud(); if(Pass) Output=Pass(GraphBuilder,View,Output); }
+ if (!Output.IsValid()) {
+  UE_LOG(LogRenderer,Error,TEXT("BMI upscaler returned an invalid output; restoring safe Bilinear pass."));
+  Output=ISpatialUpscaler::AddDefaultUpscalePass(GraphBuilder,View,PassInputs,EUpscaleMethod::Bilinear,FPaniniProjectionConfig());
+ }
+ if (bCAS) {
+  FBMICASPass Pass=FindCAS();
+  if(Pass) {
+   FScreenPassTexture CASOutput=Pass(GraphBuilder,View,Output,CASSharpness);
+   if(CASOutput.IsValid()) Output=CASOutput;
+  } else UE_LOG(LogRenderer,Warning,TEXT("CAS requested but no CAS RDG pass is registered; skipped."));
+ }
+ if (bHud) {
+  FBMIHudPass Pass=FindHud();
+  if(Pass) {
+   FScreenPassTexture HUDOutput=Pass(GraphBuilder,View,Output);
+   if(HUDOutput.IsValid()) Output=HUDOutput;
+  }
+ }
  return Output;
 }
 void FBMIUnifiedSpatialUpscaler::RegisterUpscaler(int32 Method,FBMIUpscalePass Pass) {
