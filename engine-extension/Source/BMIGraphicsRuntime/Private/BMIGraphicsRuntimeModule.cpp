@@ -53,12 +53,26 @@ namespace BMIGraphicsRuntime
     static void SetGraphicsQuality(const TArray<FString>& Args)
     {
         if (Args.Num() != 1 || !GEngine) return;
-        const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 4);
+        // 0 Low, 1 Medium, 2 High, 3 Very High, 4 Ultra, 5 Extreme.
+        const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
         if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
         {
-            Settings->SetOverallScalabilityLevel(Quality);
+            // UE4 exposes five standard scalability tiers (0..4). Extreme uses
+            // Epic scalability plus explicit mobile CVar overrides below.
+            Settings->SetOverallScalabilityLevel(FMath::Min(Quality, 4));
             Settings->ApplySettings(false);
         }
+        const float ViewDistance[] = { 0.60f, 0.80f, 1.00f, 1.10f, 1.20f, 1.35f };
+        const float MipBias[] = { 1.0f, 0.5f, 0.0f, 0.0f, -0.25f, -0.5f };
+        const int32 Effects[] = { 0, 1, 2, 3, 3, 4 };
+        const int32 Aniso[] = { 2, 4, 8, 8, 8, 16 };
+        SetCVarFloatIfPresent(TEXT("r.ViewDistanceScale"), ViewDistance[Quality]);
+        SetCVarFloatIfPresent(TEXT("r.MipMapLODBias"), MipBias[Quality]);
+        SetCVarIntIfPresent(TEXT("r.EffectsQuality"), Effects[Quality]);
+        SetCVarIntIfPresent(TEXT("r.PostProcessQuality"), Effects[Quality]);
+        SetCVarIntIfPresent(TEXT("r.MaxAnisotropy"), Aniso[Quality]);
+        SetCVarIntIfPresent(TEXT("r.ShadowQuality"), Quality >= 2 ? 1 : 0);
+        SetCVarIntIfPresent(TEXT("r.Mobile.AmbientOcclusionQuality"), Quality >= 2 ? 1 : 0);
     }
 
     static void SetFrameLimit(const TArray<FString>& Args)
