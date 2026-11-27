@@ -193,7 +193,7 @@ namespace BMIGraphicsRuntime
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetGraphicsQuality));
     static FAutoConsoleCommand CmdUpscalePreset(TEXT("bmi.SetUpscalePreset"), TEXT("Set unified upscaler preset 0..4."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscalePreset));
-    static FAutoConsoleCommand CmdUpscaler(TEXT("bmi.SetUpscaler"), TEXT("Select upscaler: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Lite, 4 Nearest, 5 Bilinear."),
+    static FAutoConsoleCommand CmdUpscaler(TEXT("bmi.SetUpscaler"), TEXT("Select upscaler: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile, 4 Nearest, 5 Bilinear."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscaler));
     static FAutoConsoleCommand CmdUpscaleSharpness(TEXT("bmi.SetUpscaleSharpness"), TEXT("Set algorithm sharpness 0..1 when supported."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscaleSharpness));
