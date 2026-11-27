@@ -10,6 +10,8 @@ namespace {
  FBMIHudPass GHudPass;
  TAutoConsoleVariable<int32> CVarBMIMethod(TEXT("bmi.Pipeline.Upscaler"),5,TEXT("0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile, 4 Nearest, 5 Bilinear."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<float> CVarBMIUpscaleSharpness(TEXT("bmi.Pipeline.UpscaleSharpness"),0.5f,TEXT("Selected spatial method sharpness 0..1."),ECVF_RenderThreadSafe);
+ TAutoConsoleVariable<int32> CVarBMIRegisteredMask(TEXT("bmi.Pipeline.RegisteredUpscalerMask"),48,TEXT("Bit mask of available upscalers; Nearest/Bilinear are built in."),ECVF_ReadOnly);
+ TAutoConsoleVariable<int32> CVarBMICASAvailable(TEXT("bmi.Pipeline.CASAvailable"),0,TEXT("1 when a real CAS RDG pass is registered."),ECVF_ReadOnly);
  TAutoConsoleVariable<int32> CVarBMICASEnabled(TEXT("bmi.Pipeline.CAS"),0,TEXT("Append registered CAS pass after spatial reconstruction."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<float> CVarBMICASSSharpness(TEXT("bmi.Pipeline.CASSharpness"),0.5f,TEXT("CAS sharpness 0..1."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<int32> CVarBMIHudEnabled(TEXT("bmi.Pipeline.HUD"),0,TEXT("Append registered HUD pass after reconstruction."),ECVF_RenderThreadSafe);
@@ -40,8 +42,15 @@ FScreenPassTexture FBMIUnifiedSpatialUpscaler::AddPasses(FRDGBuilder& GraphBuild
  if (bHud) { FBMIHudPass Pass=FindHud(); if(Pass) Output=Pass(GraphBuilder,View,Output); }
  return Output;
 }
-void FBMIUnifiedSpatialUpscaler::RegisterUpscaler(int32 Method,FBMIUpscalePass Pass) { if(Method<0||Method>3||!Pass)return; FWriteScopeLock Lock(GRegistryLock); GUpscalers.Add(Method,MoveTemp(Pass)); }
-void FBMIUnifiedSpatialUpscaler::RegisterCAS(FBMICASPass Pass) { FWriteScopeLock Lock(GRegistryLock); GCASPass=MoveTemp(Pass); }
+void FBMIUnifiedSpatialUpscaler::RegisterUpscaler(int32 Method,FBMIUpscalePass Pass) {
+ if(Method<0||Method>3||!Pass)return;
+ { FWriteScopeLock Lock(GRegistryLock); GUpscalers.Add(Method,MoveTemp(Pass)); }
+ CVarBMIRegisteredMask->Set(CVarBMIRegisteredMask.GetValueOnAnyThread() | (1 << Method),ECVF_SetByCode);
+}
+void FBMIUnifiedSpatialUpscaler::RegisterCAS(FBMICASPass Pass) {
+ { FWriteScopeLock Lock(GRegistryLock); GCASPass=MoveTemp(Pass); }
+ CVarBMICASAvailable->Set(Pass ? 1 : 0,ECVF_SetByCode);
+}
 void FBMIUnifiedSpatialUpscaler::RegisterHud(FBMIHudPass Pass) { FWriteScopeLock Lock(GRegistryLock); GHudPass=MoveTemp(Pass); }
 FBMIUpscalePass FBMIUnifiedSpatialUpscaler::FindUpscaler(int32 Method) { FReadScopeLock Lock(GRegistryLock); const auto* P=GUpscalers.Find(Method); return P?*P:FBMIUpscalePass(); }
 FBMICASPass FBMIUnifiedSpatialUpscaler::FindCAS() { FReadScopeLock Lock(GRegistryLock); return GCASPass; }
