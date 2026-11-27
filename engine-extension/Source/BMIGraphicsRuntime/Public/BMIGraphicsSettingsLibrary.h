@@ -32,7 +32,7 @@ public:
     static bool SetUpscalePreset(int32 Preset);
 
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
-    static bool SetAMD CAS(bool bEnabled);
+    static bool SetAMDCAS(bool bEnabled);
 
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
     static bool SetCASSharpness(float Sharpness);
