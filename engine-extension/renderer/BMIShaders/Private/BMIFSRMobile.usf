@@ -12,6 +12,7 @@ SamplerState LinearClamp;
 float2 InputViewportSize;
 float2 InputTextureSize;
 float2 OutputViewportSize;
+float2 InputViewportMin;
 float Sharpness;
 
 AH3 FsrEasuSampleH(AF2 p)
@@ -28,10 +29,11 @@ AH4 FsrEasuBH(AF2 p) { return AH4(InputTexture.GatherBlue(LinearClamp, p)); }
 float4 MainPS(float4 SvPosition : SV_POSITION) : SV_Target0
 {
     AU4 con0, con1, con2, con3;
-    FsrEasuCon(con0, con1, con2, con3,
+    FsrEasuConOffset(con0, con1, con2, con3,
         InputViewportSize.x, InputViewportSize.y,
         InputTextureSize.x, InputTextureSize.y,
-        OutputViewportSize.x, OutputViewportSize.y);
+        OutputViewportSize.x, OutputViewportSize.y,
+        InputViewportMin.x, InputViewportMin.y);
     AH3 reconstructed;
     FsrMobile(reconstructed, AF2(SvPosition.xy),
         AF4(con0), AF4(con1), AF4(con2), AF4(con3),
