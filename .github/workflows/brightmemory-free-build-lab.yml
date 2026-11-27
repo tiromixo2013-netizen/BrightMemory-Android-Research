@@ -26,6 +26,8 @@ jobs:
 
       - name: Install Android SDK build environment
         uses: android-actions/setup-android@v3
+        with:
+          tools: ''
       - name: Install SDK, NDK and CMake
         run: |
           yes | sdkmanager --licenses
