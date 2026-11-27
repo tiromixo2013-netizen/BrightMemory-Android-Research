@@ -106,6 +106,7 @@
         "MWSR HLSL source is an upstream reference; adapt its coarse derivatives and parameter layout to UE4.27 Mobile Vulkan shader compiler before enabling",
         "FSR Mobile is the atyuwen optimized EASU+RCAS mobile implementation; include its required FSR helper routines and validate FP16 support on Adreno 610",
         "Integrate each selected method in the UE4.27 renderer's actual spatial upscaler pass; do not only change CVars",
+        "Apply engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch and copy BMISpatialUpscaler.h/.cpp into the matching Renderer/Private directory before compiling",
         "Compile Android Vulkan shaders and visually test every method on device before exposing controls"
       ],
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaler"
