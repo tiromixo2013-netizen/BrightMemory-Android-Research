@@ -7,8 +7,7 @@ The bridge currently routes to UE4.27's built-in Nearest/Bilinear passes.
 Registration patch:
 `patches/0001-register-bmi-spatial-upscaler.patch`.
 
-The bridge defaults to disabled (opt-in) and does not replace an upscaler already
-an already-installed primary spatial upscaler supplied by the game or another extension. It must be copied into the exact
+The bridge defaults to disabled (opt-in) and does not replace an already-installed primary spatial upscaler supplied by the game or another extension. It must be copied into the exact
 engine's `Renderer/Private` directory and registered from
 `FRendererModule::StartupModule()`. This source has not been compiled against
 the shipped Bright Memory v1.34 engine snapshot.
