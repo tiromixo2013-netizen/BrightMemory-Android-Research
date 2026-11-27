@@ -32,7 +32,9 @@ assert "PipelineEnabled->Set(1, ECVF_SetByGameSetting)" in runtime
 assert "Ultra (No Queue) is unavailable" in runtime
 assert 'FindCVar(TEXT("r.SGSR2.Enabled"))' in runtime
 assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
-assert 'SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 1)' in runtime
+assert "TemporalUpsampling->Set(1, ECVF_SetByGameSetting)" in runtime
+assert 'SetCVarIntIfPresent(TEXT("r.UsePreExposure"), 1)' in runtime
+assert 'SetCVarIntIfPresent(TEXT("r.SGSR2.Exposure"), 1)' in runtime
 assert "SGSR2 is temporal and must" in runtime
 assert 'SetCVarIntIfPresent(TEXT("r.SGSR2.Quality"), GSR2Quality[Preset])' in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
