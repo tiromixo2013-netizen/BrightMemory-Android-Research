@@ -1,25 +1,33 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-Subject: [PATCH] Renderer: register BMI native spatial upscaler bridge
+Subject: [PATCH] Renderer: register BMI unified spatial reconstruction pipeline
 
 Target reference:
   jsuk10/UE4.27plus_Custom
   Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 
-This patch is intentionally limited to the inspected UE4.27 reference layout.
-Apply only after confirming the target Bright Memory engine snapshot matches.
+This installs one primary spatial upscaler. Selected algorithm, optional CAS,
+and optional performance overlay are chained by BMIUnifiedSpatialUpscaler.
+Frame Generation is not part of this patch and must use a separate temporal
+interpolation/presentation stage.
+
+Apply only after confirming the Bright Memory engine snapshot matches the
+referenced UE4.27 renderer API and after adding BMIUnifiedSpatialUpscaler.cpp
+and .h to the Renderer module source.
 
 --- a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 +++ b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 @@
  #include "PostProcess/TemporalAA.h"
-+#include "BMISpatialUpscaler.h"
+-#include "BMISpatialUpscaler.h"
++#include "BMIUnifiedSpatialUpscaler.h"
  DEFINE_LOG_CATEGORY(LogRenderer);
 @@
  void FRendererModule::StartupModule()
  {
- 	GScreenSpaceDenoiser = IScreenSpaceDenoiser::GetDefaultDenoiser();
- 	GTemporalUpscaler = ITemporalUpscaler::GetDefaultTemporalUpscaler();
+  GScreenSpaceDenoiser = IScreenSpaceDenoiser::GetDefaultDenoiser();
+  GTemporalUpscaler = ITemporalUpscaler::GetDefaultTemporalUpscaler();
  
- 	FVirtualTextureSystem::Initialize();
-+	RegisterBMISpatialUpscaler();
+  FVirtualTextureSystem::Initialize();
+- RegisterBMISpatialUpscaler();
++ RegisterBMIUnifiedSpatialUpscaler();
  }
