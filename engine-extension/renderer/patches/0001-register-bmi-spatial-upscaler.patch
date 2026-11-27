@@ -11,7 +11,7 @@ CAS and HUD composition.
 Frame Generation remains a separate temporal interpolation/presentation path.
 
 Apply only after confirming the Bright Memory engine snapshot matches the
-referenced UE4.27 renderer API and after adding BMIUnifiedSpatialUpscaler.cpp/.h and BMIFSRMobilePass.cpp to the
+referenced UE4.27 renderer API and after adding BMIUnifiedSpatialUpscaler.cpp/.h and BMIFSRMobilePass.cpp/BMIMWSRPass.cpp to the
 Renderer module source, and copying BMIShaders/ plus vendor/ under that module's
 Private directory. This patch is not proof of a target build.
 
