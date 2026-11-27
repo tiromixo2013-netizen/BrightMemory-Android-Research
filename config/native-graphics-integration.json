@@ -120,6 +120,7 @@
     "expose": false
   },
   "upscale_sharpness": {
+    "expose": false,
     "ui_label": "Upscale Sharpness",
     "range": [0, 1],
     "default": 0.25,
@@ -127,6 +128,7 @@
     "expose": false
   },
   "upscale_preset_mapping": {
+    "expose": false,
     "ui_label": "Upscale Preset",
     "options": ["Ultra Performance", "Performance", "Balanced", "Quality", "Ultra Quality"],
     "shared_control": true,
@@ -135,6 +137,7 @@
     "expose": false
   },
   "amd_cas": {
+    "expose": false,
     "ui_label": "AMD CAS",
     "mode": "sharpen-only",
     "stage": "after-selected-spatial-upscaler-before-UI-composition",
