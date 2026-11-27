@@ -155,11 +155,16 @@ jobs:
             FSceneView_MoveCtor:0x79b6988:996
             ULocalPlayer_CalcSceneViewInitOptions:0x884a708:780
             FSceneViewFamily_Ctor:0x8b3b840:728
+            FSceneViewInitOptions_CopyCtor:0x79abfc4:404
+            FSceneViewInitOptions_MoveCtor:0x79b6d6c:348
+            FRendererModule_AllocateViewState:0x79a1cc4:44
+            FRendererModule_CreateAndInitSingleView:0x79e85e8:124
           SPECS
           } > reports/complete-hook-disassembly.txt
-          echo "Scanning the complete ELF text for memory operations using displacement 0xc0 and nearby pointer-field candidates."
-          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E '([[:space:]](ldr|str|ldur|stur|ldp|stp)[[:alnum:]]*[[:space:]].*#0xc0([,]]|[[:space:]]))|([[:space:]](ldr|str|ldur|stur)[[:alnum:]]*[[:space:]].*#0xc8([,]]|[[:space:]]))' > reports/offset-c0-xrefs.txt || true
-          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E '[[:space:]]str[[:space:]]+x[0-9]+, \\[x[0-9]+, #0xc0\\]' > reports/pointer-store-c0-candidates.txt || true
+          echo "Scanning the complete ELF text for memory operations using displacements 0xb0, 0xb8, 0xc0, 0xc8, and 0xd0."
+          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E '(ldr|str|ldur|stur|ldp|stp)[[:space:]].*#0x(b0|b8|c0|c8|d0)' > reports/view-state-offset-xrefs.txt || true
+          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E 'str[[:space:]]+x[0-9]+, \\[x[0-9]+, #0xc0\\]' > reports/pointer-store-c0-candidates.txt || true
+          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E 'str[[:space:]]+x[0-9]+, \\[x[0-9]+, #0xb0\\]' > reports/pointer-store-b0-candidates.txt || true
           grep -E "LOAD|GNU_RELRO|GNU_STACK" reports/elf-program-headers.txt > reports/elf-memory-layout.txt || true
 
       - name: Upload audit evidence
