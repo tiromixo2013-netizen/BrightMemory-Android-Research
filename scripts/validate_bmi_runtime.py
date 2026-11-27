@@ -80,6 +80,9 @@ for token in [
     assert token in unified_cpp, f"Unified renderer implementation missing: {token}"
 assert "Method<0||Method>3" in unified_cpp
 assert "if (Method==4||Method==5)" in unified_cpp
+assert "\\\\n TAutoConsoleVariable<int32> CVarBMIMethod" not in unified_cpp, "Malformed escaped newline in C++ declarations"
+assert "CVarBMIPipelineEnabled.GetValueOnGameThread() == 0" in unified_cpp
+assert "InViewFamily.SetPrimarySpatialUpscalerInterface(new FBMIUnifiedSpatialUpscaler());" in unified_cpp
 assert "Copy->bCAS=CVarBMICASEnabled.GetValueOnGameThread()!=0" in unified_cpp
 
 # Algorithm source provenance and required dependencies. Presence is not a claim
