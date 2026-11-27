@@ -76,6 +76,11 @@ bool UBMIGraphicsSettingsLibrary::SetLowLatency(int32 Mode)
     return RunBMICommand(TEXT("bmi.SetLowLatency"), IntArg(Mode));
 }
 
+bool UBMIGraphicsSettingsLibrary::SetPerformanceHUD(bool bEnabled)
+{
+    return RunBMICommand(TEXT("bmi.SetPerformanceHUD"), bEnabled ? TEXT("1") : TEXT("0"));
+}
+
 bool UBMIGraphicsSettingsLibrary::SetFrameLimit(int32 FramesPerSecond)
 {
     if (FramesPerSecond != 30 && FramesPerSecond != 45 && FramesPerSecond != 60 &&
