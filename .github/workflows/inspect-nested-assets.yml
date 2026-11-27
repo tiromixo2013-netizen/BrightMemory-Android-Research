@@ -1,0 +1,66 @@
+name: Bright Memory nested asset inspection
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-nested-assets.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect-assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Download verified APK parts
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 45728055093
+          pattern: downloaded-apk-part-*
+          path: parts
+          merge-multiple: true
+
+      - name: Reassemble APK and inspect embedded containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find parts -maxdepth 1 -type f -name 'downloaded-package.part-*' | wc -l)" -eq 6
+          cat parts/downloaded-package.part-* > BrightMemory-v1.34.apk
+          echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  BrightMemory-v1.34.apk" | sha256sum -c -
+          python3 - <<'PY'
+          import io, json, pathlib, zipfile
+          apk = zipfile.ZipFile("BrightMemory-v1.34.apk")
+          out = pathlib.Path("asset-analysis")
+          out.mkdir()
+          report = {}
+          for asset in ("assets/main.obb.png", "assets/data"):
+              try:
+                  raw = apk.read(asset)
+                  with zipfile.ZipFile(io.BytesIO(raw)) as nested:
+                      entries = nested.infolist()
+                      index = out / (asset.rsplit("/",1)[-1] + ".index.txt")
+                      index.write_text("\\n".join(f"{e.file_size}\\t{e.filename}" for e in entries))
+                      report[asset] = {
+                          "container_bytes": len(raw),
+                          "zip_entries": len(entries),
+                          "pak_files": [{"name":e.filename,"bytes":e.file_size} for e in entries if e.filename.lower().endswith((".pak",".utoc",".ucas"))],
+                          "index": str(index)
+                      }
+              except Exception as e:
+                  report[asset] = {"error": repr(e)}
+          (out / "nested-assets-report.json").write_text(json.dumps(report, indent=2))
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Upload nested asset inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-v1.34-nested-asset-inventory
+          path: asset-analysis/
+          retention-days: 7
