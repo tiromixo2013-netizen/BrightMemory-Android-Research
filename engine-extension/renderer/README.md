@@ -62,3 +62,14 @@ controls are not yet visible in the shipped game's settings menu.
   rejected because no supported Vulkan queue-depth control is verified.
 - Build the exact Android target, run the source validator, and test on-device
   before exposing controls. No modified APK or device test is claimed.
+
+
+## MWSR and FSR Mobile source audit
+
+- MWSR source is from `linckosz/moonlight-web/mwsr`, MIT licensed. The upstream HLSL upscale shader and license are copied under `vendor/MWSR/`. The shader uses `ddx_coarse/ddy_coarse`, a 96-byte constant buffer and a linear-clamp sampler. It is not yet a UE4.27 Mobile Vulkan shader; the engine shader compiler and RDG pass must be adapted and compiled before use.
+- FSR Mobile refers to atyuwen's optimized FSR 1.0 mobile implementation (MIT, 2021), which combines EASU and RCAS in one pixel shader. Its helper routines/macros and mobile precision path must be brought in consistently; do not treat a CVar as a working implementation.
+- The user-facing method order is SGSR1, SGSR2, MWSR, FSR Mobile, Nearest, Bilinear. The current renderer bridge still only implements the built-in Nearest/Bilinear path; SGSR1/SGSR2/MWSR/FSR Mobile are not enabled in the shipped game.
+
+## Exact UE4.27 renderer API audit
+
+The reference source `jsuk10/UE4.27plus_Custom` contains UE4.27's `PostProcessUpscale.cpp`: `ISpatialUpscaler::AddDefaultUpscalePass` allocates an RDG output, builds `FScreenPassTextureViewport` parameters, and schedules raster passes through `FRDGBuilder::AddPass`. This confirms the integration point, but the current branch has not yet patched the game's matching Renderer source or compiled these shaders.
