@@ -1,0 +1,86 @@
+name: Bright Memory targeted config and UI extraction
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/extract-config-ui.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Download verified APK parts
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 45728055093
+          pattern: downloaded-apk-part-*
+          path: parts
+          merge-multiple: true
+
+      - name: Reassemble and extract PAK containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat parts/downloaded-package.part-* > BrightMemory-v1.34.apk
+          echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  BrightMemory-v1.34.apk" | sha256sum -c -
+          mkdir -p paks
+          python3 - <<'PY'
+          import io, zipfile, pathlib
+          apk = zipfile.ZipFile("BrightMemory-v1.34.apk")
+          for container in ("assets/main.obb.png", "assets/data"):
+              with zipfile.ZipFile(io.BytesIO(apk.read(container))) as nested:
+                  for name in nested.namelist():
+                      if name.lower().endswith(".pak"):
+                          target = pathlib.Path("paks") / pathlib.Path(name).name
+                          with nested.open(name) as src, target.open("wb") as dst:
+                              while True:
+                                  block = src.read(8 * 1024 * 1024)
+                                  if not block: break
+                                  dst.write(block)
+          PY
+          test "$(find paks -name '*.pak' | wc -l)" -eq 9
+
+      - name: Install repak
+        run: |
+          set -euo pipefail
+          curl -fsSL https://github.com/trumank/repak/releases/download/v0.2.3/repak_cli-x86_64-unknown-linux-gnu.tar.xz -o /tmp/repak.tar.xz
+          tar -xJf /tmp/repak.tar.xz -C /tmp
+          sudo install -m 0755 "$(find /tmp -type f -name repak | head -1)" /usr/local/bin/repak
+          repak --version
+
+      - name: Extract only configs and likely UI assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p extracted reports
+          for pak in paks/*.pak; do
+            name="$(basename "$pak" .pak)"
+            out="extracted/$name/"
+            repak unpack "$pak" --output "$out" --quiet \
+              --include 'BMI_Mobile/Config/*.ini' \
+              --include 'BMI_Mobile/Content/**/UMG/**' \
+              --include 'BMI_Mobile/Content/**/Settings/**' \
+              --include 'BMI_Mobile/Content/**/Menu/**'
+          done
+          find extracted -type f -printf '%p %s bytes\n' | sort > reports/extracted-files.txt
+          grep -RInaE 'resolution|quality|graphics|setting|option|frame.?rate|shadow|texture|anti.?alias|mobile|screenpercentage' extracted --include='*.ini' > reports/config-matches.txt || true
+          cat reports/extracted-files.txt
+          du -sh extracted
+
+      - name: Upload extracted configs and UI candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-v1.34-config-ui-extract
+          path: |
+            extracted/
+            reports/
+          retention-days: 7
