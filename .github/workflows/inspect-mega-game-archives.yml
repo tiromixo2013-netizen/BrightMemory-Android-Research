@@ -2,6 +2,9 @@ name: Inspect Bright Memory MEGA archives for Unreal project files
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/inspect-mega-game-archives.yml'
 
 permissions:
   contents: read
