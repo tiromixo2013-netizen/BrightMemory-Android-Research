@@ -64,6 +64,8 @@ This makes the receiver's semantic type and intended virtual method strongly ide
 The standard engine API is `FSceneViewFamily::SetPrimarySpatialUpscalerInterface(ISpatialUpscaler*)`. The standard place to call it is `ISceneViewExtension::BeginRenderViewFamily(FSceneViewFamily&)`.
 
 Qualcomm's pinned SGSR1 plugin implements exactly this pattern:
+- `FSGSRModule::StartupModule()` calls `FSceneViewExtensions::NewExtension<FSGSRViewExtension>()` and retains the thread-safe shared pointer.
+- The plugin descriptor loads the `SGSR` runtime module at `PostEngineInit` and the `SGSRSpatialUpscaling` runtime module at `PostConfigInit`.
 - `FSGSRViewExtension::BeginRenderViewFamily` checks whether temporal upscaling is requested;
 - for spatial mode, it calls `InViewFamily.SetPrimarySpatialUpscalerInterface(new FSGSRSpatialUpscaler(...))`;
 - `FSGSRSpatialUpscaler::AddPasses` implements the RDG upscaling pass;
