@@ -1,0 +1,80 @@
+name: Scan MEGA for Bright Memory Unreal project source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/scan-mega-game-source.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Install rclone
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          rclone version
+
+      - name: Configure MEGA and scan filenames
+        env:
+          MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
+          MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
+          MEGA_2FA: ${{ secrets.MEGA_2FA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p scan
+          {
+            echo "Scan started: $(date -u +%FT%TZ)"
+            if [[ -z "${MEGA_EMAIL:-}" ]]; then echo "MEGA_EMAIL: MISSING"; else echo "MEGA_EMAIL: present"; fi
+            if [[ -z "${MEGA_PASSWORD:-}" ]]; then echo "MEGA_PASSWORD: MISSING"; else echo "MEGA_PASSWORD: present"; fi
+          } | tee scan/DIAGNOSTICS.txt
+
+          if [[ -z "${MEGA_EMAIL:-}" || -z "${MEGA_PASSWORD:-}" ]]; then
+            echo "Cannot connect: required MEGA secrets are missing." | tee -a scan/DIAGNOSTICS.txt
+            exit 1
+          fi
+
+          export RCLONE_CONFIG_MEGA_TYPE=mega
+          export RCLONE_CONFIG_MEGA_USER="$MEGA_EMAIL"
+          export RCLONE_CONFIG_MEGA_PASS="$(rclone obscure "$MEGA_PASSWORD")"
+          if [[ -n "${MEGA_2FA:-}" ]]; then
+            export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"
+          fi
+
+          echo "Listing MEGA root (paths only; no game data downloaded)." | tee -a scan/DIAGNOSTICS.txt
+          rclone lsf "mega:" --max-depth 3 --dirs-only 2>&1 | tee scan/mega-root.txt
+
+          echo "Recursively inventorying filenames (no file contents)." | tee -a scan/DIAGNOSTICS.txt
+          rclone lsf "mega:" --recursive --files-only --max-depth 16 2>&1 | tee scan/mega-files.txt
+
+          {
+            echo "# MEGA Bright Memory source scan"
+            echo "- Scan mode: names/paths only"
+            echo "- Total files: $(wc -l < scan/mega-files.txt)"
+            echo
+            echo "## Unreal project markers"
+            grep -Ei '\\.(uproject|uplugin|Target\\.cs|Build\\.cs)$' scan/mega-files.txt || true
+            echo
+            echo "## Source/content folders"
+            grep -Ei '(^|/)(Source|Plugins|Content|Config|Build|Engine)/' scan/mega-files.txt | head -n 500 || true
+            echo
+            echo "## Candidate Bright Memory paths"
+            grep -Ei 'bright.?memory|BMI_Mobile|FYQD|UE4\\.27' scan/mega-files.txt | head -n 500 || true
+          } > scan/REPORT.md
+          cat scan/REPORT.md
+
+      - name: Upload scan report and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-mega-source-scan
+          path: scan/
+          if-no-files-found: warn
+          retention-days: 7
