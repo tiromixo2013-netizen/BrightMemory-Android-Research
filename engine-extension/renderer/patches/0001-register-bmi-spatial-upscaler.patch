@@ -5,14 +5,13 @@ Target reference:
   jsuk10/UE4.27plus_Custom
   Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 
-This installs one primary spatial upscaler. Selected algorithm, optional CAS,
-and optional performance overlay are chained by BMIUnifiedSpatialUpscaler.
-Frame Generation is not part of this patch and must use a separate temporal
-interpolation/presentation stage.
+This installs one primary spatial upscaler. The BMI dispatcher selects a
+registered spatial backend, then optionally chains CAS and HUD composition.
+Frame Generation remains a separate temporal interpolation/presentation path.
 
 Apply only after confirming the Bright Memory engine snapshot matches the
 referenced UE4.27 renderer API and after adding BMIUnifiedSpatialUpscaler.cpp
-and .h to the Renderer module source.
+and .h to the Renderer module source. This patch is not proof of a target build.
 
 --- a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 +++ b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
