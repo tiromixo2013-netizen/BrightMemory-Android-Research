@@ -45,7 +45,7 @@ upscaler_config = next(item for item in config["settings"] if item["id"] == "ups
 assert "renderer_bridge_source_authored" in upscaler_config["status"]
 assert "AddDefaultUpscalePass" in upscaler_config["methods"]["Nearest"]
 assert "AddDefaultUpscalePass" in upscaler_config["methods"]["Bilinear"]
-assert all(name in upscaler_config["integration_requirements"][0] for name in ["BMISpatialUpscaler.h", "BMISpatialUpscaler.cpp"])
+assert "BMISpatialUpscaler.h/.cpp" in upscaler_config["integration_requirements"][0]
 for expected in ["render_scale", "graphics_quality", "upscaler", "amd_cas",
                  "frame_generation", "frame_pacing", "low_latency", "performance_hud"]:
     assert expected in ids, f"Missing agreed setting: {expected}"
