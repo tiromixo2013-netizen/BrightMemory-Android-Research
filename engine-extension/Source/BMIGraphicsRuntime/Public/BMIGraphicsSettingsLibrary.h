@@ -44,5 +44,8 @@ public:
     static bool SetLowLatency(int32 Mode);
 
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
+    static bool SetPerformanceHUD(bool bEnabled);
+
+    UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
     static bool SetFrameLimit(int32 FramesPerSecond);
 };
