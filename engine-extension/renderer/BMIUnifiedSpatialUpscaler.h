@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 #include "PostProcess/PostProcessUpscale.h"
 #include "ScreenPass.h"
+#include "SceneViewExtension.h"
 
 using FBMIUpscalePass = TFunction<FScreenPassTexture(FRDGBuilder&, const FViewInfo&, const ISpatialUpscaler::FInputs&)>;
 using FBMICASPass = TFunction<FScreenPassTexture(FRDGBuilder&, const FViewInfo&, const FScreenPassTexture&, float)>;
@@ -30,3 +31,15 @@ private:
  float CASSharpness = 0.5f;
  bool bHud = false;
 };
+
+class FBMIUnifiedUpscalerViewExtension final : public FSceneViewExtensionBase
+{
+public:
+ explicit FBMIUnifiedUpscalerViewExtension(const FAutoRegister& AutoRegister);
+ void SetupViewFamily(FSceneViewFamily& InViewFamily) override;
+ void SetupView(FSceneViewFamily& InViewFamily,FSceneView& InView) override;
+ void BeginRenderViewFamily(FSceneViewFamily& InViewFamily) override;
+ void PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList,FSceneViewFamily& InViewFamily) override;
+ void PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList,FSceneView& InView) override;
+};
+void RegisterBMIUnifiedSpatialUpscaler();
