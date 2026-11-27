@@ -73,7 +73,11 @@ jobs:
               --include 'BMI_Mobile/Content/**/UMG/**' \
               --include 'BMI_Mobile/Content/**/Settings/**' \
               --include 'BMI_Mobile/Content/**/Menu/**' \
-              --include 'BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save*'
+              --include 'BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save*' \\
+              --include 'BMI_Mobile/Content/**/GamePlaySaveSystem*' \\
+              --include 'BMI_Mobile/Content/**/UserSave*' \\
+              --include 'BMI_Mobile/Content/**/BMFunctionLibrary*' \\
+              --include 'BMI_Mobile/Content/**/SaveAge*'
           done
           test -f extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/UISystem_BMI/Menu/Seting/Graphics/BMI_Graphics_UMG.uasset
           test -f extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save.uasset
@@ -118,13 +122,20 @@ jobs:
               echo "JSON_FAILED: $name" >> inspection/logs/parser-status.txt
             fi
           done
+          # Parse the exact save-system dependencies imported by BMI_Save and graphics widgets.
+          while IFS= read -r asset; do
+            name="$(basename "$asset" .uasset)"
+            echo "PARSING_DEPENDENCY: $asset"
+            python3 parser/uasset_to_text.py "$asset" -o "inspection/metadata/$name.json" > "inspection/logs/$name-json.out" 2> "inspection/logs/$name-json.err"               && echo "DEPENDENCY_JSON_OK: $name" >> inspection/logs/parser-status.txt               || echo "DEPENDENCY_JSON_FAILED: $name" >> inspection/logs/parser-status.txt
+          done < <(find extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content -type f -name '*.uasset' \
+            \( -name 'GamePlaySaveSystem.uasset' -o -name 'UserSave.uasset' -o -name 'BMFunctionLibrary.uasset' -o -name 'SaveAge.uasset' \) | sort)
           cp extracted/pakchunk0-Android_ASTC/BMI_Mobile/Config/*.ini inspection/ 2>/dev/null || true
           {
             echo "# Bright Memory v1.34 expanded UMG and save inspection"
             echo
             echo "- APK SHA256: c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4"
             echo "- Parser: conaman/ue4-uasset-tools (UE4.27 read-only metadata parser)"
-            echo "- Scope: settings parent, graphics page, all known graphics row widgets, Advanced Graphics label widget, and BMI_Save."
+            echo "- Scope: settings parent, graphics page, all known graphics row widgets, Advanced Graphics label widget, BMI_Save, and its referenced save-system dependencies (when present)."
             echo "- Metadata only: this does not edit cooked assets or establish Blueprint execution semantics."
             echo
             echo "## Parser status"
@@ -148,5 +159,9 @@ jobs:
             inspection/
             extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/UISystem_BMI/Menu/
             extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save*
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/**/GamePlaySaveSystem*
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/**/UserSave*
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/**/BMFunctionLibrary*
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/**/SaveAge*
           if-no-files-found: warn
           retention-days: 14
