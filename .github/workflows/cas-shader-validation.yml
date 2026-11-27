@@ -35,10 +35,7 @@ jobs:
       - name: Compile Android OpenGL ES 3.1 CAS port to SPIR-V
         run: |
           set -euo pipefail
-          glslangValidator -G -S comp \\
-            -Ivendor/amd-fidelityfx-cas \\
-            vendor/amd-fidelityfx-cas/CAS_Shader_GLES31.comp \\
-            -o build/cas/cas-gles31-fp32-sharpen.spv
+          glslangValidator -G -S comp -Ivendor/amd-fidelityfx-cas vendor/amd-fidelityfx-cas/CAS_Shader_GLES31.comp -o build/cas/cas-gles31-fp32-sharpen.spv
 
       - name: Compile official HLSL CAS compute shader to SPIR-V
         run: |
