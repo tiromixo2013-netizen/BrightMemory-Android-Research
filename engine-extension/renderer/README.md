@@ -13,7 +13,7 @@ chains optional post-reconstruction stages in this order:
 Frame Generation is deliberately separate; it is not a spatial upscaler pass.
 The dispatcher currently contains only UE4's built-in Nearest and Bilinear
 fallbacks. External methods are accepted by the registry API but none of the
-four external adapters is registered yet.
+four external adapters is registered yet. The view extension is opt-in: its `bmi.Pipeline.Enabled` CVar defaults to 0, and the runtime only enables it after confirming that the requested method's registration bit is available. If the unified renderer CVars are absent, the runtime leaves the game's original upscaler untouched.
 
 Registration patch:
 `patches/0001-register-bmi-spatial-upscaler.patch`.
