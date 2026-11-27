@@ -61,3 +61,25 @@ This document verifies signatures and ownership from the cited public reference 
 It does **not** establish that this reference fork is byte-for-byte the engine used
 to build Bright Memory v1.34, that the game has these headers available, or that
 any plugin/renderer code compiles or runs in the shipped APK.
+
+
+## Exact API audit (pinned reference blobs)
+
+The companion `renderer-api-audit.json` records the inspected Git blob SHAs and the exact API surface used to decide the integration boundary. In particular, a concrete `FSceneViewExtensionBase` subclass must implement the five required callbacks listed there; the base class does not make those pure virtual callbacks disappear.
+
+The primary spatial upscaler is installed with
+`FSceneViewFamily::SetPrimarySpatialUpscalerInterface(ISpatialUpscaler*)`.
+The setter checks both that the pointer is non-null and that no primary
+upscaler was already assigned. The interface inherits the view-family
+extension lifetime contract, so the implementation must remain valid for the
+owning view family; a temporary stack object is not a valid implementation.
+
+The reference `AddDrawScreenPass` helper records a raster pass in the RDG
+graph and binds shader parameters through the pass parameter struct. This is
+the confirmed helper shape for a future shader implementation, not evidence
+that any new shader has been written or compiled.
+
+The JSON audit is intentionally explicit that the target engine compile,
+Android Vulkan validation, and modified APK are all still false. Its purpose
+is to prevent a source-reference audit from being mistaken for a working
+Bright Memory patch.
