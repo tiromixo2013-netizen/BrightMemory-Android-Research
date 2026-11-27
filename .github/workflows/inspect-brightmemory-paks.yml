@@ -19,7 +19,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y rclone p7zip-full unzip cargo
-          cargo install --git https://github.com/trumank/repak --locked --package repak_cli --no-default-features
+          cargo install --git https://github.com/trumank/repak --locked --no-default-features repak_cli
 
       - name: Recover original APK from MEGA
         env:
