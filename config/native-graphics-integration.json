@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "target": {
+    "game": "Bright Memory: Infinite Android v1.34",
+    "abi": "arm64-v8a",
+    "engine_family": "UE4.27Plus",
+    "first_rhi_target": "OpenGL ES 3.1",
+    "rhi_status": "packaged-config-target-confirmed-runtime-selection-unconfirmed",
+    "source_apk_sha256": "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4"
+  },
+  "pipeline_order": [
+    "display_resolution",
+    "graphics_quality",
+    "render_scale",
+    "one_spatial_upscaler",
+    "upscale_sharpness",
+    "upscale_preset_mapping",
+    "amd_cas_sharpen_only"
+  ],
+  "safety_invariants": [
+    "Never change Android system DPI.",
+    "Keep physical display mode, aspect ratio and orientation independent from internal render resolution.",
+    "Apply render-scale changes at a safe frame boundary; never recreate render targets every frame.",
+    "Only one spatial upscaler may be active per view family.",
+    "Preserve Unreal default spatial upscale as the fallback.",
+    "CAS is a separate post-upscale sharpening pass and must not silently perform a second resize.",
+    "Do not expose an option as functional until its implementation and runtime visual test pass.",
+    "Restore prior CVars and engine settings when switching methods or leaving the graphics menu."
+  ],
+  "display_resolution": {
+    "ui_label": "Resolution Controller",
+    "options": ["Native", "540P", "640P", "720P", "900P", "980P", "1080P"],
+    "native_device_reference": "Samsung Galaxy M14 4G 1080x2408",
+    "engine_path": "existing BMI_Graphics_Screen UMG; r.MobileContentScaleFactor commands",
+    "native_engine_api": "UGameUserSettings::SetResolutionScaleValueEx(float)",
+    "verified_rvas": {
+      "SetResolutionScaleValue": "0x8735a9c",
+      "SetResolutionScaleValueEx": "0x8735b40",
+      "SetResolutionScaleNormalized": "0x8735be0",
+      "ApplySettings": "0x8734cfc",
+      "SaveSettings": "0x873500c"
+    },
+    "existing_menu_commands": [0, 0.75, 0.85, 1, 1.2, 1.35, 1.5],
+    "mapping_status": "existing-menu-command-values-found-label-to-physical-resolution-map-not-proven",
+    "native_behavior": "Native keeps display mode and uses 1.0 internal scale; other labels map to aspect-preserving internal render height after device metrics are queried.",
+    "expose": false
+  },
+  "graphics_quality": {
+    "ui_label": "Graphics Quality",
+    "options": ["Low", "Medium", "High", "Very High", "Ultra", "Extreme"],
+    "native_api": "UGameUserSettings scalability setters; SetOverallScalabilityLevel is present",
+    "verified_setters": {
+      "overall": "0x87359ec",
+      "view_distance": "0x8735c88",
+      "shadows": "0x8735c98",
+      "anti_aliasing": "0x8735ca8",
+      "textures": "0x8735cb8",
+      "visual_effects": "0x8735cc8",
+      "post_processing": "0x8735cd8",
+      "foliage": "0x8735ce8",
+      "shading": "0x8735cf8"
+    },
+    "categories": [
+      "view_distance",
+      "shadows",
+      "anti_aliasing",
+      "textures",
+      "visual_effects",
+      "post_processing",
+      "foliage",
+      "shading"
+    ],
+    "mapping_policy": {
+      "Low": {"scalability_level": 0, "scale_overrides": "minimum-supported-mobile-values"},
+      "Medium": {"scalability_level": 1, "scale_overrides": "conservative-mobile-values"},
+      "High": {"scalability_level": 2, "scale_overrides": "balanced-mobile-values"},
+      "Very High": {"scalability_level": 3, "scale_overrides": "high-mobile-values"},
+      "Ultra": {"scalability_level": 3, "scale_overrides": "high-mobile-values-plus-verified-extra-effects-only"},
+      "Extreme": {"scalability_level": 3, "scale_overrides": "maximum-device-supported-values-only"}
+    },
+    "warning": "The six UI tiers must not be faked by assigning unsupported scalability integers. Ultra/Extreme remain hidden until extra supported CVars are identified and visual effects are verified.",
+    "status": "native-setters-confirmed-tier-to-visual-mapping-not-validated",
+    "expose": false
+  },
+  "render_scale": {
+    "ui_label": "Render Scale",
+    "native_path": "UGameUserSettings::SetResolutionScaleValueEx(float) and FSceneRenderer::ApplyResolutionFraction",
+    "verified_rvas": {
+      "ApplyResolutionFraction": "0x79e5ba0",
+      "GetDesiredInternalBufferSize": "0x79e5c10"
+    },
+    "range": [0.5, 1.0],
+    "step": 0.05,
+    "independent_of_display_resolution": true,
+    "dynamic_resolution": "disabled-unless-explicitly-implemented-and-tested",
+    "status": "native-api-and-renderer-path-symbols-confirmed-runtime-control-not-validated",
+    "expose": false
+  },
+  "upscaling": {
+    "ui_label": "Upscaling Method",
+    "single_active_method": true,
+    "options": ["SGSR1", "SGSR2", "MWSR", "FSR Lite", "Nearest", "Bilinear"],
+    "dispatch": {
+      "mobile_post_processing": "0x78870c0",
+      "default_fallback": "0x78fae30",
+      "family_primary_spatial_upscaler_field_offset": "0xc0",
+      "family_copy_constructor": "0x79e5a04",
+      "family_destructor": "0x8b3bb18",
+      "renderer_constructor": "0x79e5618"
+    },
+    "methods": {
+      "SGSR1": {"implementation": "Qualcomm UE4.27 source architecture inspected; adapt to BMI ABI and GLES shader platform", "status": "source-verified-not-integrated"},
+      "SGSR2": {"implementation": "Qualcomm UE4.27 source variants exist; temporal prerequisites and BMI shader compatibility unresolved", "status": "source-verified-not-integrated"},
+      "MWSR": {"implementation": "no pinned source or implementation currently vendored", "status": "unverified"},
+      "FSR Lite": {"implementation": "must be defined as a specific lightweight spatial algorithm/version; no official implementation currently vendored", "status": "unverified"},
+      "Nearest": {"implementation": "native RDG point-sample pass using source/destination texture and viewport", "status": "pass-not-implemented"},
+      "Bilinear": {"implementation": "native RDG linear-sample pass using source/destination texture and viewport", "status": "pass-not-implemented"}
+    },
+    "fallback": "Unreal default upscale",
+    "expose": false
+  },
+  "upscale_sharpness": {
+    "ui_label": "Upscale Sharpness",
+    "range": [0, 1],
+    "default": 0.25,
+    "status": "requires-selected-method-parameter-binding",
+    "expose": false
+  },
+  "upscale_preset_mapping": {
+    "ui_label": "Upscale Preset",
+    "options": ["Ultra Performance", "Performance", "Balanced", "Quality", "Ultra Quality"],
+    "shared_control": true,
+    "mapping_rule": "Each selected method owns its own valid input/output scale and sharpness mapping; preset must not activate a second scaler.",
+    "status": "mapping-contract-defined-per-method-values-not-yet-validated",
+    "expose": false
+  },
+  "amd_cas": {
+    "ui_label": "AMD CAS",
+    "mode": "sharpen-only",
+    "stage": "after-selected-spatial-upscaler-before-UI-composition",
+    "sharpness": {"range": [0, 1], "default": 0.25},
+    "source": "vendor/amd-fidelityfx-cas",
+    "gles31_shader": "vendor/amd-fidelityfx-cas/CAS_Shader_GLES31.comp",
+    "reference_validation_run": "46008810503",
+    "reference_validation": "GLES31-HLSL-Vulkan-GLSL-source-compilation-and-SPIR-V-validation-passed",
+    "remaining": [
+      "UE4 shader compiler integration",
+      "target texture format and precision confirmation",
+      "RDG input/output binding",
+      "color-space conversion verification",
+      "runtime GLES driver compilation and execution",
+      "visual quality and GPU cost measurement"
+    ],
+    "status": "GLES31-reference-shader-compiles-native-UE4-pass-not-integrated",
+    "expose": false
+  },
+  "current_delivery_status": {
+    "settings_contract": "defined",
+    "config_and_binary_evidence": "inspected",
+    "native_renderer_code": "not-yet-integrated",
+    "cooked_UMG_menu_edit": "not-yet-integrated",
+    "modified_libUE4": false,
+    "modified_APK": false
+  }
+}
