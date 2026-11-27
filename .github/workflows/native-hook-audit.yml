@@ -106,10 +106,10 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y llvm-21
-          OBJDUMP="$(find /usr/lib/llvm-* /usr/bin -type f -name 'llvm-objdump*' 2>/dev/null | sort -V | head -1)"
+          OBJDUMP="$(command -v llvm-objdump || find /usr/lib/llvm-* /usr/bin \\( -type f -o -type l \\) -name 'llvm-objdump*' 2>/dev/null | sort -V | head -1)"
           if [ -z "$OBJDUMP" ]; then
             echo "llvm-objdump was not installed; available LLVM binaries:"
-            find /usr/lib/llvm-* /usr/bin -type f -name '*objdump*' 2>/dev/null | sort -V || true
+            find /usr/lib/llvm-* /usr/bin \\( -type f -o -type l \\) -name '*objdump*' 2>/dev/null | sort -V || true
             exit 1
           fi
           {
@@ -122,23 +122,23 @@ jobs:
               echo "===== $name @ $addr size=$size ====="
               "$OBJDUMP" -d --demangle --no-show-raw-insn --start-address="$((addr))" --stop-address="$((addr + size))" work/libUE4.so
             done <<'SPECS'
-AddMobilePostProcessingPasses:0x78870c0:9616
-ISpatialUpscaler_AddDefaultUpscalePass:0x78fae30:1424
-ApplyResolutionFraction:0x79e5ba0:36
-GetDesiredInternalBufferSize:0x79e5c10:144
-FSceneViewExtensions_ForEachActiveViewExtension:0x8b3c1bc:400
-FDefaultTemporalUpscaler_AddPasses:0x7956ac0:1184
-Vulkan_RenderThreadPacing:0x626acb8:448
-Vulkan_Present:0x626aea8:1024
-Android_GetFramePace:0x67dac90:180
-AnalyzeFrame:0x852dd6c:1600
-SetFrameRateLimit:0x87359dc:8
-SetOverallScalabilityLevel:0x87359ec:8
-SetResolutionScaleValue:0x8735a9c:164
-SetResolutionScaleValueEx:0x8735b40:168
-SetResolutionScaleNormalized:0x8735be0:168
-ApplySettings:0x8734cfc:72
-SaveSettings:0x873500c:92
+            AddMobilePostProcessingPasses:0x78870c0:9616
+            ISpatialUpscaler_AddDefaultUpscalePass:0x78fae30:1424
+            ApplyResolutionFraction:0x79e5ba0:36
+            GetDesiredInternalBufferSize:0x79e5c10:144
+            FSceneViewExtensions_ForEachActiveViewExtension:0x8b3c1bc:400
+            FDefaultTemporalUpscaler_AddPasses:0x7956ac0:1184
+            Vulkan_RenderThreadPacing:0x626acb8:448
+            Vulkan_Present:0x626aea8:1024
+            Android_GetFramePace:0x67dac90:180
+            AnalyzeFrame:0x852dd6c:1600
+            SetFrameRateLimit:0x87359dc:8
+            SetOverallScalabilityLevel:0x87359ec:8
+            SetResolutionScaleValue:0x8735a9c:164
+            SetResolutionScaleValueEx:0x8735b40:168
+            SetResolutionScaleNormalized:0x8735be0:168
+            ApplySettings:0x8734cfc:72
+            SaveSettings:0x873500c:92
 SPECS
           } > reports/complete-hook-disassembly.txt
           grep -E "LOAD|GNU_RELRO|GNU_STACK" reports/elf-program-headers.txt > reports/elf-memory-layout.txt || true
