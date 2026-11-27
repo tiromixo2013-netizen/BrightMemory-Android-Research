@@ -13,6 +13,7 @@ public:
         SHADER_PARAMETER(FVector2D, InputViewportSize)
         SHADER_PARAMETER(FVector2D, InputTextureSize)
         SHADER_PARAMETER(FVector2D, OutputViewportSize)
+        SHADER_PARAMETER(FVector2D, InputViewportMin)
         SHADER_PARAMETER(float, Sharpness)
         RENDER_TARGET_BINDING_SLOTS()
     END_SHADER_PARAMETER_STRUCT()
@@ -55,6 +56,7 @@ static FScreenPassTexture AddBMIFSRMobilePass(
     Parameters->InputTextureSize = FVector2D(
         Inputs.SceneColor.Texture->Desc.Extent.X, Inputs.SceneColor.Texture->Desc.Extent.Y);
     Parameters->OutputViewportSize = FVector2D(OutputViewport.Rect.Width(), OutputViewport.Rect.Height());
+    Parameters->InputViewportMin = FVector2D(InputViewport.Rect.Min.X, InputViewport.Rect.Min.Y);
     Parameters->Sharpness = FMath::Clamp(Sharpness, 0.0f, 1.0f);
     Parameters->RenderTargets[0] = FRenderTargetBinding(
         Output.Texture, ERenderTargetLoadAction::ENoAction);
