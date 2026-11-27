@@ -147,6 +147,7 @@ namespace BMIGraphicsRuntime
             }
             if (PipelineEnabled) PipelineEnabled->Set(0, ECVF_SetByGameSetting);
             SetCVarIntIfPresent(TEXT("r.SGSR2.Enabled"), 0);
+            SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 0);
             SGSR1->Set(1, ECVF_SetByGameSetting);
             return;
         }
@@ -154,16 +155,19 @@ namespace BMIGraphicsRuntime
         if (Method == 1)
         {
             IConsoleVariable* SGSR2 = FindCVar(TEXT("r.SGSR2.Enabled"));
-            if (!SGSR2)
+            IConsoleVariable* TemporalUpsampling = FindCVar(TEXT("r.TemporalAA.Upsampling"));
+            if (!SGSR2 || !TemporalUpsampling)
             {
-                UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR2 UE4.27 temporal plugin is not loaded; selection rejected."));
+                UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR2 UE4.27 temporal plugin or UE temporal-upscale path is not loaded; selection rejected."));
                 return;
             }
             // SGSR2 consumes velocity, depth and per-view history through
             // ITemporalUpscaler. It is not a spatial BMI backend.
             if (PipelineEnabled) PipelineEnabled->Set(0, ECVF_SetByGameSetting);
             SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
-            SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 1);
+            TemporalUpsampling->Set(1, ECVF_SetByGameSetting);
+            SetCVarIntIfPresent(TEXT("r.UsePreExposure"), 1);
+            SetCVarIntIfPresent(TEXT("r.SGSR2.Exposure"), 1);
             SGSR2->Set(1, ECVF_SetByGameSetting);
             return;
         }
@@ -184,6 +188,7 @@ namespace BMIGraphicsRuntime
         }
         SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
         SetCVarIntIfPresent(TEXT("r.SGSR2.Enabled"), 0);
+        SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 0);
         SelectedMethod->Set(Method, ECVF_SetByGameSetting);
         PipelineEnabled->Set(1, ECVF_SetByGameSetting);
     }
