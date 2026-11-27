@@ -104,8 +104,8 @@ namespace BMIGraphicsRuntime
     static void SetUpscaleSharpness(const TArray<FString>& Args)
     {
         if (Args.Num() != 1) return;
-        const float Sharpness = FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
-        // Only forward to an explicitly integrated algorithm parameter.
+        const float Sharpness = 1.0f + FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
+        // Map the user slider 0..1 to SGSR1's documented 1..2 edge-strength range.
         if (!SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), Sharpness))
             UE_LOG(LogTemp, Warning, TEXT("Selected upscaler exposes no runtime sharpness CVar in this build."));
     }
