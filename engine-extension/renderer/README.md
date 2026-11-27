@@ -12,8 +12,9 @@ chains optional post-reconstruction stages in this order:
 
 Frame Generation is deliberately separate; it is not a spatial upscaler pass.
 The dispatcher currently contains only UE4's built-in Nearest and Bilinear
-fallbacks. External methods are accepted by the registry API but none of the
-four external adapters is registered yet.
+fallbacks. SGSR1 is selected through Qualcomm's original spatial extension;
+SGSR2 uses Qualcomm's separate temporal extension. MWSR and FSR Mobile remain
+source-vendored and are not yet registered as BMI RDG passes.
 
 The view extension is opt-in: `bmi.Pipeline.Enabled` defaults to 0. The
 Renderer startup patch replaces the old BMI registration call with
