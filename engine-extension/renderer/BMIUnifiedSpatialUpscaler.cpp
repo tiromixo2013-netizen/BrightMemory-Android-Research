@@ -8,7 +8,8 @@ namespace {
  TMap<int32, FBMIUpscalePass> GUpscalers;
  FBMICASPass GCASPass;
  FBMIHudPass GHudPass;
- TAutoConsoleVariable<int32> CVarBMIPipelineEnabled(TEXT("bmi.Pipeline.Enabled"),0,TEXT("Install BMI as primary spatial upscaler only after a supported method is selected."),ECVF_RenderThreadSafe);\n TAutoConsoleVariable<int32> CVarBMIMethod(TEXT("bmi.Pipeline.Upscaler"),5,TEXT("0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile, 4 Nearest, 5 Bilinear."),ECVF_RenderThreadSafe);
+ TAutoConsoleVariable<int32> CVarBMIPipelineEnabled(TEXT("bmi.Pipeline.Enabled"),0,TEXT("Install BMI as primary spatial upscaler only after a supported method is selected."),ECVF_RenderThreadSafe);
+ TAutoConsoleVariable<int32> CVarBMIMethod(TEXT("bmi.Pipeline.Upscaler"),5,TEXT("0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile, 4 Nearest, 5 Bilinear."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<float> CVarBMIUpscaleSharpness(TEXT("bmi.Pipeline.UpscaleSharpness"),0.5f,TEXT("Selected spatial method sharpness 0..1."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<int32> CVarBMIRegisteredMask(TEXT("bmi.Pipeline.RegisteredUpscalerMask"),48,TEXT("Bit mask of available upscalers; Nearest/Bilinear are built in."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<int32> CVarBMICASAvailable(TEXT("bmi.Pipeline.CASAvailable"),0,TEXT("1 when a real CAS RDG pass is registered."),ECVF_ReadOnly);
