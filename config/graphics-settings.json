@@ -322,7 +322,7 @@
     "never_claim_algorithm_support_from_repository_readme_alone": true,
     "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true
   },
-  "implementation_note": "Source integration work is in progress. Resolution controller, graphics quality, render scale, preset selection, SGSR1 vendor source/sharpness and safe UE4 low-latency command bindings have source changes. SGSR2/MWSR/FSR Lite and AMD CAS still require native renderer passes; nothing is compiled into the Bright Memory APK.",
+  "implementation_note": "Source integration work is in progress. Resolution controller, graphics quality, render scale, preset selection, SGSR1 vendor source/sharpness and safe UE4 low-latency command bindings have source changes. SGSR2/MWSR/FSR Mobile and AMD CAS still require native renderer passes; nothing is compiled into the Bright Memory APK.",
   "integration_constraints": [
     "The game binary identifies its build source path as UE4.27Plus; exact engine patch version still needs confirmation.",
     "Target libUE4.so does not contain SGSR1, SGSR2, or Mobile FSR plugin CVar strings searched; plugin integration is not already present.",
@@ -330,5 +330,5 @@
     "No game project source/UE4 build environment is present in this research repository, so a valid modified libUE4.so/APK cannot be produced from static analysis alone.",
     "Keep all controls hidden until native implementation is compiled and tested."
   ],
-  "integration_note": "A Blueprint-callable settings API now exists in source for the UMG layer. It is not yet wired into the shipped game's actual settings widget. Resolution/quality/render-scale commands, upscaler selection, CAS, and latency remain uncompiled; unsupported algorithms/pass controls must stay hidden until engine integration and device validation."
+  "integration_note": "A Blueprint-callable settings API exists in source, but no original Bright Memory UMG settings widget/assets were found in this repository or the PR file list. The API is not connected to the shipped settings screen. Native renderer passes, game UI assets, engine compilation and device validation are still required; keep all unverified controls hidden."
 }
