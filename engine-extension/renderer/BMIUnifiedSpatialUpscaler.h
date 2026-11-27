@@ -8,7 +8,7 @@
 #include "ScreenPass.h"
 #include "SceneViewExtension.h"
 
-using FBMIUpscalePass = TFunction<FScreenPassTexture(FRDGBuilder&, const FViewInfo&, const ISpatialUpscaler::FInputs&)>;
+using FBMIUpscalePass = TFunction<FScreenPassTexture(FRDGBuilder&, const FViewInfo&, const ISpatialUpscaler::FInputs&, float)>;
 using FBMICASPass = TFunction<FScreenPassTexture(FRDGBuilder&, const FViewInfo&, const FScreenPassTexture&, float)>;
 using FBMIHudPass = TFunction<FScreenPassTexture(FRDGBuilder&, const FViewInfo&, const FScreenPassTexture&)>;
 
@@ -28,6 +28,7 @@ private:
  static FBMIHudPass FindHud();
  int32 Method = 5;
  bool bCAS = false;
+ float UpscaleSharpness = 0.5f;
  float CASSharpness = 0.5f;
  bool bHud = false;
 };
