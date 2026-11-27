@@ -23,20 +23,28 @@ jobs:
           run-id: 45920740655
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify APK and split into ten transfer-sized parts
+      - name: Diagnose, verify and split APK
         shell: bash
         run: |
           set -euo pipefail
+          find restored -type f -printf '%p %s bytes\\n'
           APK="restored/workspace/bright-memory-infinite-v1.34.apk"
           test -s "$APK"
           ACTUAL_SIZE="$(stat -c%s "$APK")"
-          echo "APK size: $ACTUAL_SIZE"
-          test "$ACTUAL_SIZE" -eq 2431306902
+          ACTUAL_SHA="$(sha256sum "$APK" | awk '{print $1}')"
+          echo "APK size: $ACTUAL_SIZE bytes"
+          echo "APK SHA256: $ACTUAL_SHA"
+          test "$ACTUAL_SHA" = "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4"
           mkdir -p split
           split -b 250000000 -d -a 2 "$APK" split/brightmemory.apk.part
           PART_COUNT="$(find split -maxdepth 1 -type f -name 'brightmemory.apk.part*' | wc -l)"
           echo "Generated parts: $PART_COUNT"
           test "$PART_COUNT" -eq 10
+          cat split/brightmemory.apk.part* > split/reassembled-check.apk
+          REASSEMBLED_SHA="$(sha256sum split/reassembled-check.apk | awk '{print $1}')"
+          echo "Reassembled SHA256: $REASSEMBLED_SHA"
+          test "$REASSEMBLED_SHA" = "$ACTUAL_SHA"
+          rm split/reassembled-check.apk
           sha256sum split/brightmemory.apk.part* > split/SHA256SUMS
           ls -lh split
 
