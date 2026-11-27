@@ -48,7 +48,7 @@
   ],
   "implementation_status": {
     "reference_signatures_inspected": true,
-    "renderer_patch_written": false,
+    "renderer_patch_written": true,
     "target_engine_compile": false,
     "android_vulkan_validation": false,
     "modified_apk": false,
@@ -57,6 +57,7 @@
       "Nearest",
       "Bilinear"
     ],
-    "default_enabled": false
+    "default_enabled": false,
+    "renderer_patch_path": "engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch"
   }
 }
