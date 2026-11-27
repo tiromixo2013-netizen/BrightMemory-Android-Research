@@ -134,6 +134,8 @@ namespace BMIGraphicsRuntime
         if (Args.Num() != 1) return;
         const int32 Method = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
         IConsoleVariable* PipelineEnabled = FindCVar(TEXT("bmi.Pipeline.Enabled"));
+        if (IConsoleVariable* SelectedMethod = FindCVar(TEXT("bmi.Pipeline.Upscaler")))
+            SelectedMethod->Set(Method, ECVF_SetByGameSetting);
 
         if (Method == 0)
         {
