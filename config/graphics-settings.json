@@ -92,13 +92,13 @@
       "integration_point": "AddMobilePostProcessingPasses @ 0x78870c0; ISpatialUpscaler::AddDefaultUpscalePass @ 0x78fae30",
       "methods": {
         "SGSR1": "official Qualcomm UE4.27 plugin source vendored; integration into shipped renderer not compiled",
-        "SGSR2": "official Qualcomm UE4.27 plugin source is available upstream; vendoring/integration not yet completed; temporal history and motion vectors must be verified for game path",
+        "SGSR2": "No verified SGSR2 source is present in the current vendor tree; do not alias SGSR1; source and engine integration must be verified before implementation.",
         "MWSR": "MIT source from linckosz/moonlight-web/mwsr vendored as HLSL reference; uses coarse derivatives and a 96-byte constants block; UE4.27 mobile Vulkan shader adaptation and RDG registration not yet compiled",
         "FSR Mobile": "MIT optimized mobile FSR1 source by atyuwen; single-pass EASU+RCAS variant; requires AMD FSR helper routines and UE4.27 mobile shader adaptation",
         "Nearest": "native UE4.27 AddDefaultUpscalePass bridge source; not compiled into target",
         "Bilinear": "native UE4.27 AddDefaultUpscalePass bridge source; not compiled into target"
       },
-      "status": "unified_renderer_RDG_dispatcher_added; Nearest_and_Bilinear_are_builtin; SGSR1_SGSR2_MWSR_FSR_Mobile_backends_not_yet_registered",
+      "status": "unified_renderer_RDG_dispatcher_added; Nearest_and_Bilinear_are_builtin; SGSR1_MWSR_FSR_Mobile_adapters_not_yet_registered; SGSR2_source_not_verified",
       "ui_control_defined": true,
       "expose_control": false,
       "integration_requirements": [
@@ -106,7 +106,7 @@
         "MWSR HLSL source is an upstream reference; adapt its coarse derivatives and parameter layout to UE4.27 Mobile Vulkan shader compiler before enabling",
         "FSR Mobile is the atyuwen optimized EASU+RCAS mobile implementation; include its required FSR helper routines and validate FP16 support on Adreno 610",
         "Integrate each selected method in the UE4.27 renderer's actual spatial upscaler pass; do not only change CVars",
-        "Apply engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch and copy BMISpatialUpscaler.h/.cpp into the matching Renderer/Private directory before compiling",
+        "Apply engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch and copy BMIUnifiedSpatialUpscaler.h/.cpp into the matching Renderer/Private directory before compiling",
         "Compile Android Vulkan shaders and visually test every method on device before exposing controls"
       ],
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaler"
