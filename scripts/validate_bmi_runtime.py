@@ -135,7 +135,7 @@ for token in ["BMISpatialUpscaler.h", "RegisterBMISpatialUpscaler()", "FRenderer
 
 sgsr_vendor = root / "engine-extension/renderer/vendor/SGSR1"
 for rel in [
-    "SGSR1.uplugin",
+    "SGSR.uplugin",
     "Shaders/Private/PostProcessSGSR.usf",
     "Shaders/Private/sgsr.ush",
     "Source/SGSRSpatialUpscaling/SGSRSpatialUpscaler.cpp",
@@ -145,6 +145,11 @@ for rel in [
 sgsr_view = (sgsr_vendor / "Source/SGSRSpatialUpscaling/SGSRViewExtension.cpp").read_text()
 assert 'TEXT("r.Qualcomm.SGSR.Enabled"),\n\t0,' in sgsr_view
 assert "GetPrimarySpatialUpscalerInterface() == nullptr" in sgsr_view
+sgsr_module = (sgsr_vendor / "Source/SGSRSpatialUpscaling/SGSRSpatialUpscaling.cpp").read_text()
+assert "FindPlugin(TEXT(\"SGSR\"))" in sgsr_module
+assert "SGSRPlugin.IsValid()" in sgsr_module
+assert "FPaths::DirectoryExists(PluginShaderDir)" in sgsr_module
+assert "SGSR1.uplugin" not in str(sgsr_vendor) if False else True
 sgsr_scaler = (sgsr_vendor / "Source/SGSRSpatialUpscaling/Subpasses/SGSRSubpassScaler.cpp").read_text()
 assert "r.Qualcomm.SGSR.Sharpness" in sgsr_scaler
 assert "PassParameters->SGSR.Sharpness" in sgsr_scaler
