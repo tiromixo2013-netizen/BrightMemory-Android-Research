@@ -51,4 +51,40 @@ for item in config["settings"]:
             f"Unimplemented feature must remain hidden: {item['id']}"
         )
 
-print("PASS: plugin descriptor, native API wiring, renderer contract, settings schema and feature gates")
+audit = json.loads((root / "engine-extension/renderer-api-audit.json").read_text())
+assert audit["schema_version"] == 1
+assert audit["reference"]["repository"] == "jsuk10/UE4.27plus_Custom"
+assert len(audit["reference"]["files"]) == 5
+verified = audit["verified_contract"]
+for symbol in [
+    "FSceneViewExtensionBase",
+    "FSceneViewExtensions::NewExtension<T>(...)",
+    "SetupViewFamily(FSceneViewFamily&)",
+    "SetupView(FSceneViewFamily&, FSceneView&)",
+    "BeginRenderViewFamily(FSceneViewFamily&)",
+    "PreRenderViewFamily_RenderThread(FRHICommandListImmediate&, FSceneViewFamily&)",
+    "PreRenderView_RenderThread(FRHICommandListImmediate&, FSceneView&)",
+]:
+    assert symbol in verified["required_overrides"] or symbol in [
+        verified["view_extension_base"], verified["factory"]
+    ], f"Missing verified view-extension API: {symbol}"
+for symbol in ["GetDebugName() const", "Fork_GameThread(const FSceneViewFamily&) const",
+               "AddPasses(FRDGBuilder&, const FViewInfo&, const FInputs&) const"]:
+    assert symbol in verified["upscaler_methods"], f"Missing ISpatialUpscaler method: {symbol}"
+for field in ["FScreenPassRenderTarget OverrideOutput", "FScreenPassTexture SceneColor",
+              "EUpscaleStage Stage"]:
+    assert field in verified["input_fields"], f"Missing ISpatialUpscaler input: {field}"
+assert verified["view_family_assignment"] == "SetPrimarySpatialUpscalerInterface(ISpatialUpscaler*)"
+assert verified["screen_pass_helper"] == "AddDrawScreenPass"
+assert verified["rdg_pass_flag"] == "ERDGPassFlags::Raster"
+constraints = " ".join(audit["integration_constraints"])
+assert "private header" in constraints
+assert "not proven identical" in constraints
+status = audit["implementation_status"]
+assert status["reference_signatures_inspected"] is True
+assert status["renderer_patch_written"] is False
+assert status["target_engine_compile"] is False
+assert status["android_vulkan_validation"] is False
+assert status["modified_apk"] is False
+
+print("PASS: plugin descriptor, native API wiring, renderer contract, pinned API audit, settings schema and feature gates")
