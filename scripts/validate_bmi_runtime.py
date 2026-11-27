@@ -8,20 +8,19 @@ assert any(m["Name"] == "BMIGraphicsRuntime" and m["Type"] == "Runtime" for m in
 
 source = (root / "engine-extension/Source/BMIGraphicsRuntime/Private/BMIGraphicsRuntimeModule.cpp").read_text()
 required = [
+    "SetResolutionController",
+    "r.MobileContentScaleFactor",
     "SetResolutionScaleValueEx",
     "SetOverallScalabilityLevel",
-    "SetViewDistanceQuality",
-    "SetShadowQuality",
-    "SetAntiAliasingQuality",
-    "SetTextureQuality",
-    "SetVisualEffectQuality",
-    "SetPostProcessingQuality",
-    "SetFoliageQuality",
-    "SetShadingQuality",
-    "bmi.SetGraphicsPreset",
+    "SetUpscalePreset",
+    "SetUpscaler",
+    "SetUpscaleSharpness",
+    "r.Qualcomm.SGSR.Sharpness",
+    "SetCAS",
+    "SetCASSharpness",
+    "SetLowLatency",
+    "r.OneFrameThreadLag",
     "SetFrameRateLimit",
-    "r.ShadowQuality",
-    "r.Mobile.AmbientOcclusionQuality",
 ]
 for symbol in required:
     assert symbol in source, f"Missing runtime integration: {symbol}"
@@ -123,8 +122,9 @@ for symbol in [
 ]:
     assert symbol in renderer_source, f"Renderer bridge source missing: {symbol}"
 assert "default 0" in renderer_readme
-assert "does not claim to implement SGSR" in renderer_readme
-assert "Neither has been compiled" in renderer_readme
+assert "official Qualcomm UE4.27 SGSR1 plugin source" in renderer_readme
+assert "not yet connected to an RDG shader pass" in renderer_readme
+assert "have not been compiled against the exact Bright Memory v1.34" in renderer_readme
 assert "FSceneViewFamily owns" in renderer_source
 assert "does not replace a primary upscaler" in renderer_readme
 
@@ -132,4 +132,21 @@ patch = (root / "engine-extension/renderer/patches/0001-register-bmi-spatial-ups
 for token in ["BMISpatialUpscaler.h", "RegisterBMISpatialUpscaler()", "FRendererModule::StartupModule"]:
     assert token in patch, f"Renderer registration patch missing: {token}"
 
-print("PASS: plugin descriptor, native API wiring, renderer contract, pinned API audit, renderer registration patch, native mobile upscale bridge, settings schema and feature gates")
+sgsr_vendor = root / "engine-extension/renderer/vendor/SGSR1"
+for rel in [
+    "SGSR1.uplugin",
+    "Shaders/Private/PostProcessSGSR.usf",
+    "Shaders/Private/sgsr.ush",
+    "Source/SGSRSpatialUpscaling/SGSRSpatialUpscaler.cpp",
+    "Source/SGSRSpatialUpscaling/Subpasses/SGSRSubpassScaler.cpp",
+]:
+    assert (sgsr_vendor / rel).exists(), f"Missing vendored SGSR1 integration file: {rel}"
+sgsr_view = (sgsr_vendor / "Source/SGSRSpatialUpscaling/SGSRViewExtension.cpp").read_text()
+assert 'TEXT("r.Qualcomm.SGSR.Enabled"),\n\t0,' in sgsr_view
+assert "GetPrimarySpatialUpscalerInterface() == nullptr" in sgsr_view
+sgsr_scaler = (sgsr_vendor / "Source/SGSRSpatialUpscaling/Subpasses/SGSRSubpassScaler.cpp").read_text()
+assert "r.Qualcomm.SGSR.Sharpness" in sgsr_scaler
+assert "PassParameters->SGSR.Sharpness" in sgsr_scaler
+cas_vendor = root / "engine-extension/renderer/vendor/AMD-CAS"
+assert (cas_vendor / "ffx_a.h").exists() and (cas_vendor / "ffx_cas.h").exists()
+\nprint("PASS: runtime settings bridge, SGSR1 source package and sharpness wiring, AMD CAS source provenance, renderer API audit, low-latency safety gates and settings schema")
