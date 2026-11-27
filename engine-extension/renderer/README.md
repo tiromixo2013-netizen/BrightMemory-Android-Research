@@ -6,12 +6,15 @@ inside `Engine/Source/Runtime/Renderer/Private/`, not in the runtime plugin.
 Files:
 - `BMISpatialUpscaler.h`
 - `BMISpatialUpscaler.cpp`
+- `patches/0001-register-bmi-spatial-upscaler.patch`
 
 Integration:
-1. Add both files to the Renderer module's private source tree.
-2. Include `BMISpatialUpscaler.h` in the Renderer module implementation.
-3. Call `RegisterBMISpatialUpscaler()` once from `FRendererModule::StartupModule()`.
-4. Build the exact Bright Memory Android engine target before enabling the CVars.
+1. Copy both source files into `Engine/Source/Runtime/Renderer/Private/`.
+2. Apply the registration patch to `Renderer.cpp`. It adds the private header include
+   and calls `RegisterBMISpatialUpscaler()` once from `FRendererModule::StartupModule()`.
+3. Confirm the target engine source matches the pinned reference before applying.
+4. Build the exact Bright Memory Android engine target and validate Vulkan output
+   before enabling the runtime CVar.
 
 Runtime controls:
 - `bmi.UseNativeSpatialUpscaler 0|1` (default 0; off preserves original path)
@@ -30,5 +33,6 @@ Safety:
   contract and recreated by `Fork_GameThread`.
 - No guessed offsets, vtable hooks, or per-frame queue stalls are used.
 
-Validation status: source authored against the pinned reference API; not yet
-compiled against the Bright Memory v1.34 engine snapshot or tested on Android.
+Validation status: bridge and exact reference integration patch authored.
+Neither has been compiled against the Bright Memory v1.34 engine snapshot or
+tested on Android. No modified APK exists.
