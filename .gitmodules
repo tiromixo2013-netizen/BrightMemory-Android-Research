@@ -1,0 +1,4 @@
+[submodule "third_party/qualcomm-ue-plugins"]
+	path = third_party/qualcomm-ue-plugins
+	url = https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine.git
+	branch = engine/4.27
