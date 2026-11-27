@@ -149,4 +149,5 @@ assert "r.Qualcomm.SGSR.Sharpness" in sgsr_scaler
 assert "PassParameters->SGSR.Sharpness" in sgsr_scaler
 cas_vendor = root / "engine-extension/renderer/vendor/AMD-CAS"
 assert (cas_vendor / "ffx_a.h").exists() and (cas_vendor / "ffx_cas.h").exists()
-\nprint("PASS: runtime settings bridge, SGSR1 source package and sharpness wiring, AMD CAS source provenance, renderer API audit, low-latency safety gates and settings schema")
+
+print("PASS: runtime settings bridge, SGSR1 source package and sharpness wiring, AMD CAS source provenance, renderer API audit, low-latency safety gates and settings schema")
