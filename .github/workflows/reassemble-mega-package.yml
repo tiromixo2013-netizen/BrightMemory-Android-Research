@@ -1,0 +1,84 @@
+name: Reassemble and inspect Bright Memory MEGA package
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/reassemble-mega-package.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  reassemble:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Install rclone and archive tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full unzip
+          df -h .
+
+      - name: Download six MEGA ZIP wrappers
+        env:
+          MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
+          MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
+          MEGA_2FA: ${{ secrets.MEGA_2FA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work/wrappers work/parts reports
+          test -n "${MEGA_EMAIL:-}" && test -n "${MEGA_PASSWORD:-}"
+          export RCLONE_CONFIG_MEGA_TYPE=mega
+          export RCLONE_CONFIG_MEGA_USER="$MEGA_EMAIL"
+          export RCLONE_CONFIG_MEGA_PASS="$(rclone obscure "$MEGA_PASSWORD")"
+          if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
+          rclone copy "mega:BrightMemory-Private" work/wrappers \
+            --include "brightmemory-part-*.zip" --transfers 2 --checkers 4 --stats 30s
+          for i in 00 01 02 03 04 05; do
+            f="work/wrappers/brightmemory-part-${i}.zip"
+            test -s "$f"
+            entry="downloaded-package.part-${i}"
+            unzip -p "$f" "$entry" > "work/parts/$entry"
+            test -s "work/parts/$entry"
+            printf '%s %s bytes\n' "$entry" "$(stat -c%s "work/parts/$entry")" >> reports/part-sizes.txt
+          done
+          cat work/parts/downloaded-package.part-{00,01,02,03,04,05} > work/combined-package.bin
+          sha256sum work/combined-package.bin > reports/combined-sha256.txt
+          file work/combined-package.bin | tee reports/combined-file-type.txt
+          od -An -tx1 -N32 work/combined-package.bin | tee reports/combined-first-bytes.txt
+
+      - name: Identify and list the reassembled package
+        shell: bash
+        run: |
+          set -euo pipefail
+          7z l -slt work/combined-package.bin > reports/package-listing.txt 2>&1 || true
+          {
+            echo "# Reassembled MEGA package inspection"
+            echo
+            cat reports/part-sizes.txt
+            echo
+            echo "## File signature"
+            cat reports/combined-file-type.txt
+            cat reports/combined-first-bytes.txt
+            echo
+            echo "## Archive listing summary"
+            grep -E '^(Type =|Physical Size =|Path =|Errors:|Warnings:)' reports/package-listing.txt | head -n 80 || true
+            echo
+            echo "## Relevant game/package paths"
+            grep -Ei '\.(apk|obb|pak|ucas|utoc|uasset|uexp|ubulk|ini|so|dll)$|(^|/)(Content|Config|Source|Plugins)/' reports/package-listing.txt | head -n 300 || true
+          } > reports/REPORT.md
+          cat reports/REPORT.md
+
+      - name: Upload reports only (not game data)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-reassembled-package-report
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 7
