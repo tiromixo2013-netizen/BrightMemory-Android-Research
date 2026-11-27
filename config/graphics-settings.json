@@ -58,7 +58,7 @@
         "Extreme"
       ],
       "integration_point": "UGameUserSettings scalability categories and supported mobile CVars",
-      "status": "runtime_command_source_added_UE4_scalability_groups_uncompiled",
+      "status": "six_runtime_profiles_added; Extreme adds explicit mobile CVar overrides; uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
       "note": "Each tier must change actual shadow, view distance, effects, texture, foliage, shading and post-processing settings where supported; do not expose until visual validation.",
@@ -98,7 +98,7 @@
         "Nearest": "native UE4.27 AddDefaultUpscalePass bridge source; not compiled into target",
         "Bilinear": "native UE4.27 AddDefaultUpscalePass bridge source; not compiled into target"
       },
-      "status": "SGSR1_source_vendored; SGSR2_official_UE4_27_upstream_available; MWSR_HLSL_source_vendored_reference; FSR_Mobile_MIT_source_verified; all custom renderer integrations require UE4.27 mobile shader compile",
+      "status": "unified_renderer_RDG_dispatcher_added; Nearest_and_Bilinear_are_builtin; SGSR1_SGSR2_MWSR_FSR_Mobile_backends_not_yet_registered",
       "ui_control_defined": true,
       "expose_control": false,
       "integration_requirements": [
@@ -120,7 +120,7 @@
         0,
         1
       ],
-      "status": "SGSR1_runtime_shader_parameter_added_source_not_compiled_other_algorithms_method_dependent",
+      "status": "0_to_1_parameter_added_to_unified_selected-upscaler_pass_contract; backend shader binding pending",
       "ui_control_defined": true,
       "expose_control": false,
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaleSharpness"
@@ -138,7 +138,7 @@
         "Ultra Quality"
       ],
       "behavior": "map_each_preset_to_the_selected_upscaler_supported_render_scale_and_parameters",
-      "status": "runtime_render_scale_preset_command_added_source_uncompiled_algorithm_specific_mapping_pending",
+      "status": "single shared preset now maps method-specific render fractions and sharpness; runtime source uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscalePreset"
@@ -149,7 +149,7 @@
       "label": "AMD CAS",
       "type": "boolean",
       "integration_point": "separate_RDG_post_upscale_pass; do_not_stack_on_SGSR1_sharpening_by_default",
-      "status": "AMD CAS headers vendored only; no RDG pass or shader binding",
+      "status": "CAS stage chained after selected upscaler in unified RDG path; no AMD CAS shader pass registered yet; toggle rejects unavailable",
       "ui_control_defined": true,
       "expose_control": false,
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetAMDCAS"
@@ -164,7 +164,7 @@
         1
       ],
       "depends_on": "amd_cas",
-      "status": "blocked_until_AMD_CAS_RDG_pass_is_implemented",
+      "status": "CAS sharpness is a distinct parameter to the unified CAS stage; unavailable until real CAS pass registers",
       "ui_control_defined": true,
       "expose_control": false,
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetCASSharpness"
@@ -192,7 +192,7 @@
       "label": "Frame Pacing",
       "type": "boolean",
       "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; FAndroidPlatformRHIFramePacer::GetFramePace @ 0x67dac90; Swappy symbols present",
-      "status": "runtime command and Blueprint API added for UE4.27 Vulkan CPU fallback pacers; exact Vulkan CVar names verified in reference source; not compiled into game",
+      "status": "Vulkan-only implementation removed for target; Android OpenGL ES/Swappy pacer integration still pending",
       "ui_control_defined": true,
       "expose_control": false,
       "note": "On toggles r.Vulkan.CPURenderthreadFramePacer and r.Vulkan.CPURHIThreadFramePacer; it does not force pacing when VSync is off and does not replace platform FramePace/Swappy. Validate on target device.",
@@ -258,7 +258,7 @@
         "FPerformanceTrackingSystem::AnalyzeFrame @ 0x852dd6c",
         "FPerformanceTrackingSystem::AnalyzeFrame(float) @ 0x852dd6c uses clock_gettime and maintains frame-duration samples"
       ],
-      "status": "frame_timing_source_verified_hud_not_implemented",
+      "status": "post-upscale HUD callback and Blueprint toggle added to unified path; no compositor/telemetry pass registered yet",
       "ui_control_defined": true,
       "expose_control": false,
       "note": "CPU/GPU utilization require separate Android/vendor telemetry; GAverageFPS and frame timing internals are not a complete GPU utilization API."
@@ -320,9 +320,10 @@
     "performance_hud_section_last": true,
     "hide_unimplemented_controls": true,
     "never_claim_algorithm_support_from_repository_readme_alone": true,
-    "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true
+    "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true,
+    "keep_all_controls_hidden_until_native_implementation_is_compiled_and_tested": true
   },
-  "implementation_note": "Source integration work is in progress. Resolution controller, graphics quality, render scale, preset selection, SGSR1 vendor source/sharpness and safe UE4 low-latency command bindings have source changes. SGSR2/MWSR/FSR Mobile and AMD CAS still require native renderer passes; nothing is compiled into the Bright Memory APK.",
+  "implementation_note": "A single Renderer-private FBMIUnifiedSpatialUpscaler and RDG chain now owns selected spatial reconstruction, optional CAS, and optional HUD composition. Built-in Nearest/Bilinear are the only available upscalers by default. The method registry intentionally rejects unregistered SGSR1/SGSR2/MWSR/FSR Mobile backends. Frame Generation remains a separate pipeline. Source has not been compiled into the target engine or APK.",
   "integration_constraints": [
     "The game binary identifies its build source path as UE4.27Plus; exact engine patch version still needs confirmation.",
     "Target libUE4.so does not contain SGSR1, SGSR2, or Mobile FSR plugin CVar strings searched; plugin integration is not already present.",
