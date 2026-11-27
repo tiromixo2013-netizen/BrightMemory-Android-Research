@@ -77,7 +77,11 @@
       "Nearest",
       "Bilinear"
     ],
-    "sgsr2_route_type": "ITemporalUpscaler (separate from BMI ISpatialUpscaler)"
+    "sgsr2_route_type": "ITemporalUpscaler (separate from BMI ISpatialUpscaler)",
+    "fsr_mobile_adapter_source_registered": true,
+    "fsr_mobile_adapter_compiled": false,
+    "fsr_mobile_shader_wrapper_authored": true,
+    "fsr_mobile_android_opengles_shader_compiled": false
   },
   "target_rhi": {
     "platform": "Android",
