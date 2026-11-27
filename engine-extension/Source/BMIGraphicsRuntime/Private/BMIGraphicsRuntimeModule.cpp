@@ -201,7 +201,9 @@ namespace BMIGraphicsRuntime
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetCAS));
     static FAutoConsoleCommand CmdCASSharpness(TEXT("bmi.SetCASSharpness"), TEXT("Set registered AMD CAS sharpness 0..1."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetCASSharpness));
-    static FAutoConsoleCommand CmdFramePacing(TEXT("bmi.SetFramePacing"), TEXT("Enable/disable UE4.27 Vulkan CPU fallback frame pacing."),\n        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFramePacing));\n    static FAutoConsoleCommand CmdLowLatency(TEXT("bmi.SetLowLatency"), TEXT("Low latency: 0 off, 1 UE4 thread sync, 2 unsupported no-queue."),
+    static FAutoConsoleCommand CmdFramePacing(TEXT("bmi.SetFramePacing"), TEXT("Enable/disable UE4.27 Vulkan CPU fallback frame pacing."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFramePacing));
+    static FAutoConsoleCommand CmdLowLatency(TEXT("bmi.SetLowLatency"), TEXT("Low latency: 0 off, 1 UE4 thread sync, 2 unsupported no-queue."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetLowLatency));
 }
 
