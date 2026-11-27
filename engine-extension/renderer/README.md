@@ -13,8 +13,7 @@ chains optional post-reconstruction stages in this order:
 Frame Generation is deliberately separate; it is not a spatial upscaler pass.
 The dispatcher currently contains only UE4's built-in Nearest and Bilinear
 fallbacks. SGSR1 is selected through Qualcomm's original spatial extension;
-SGSR2 uses Qualcomm's separate temporal extension. MWSR and FSR Mobile remain
-source-vendored and are not yet registered as BMI RDG passes.
+SGSR2 uses Qualcomm's separate temporal extension. MWSR and FSR Mobile now have BMI RDG pixel-pass adapters and are registered as spatial methods 2 and 3. MWSR ports the upstream 96-byte constants law and maps coarse derivatives to standard fragment derivatives. FSR Mobile uses the fused EASU/RCAS mobile shader wrapper. Both are source-level integrations only; exact UE4.27 engine compilation, GLES shader compilation and Adreno 610 image/performance tests remain outstanding.
 
 The view extension is opt-in: `bmi.Pipeline.Enabled` defaults to 0. The
 Renderer startup patch replaces the old BMI registration call with
