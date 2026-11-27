@@ -10,13 +10,13 @@ The runtime module registers console commands that call existing UE4 settings/CV
 
 | Command | Engine path |
 |---|---|
-| `bmi.SetRenderScale 0.75` | `r.MobileContentScaleFactor` |
+| `bmi.SetRenderScale 75` (percent) | `UGameUserSettings::SetResolutionScaleValueEx` (50..150 percent) |
 | `bmi.SetGraphicsQuality 0..4` | `UGameUserSettings::SetOverallScalabilityLevel` + `ApplySettings` |
 | `bmi.SetFrameLimit 30|45|60|90|120` | `UGameUserSettings::SetFrameRateLimit` + `ApplySettings` |
 | `bmi.SetShadowQuality 0|1` | Existing `r.ShadowQuality` CVar |
 | `bmi.SetMobileAO 0|1` | Existing `r.Mobile.AmbientOcclusionQuality` CVar |
 
-These are native engine controls, not UI-only toggles. They are intentionally kept separate from the game's cooked UMG assets at this stage.
+These are native engine controls, not UI-only toggles. Render scale uses the engine's percentage-based ResolutionQuality API (not a 0..1 factor).. They are intentionally kept separate from the game's cooked UMG assets at this stage.
 
 ## Not falsely enabled
 
