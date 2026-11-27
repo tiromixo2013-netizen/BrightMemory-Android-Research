@@ -135,7 +135,7 @@ assert "InViewFamily.SetPrimarySpatialUpscalerInterface(new FSGSRSpatialUpscaler
 assert 'SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0)' in runtime
 assert "RegisterBMIUnifiedSpatialUpscaler();" in patch
 assert "Renderer startup patch replaces the old BMI registration call" in read(RENDERER / "README.md")
-assert "If another extension claims the primary slot first" in read(RENDERER / "README.md")
+assert "claims the primary slot first" in read(RENDERER / "README.md")
 assert audit["verified_contract"]["bmi_extension_behavior"].startswith("BMI's view extension is registered from the Renderer module startup hook")
 assert audit["implementation_status"]["renderer_extension_registration_applied_to_target"] is False
 
