@@ -123,7 +123,10 @@ namespace BMIGraphicsRuntime
             Settings->SetResolutionScaleValueEx(Scale[Method][Preset]);
             Settings->ApplySettings(false);
         }
-        SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness[Preset]);
+        if (Method == 0)
+            SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), 1.0f + Sharpness[Preset]);
+        else if (Method != 1)
+            SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness[Preset]);
     }
 
     // Method IDs: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile,
@@ -197,7 +200,14 @@ namespace BMIGraphicsRuntime
     {
         if (Args.Num() != 1) return;
         const float Sharpness = FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
-        SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness);
+        int32 Method = 5;
+        if (IConsoleVariable* Selected = FindCVar(TEXT("bmi.Pipeline.Upscaler")))
+            Method = FMath::Clamp(Selected->GetInt(), 0, 5);
+        if (Method == 0)
+            SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), 1.0f + Sharpness);
+        else if (Method != 1)
+            SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness);
+        // SGSR2's upstream UE4.27 path has no independent sharpness control.
     }
 
     static void SetCAS(const TArray<FString>& Args)
