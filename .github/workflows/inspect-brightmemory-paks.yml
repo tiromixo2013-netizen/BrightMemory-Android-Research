@@ -1,0 +1,107 @@
+name: Inspect Bright Memory Unreal Pak assets
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/inspect-brightmemory-paks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Install archive and Rust tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rclone p7zip-full unzip cargo
+          cargo install --git https://github.com/trumank/repak --locked
+
+      - name: Recover original APK from MEGA
+        env:
+          MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
+          MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
+          MEGA_2FA: ${{ secrets.MEGA_2FA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${MEGA_EMAIL:-}" && test -n "${MEGA_PASSWORD:-}"
+          export RCLONE_CONFIG_MEGA_TYPE=mega
+          export RCLONE_CONFIG_MEGA_USER="$MEGA_EMAIL"
+          export RCLONE_CONFIG_MEGA_PASS="$(rclone obscure "$MEGA_PASSWORD")"
+          if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
+          mkdir -p work/wrappers work/parts work/apk work/paks-data work/paks-main work/report
+          rclone lsf mega: --recursive --files-only > work/report/mega-files.txt
+          mapfile -t candidates < <(grep -E '(^|/)(brightmemory-part-0[0-5]\\.zip|downloaded-package\\.part-0[0-5])$' work/report/mega-files.txt | sort -V)
+          if [[ ${#candidates[@]} -ne 6 ]]; then
+            echo "Expected six MEGA part files; found ${#candidates[@]}." >&2
+            cat work/report/mega-files.txt
+            exit 2
+          fi
+          for remote in "${candidates[@]}"; do
+            name="${remote##*/}"
+            rclone copyto "mega:$remote" "work/wrappers/$name"
+            if [[ "$name" == *.zip ]]; then
+              member="$(7z -slt "work/wrappers/$name" | sed -n 's/^Path = //p' | grep -vE '^(work/|$)' | head -n 1)"
+              test -n "$member"
+              7z x -so "work/wrappers/$name" "$member" > "work/parts/${name%.zip}.raw"
+            else
+              cp "work/wrappers/$name" "work/parts/$name"
+            fi
+          done
+          mapfile -t rawparts < <(find work/parts -maxdepth 1 -type f | sort -V)
+          test "${#rawparts[@]}" -eq 6
+          cat "${rawparts[@]}" > work/apk/brightmemory-original.apk
+          sha256sum work/apk/brightmemory-original.apk | tee work/report/apk-sha256.txt
+          unzip -t work/apk/brightmemory-original.apk > work/report/apk-integrity.txt
+
+      - name: Extract nested Unreal Pak containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=work/apk/brightmemory-original.apk
+          unzip -p "$APK" assets/data > work/apk/assets-data.zip
+          unzip -p "$APK" assets/main.obb.png > work/apk/main-obb.zip
+          7z x -y -owork/paks-data work/apk/assets-data.zip '*.pak' > work/report/extract-data-paks.txt
+          7z x -y -owork/paks-main work/apk/main-obb.zip '*.pak' > work/report/extract-main-pak.txt
+          find work/paks-data work/paks-main -type f -name '*.pak' -printf '%p %s bytes\\n' | sort > work/report/pak-files.txt
+          test "$(find work/paks-data work/paks-main -type f -name '*.pak' | wc -l)" -ge 1
+
+      - name: Parse Pak indexes and enumerate game assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work/report/pak-indexes
+          while IFS= read -r pak; do
+            base="$(basename "$pak")"
+            echo "===== $pak =====" >> work/report/pak-info.txt
+            repak info "$pak" >> work/report/pak-info.txt 2>&1
+            repak list "$pak" > "work/report/pak-indexes/$base.txt"
+          done < <(find work/paks-data work/paks-main -type f -name '*.pak' | sort)
+          cat work/report/pak-indexes/*.txt > work/report/all-asset-paths.txt
+          grep -Ei '\\.(uasset|uexp|ubulk)$|UI|Menu|Settings|Graphics|Quality|Resolution|GameUserSettings|Widget' work/report/all-asset-paths.txt > work/report/ui-and-settings-candidates.txt || true
+          {
+            echo "# Bright Memory Unreal Pak inspection"
+            echo
+            echo "Original APK SHA256: $(cut -d' ' -f1 work/report/apk-sha256.txt)"
+            echo
+            echo "## Pak containers"
+            cat work/report/pak-files.txt
+            echo
+            echo "## Pak metadata"
+            cat work/report/pak-info.txt
+            echo
+            echo "## UI/settings asset candidates"
+            cat work/report/ui-and-settings-candidates.txt
+          } > work/report/REPORT.md
+
+      - name: Upload text-only inspection report
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-pak-index-report
+          path: work/report/
+          retention-days: 7
