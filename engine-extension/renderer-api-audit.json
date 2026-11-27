@@ -38,7 +38,9 @@
     "screen_pass_helper": "AddDrawScreenPass",
     "rdg_pass_flag": "ERDGPassFlags::Raster",
     "view_family_ownership": "FSceneViewFamily::~FSceneViewFamily deletes the primary ISpatialUpscaler through ISceneViewFamilyExtention",
-    "fork_behavior": "FSceneRenderer forks the primary upscaler with Fork_GameThread when copying a view family"
+    "fork_behavior": "FSceneRenderer forks the primary upscaler with Fork_GameThread when copying a view family",
+    "sgsr_extension_behavior": "The vendored Qualcomm FSGSRViewExtension checks r.Qualcomm.SGSR.Enabled and assigns the primary slot only when GetPrimarySpatialUpscalerInterface() is null.",
+    "bmi_extension_behavior": "BMI's view extension is registered from the Renderer module startup hook and assigns the primary slot in BeginRenderViewFamily only when enabled, its selected method bit is registered, and the slot is empty."
   },
   "integration_constraints": [
     "ISpatialUpscaler is declared in a Renderer private header, not a public plugin API.",
@@ -46,7 +48,7 @@
     "The extension must be retained by a shared reference for as long as it is registered.",
     "A normal plugin using only public Engine headers cannot safely implement this interface.",
     "The reference fork is not proven identical to the Bright Memory v1.34 engine snapshot.",
-    "A view extension cannot overwrite an already assigned primary spatial upscaler; BMI must be installed at the engine's original assignment site in the matching Renderer source."
+    "BMI cannot overwrite a primary spatial upscaler already claimed by another active view extension; the SGSR extension must be disabled before BMI claims the empty slot."
   ],
   "implementation_status": {
     "reference_signatures_inspected": true,
@@ -64,7 +66,7 @@
     "android_opengles_validation": false,
     "fsr_mobile_adapter_registered": false,
     "fsr_mobile_shader_compiled": false,
-    "renderer_assignment_site_integrated": false
+    "renderer_extension_registration_applied_to_target": false
   },
   "target_rhi": {
     "platform": "Android",
