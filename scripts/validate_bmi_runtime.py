@@ -87,4 +87,32 @@ assert status["target_engine_compile"] is False
 assert status["android_vulkan_validation"] is False
 assert status["modified_apk"] is False
 
-print("PASS: plugin descriptor, native API wiring, renderer contract, pinned API audit, settings schema and feature gates")
+
+renderer_dir = root / "engine-extension/renderer"
+renderer_header = (renderer_dir / "BMISpatialUpscaler.h").read_text()
+renderer_source = (renderer_dir / "BMISpatialUpscaler.cpp").read_text()
+renderer_readme = (renderer_dir / "README.md").read_text()
+for symbol in [
+    "class FBMISpatialUpscaler final : public ISpatialUpscaler",
+    "Fork_GameThread(const FSceneViewFamily& ViewFamily) const override",
+    "AddPasses(",
+    "class FBMISpatialUpscalerViewExtension final : public FSceneViewExtensionBase",
+    "BeginRenderViewFamily(FSceneViewFamily& InViewFamily) override",
+    "RegisterBMISpatialUpscaler()",
+]:
+    assert symbol in renderer_header, f"Renderer bridge header missing: {symbol}"
+for symbol in [
+    "ISpatialUpscaler::AddDefaultUpscalePass",
+    "EUpscaleMethod::Nearest",
+    "EUpscaleMethod::Bilinear",
+    "SetPrimarySpatialUpscalerInterface(new FBMISpatialUpscaler())",
+    "GetPrimarySpatialUpscalerInterface() == nullptr",
+    "bmi.UseNativeSpatialUpscaler",
+    "bmi.NativeUpscaleMethod",
+]:
+    assert symbol in renderer_source, f"Renderer bridge source missing: {symbol}"
+assert "default 0" in renderer_readme
+assert "does not claim to implement SGSR" in renderer_readme
+assert "not yet" in renderer_readme
+
+print("PASS: plugin descriptor, native API wiring, renderer contract, pinned API audit, native mobile upscale bridge, settings schema and feature gates")
