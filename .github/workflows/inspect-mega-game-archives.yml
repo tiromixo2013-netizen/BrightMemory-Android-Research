@@ -1,0 +1,125 @@
+name: Inspect Bright Memory MEGA archives for Unreal project files
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Install rclone and archive tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+          rclone version
+          7z
+
+      - name: Download six archive parts and inspect without extraction
+        env:
+          MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
+          MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
+          MEGA_2FA: ${{ secrets.MEGA_2FA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p inspect/downloads inspect/reports
+          if [[ -z "${MEGA_EMAIL:-}" || -z "${MEGA_PASSWORD:-}" ]]; then
+            echo "Required MEGA credentials are missing." | tee inspect/reports/ERROR.txt
+            exit 1
+          fi
+          export RCLONE_CONFIG_MEGA_TYPE=mega
+          export RCLONE_CONFIG_MEGA_USER="$MEGA_EMAIL"
+          export RCLONE_CONFIG_MEGA_PASS="$(rclone obscure "$MEGA_PASSWORD")"
+          if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
+
+          for n in 00 01 02 03 04 05; do
+            f="brightmemory-part-${n}.zip"
+            echo "Downloading $f"
+            rclone copyto "mega:BrightMemory-Private/$f" "inspect/downloads/$f" --progress
+          done
+
+          {
+            echo "# Bright Memory archive inspection"
+            echo "Inspection time: $(date -u +%FT%TZ)"
+            echo
+            echo "## Part sizes and file signatures"
+            for f in inspect/downloads/*.zip; do
+              echo "### $(basename "$f")"
+              stat -c 'bytes=%s' "$f"
+              file "$f"
+              od -An -tx1 -N16 "$f"
+              echo
+            done
+          } | tee inspect/reports/parts-and-signatures.txt
+
+          python3 - <<'PY'
+          import os, zipfile, hashlib
+          from pathlib import Path
+          root=Path("inspect/downloads")
+          report=Path("inspect/reports/archive-index.txt")
+          markers=[]
+          total=0
+          with report.open("w") as out:
+              out.write("# ZIP/archive inventory (no extraction)\n")
+              for p in sorted(root.glob("*.zip")):
+                  out.write(f"\n## {p.name}\n")
+                  try:
+                      with zipfile.ZipFile(p) as z:
+                          infos=z.infolist()
+                          out.write(f"ZIP entries: {len(infos)}\n")
+                          for i in infos:
+                              name=i.filename
+                              low=name.lower()
+                              if (low.endswith((".uproject",".uplugin","target.cs","build.cs")) or
+                                  any(x in low for x in ("/source/","/plugins/","/content/","/config/","/engine/"))):
+                                  markers.append((p.name,name))
+                                  out.write("PROJECT_MARKER: "+name+"\n")
+                          for i in infos[:250]:
+                              out.write(f"{i.file_size:>12}  {i.filename}\n")
+                          if len(infos)>250: out.write(f"... {len(infos)-250} more entries omitted\n")
+                  except Exception as e:
+                      out.write(f"Not a standalone ZIP: {type(e).__name__}: {e}\n")
+              out.write("\n## Project markers found\n")
+              if markers:
+                  for part,name in markers: out.write(f"{part}: {name}\n")
+              else:
+                  out.write("NONE in individually readable ZIPs\n")
+          # Probe whether the six parts are consecutive byte chunks of one archive.
+          joined=Path("inspect/combined-parts.bin")
+          with joined.open("wb") as dst:
+              for p in sorted(root.glob("*.zip")):
+                  with p.open("rb") as src:
+                      while True:
+                          b=src.read(8*1024*1024)
+                          if not b: break
+                          dst.write(b)
+          with zipfile.ZipFile(joined) as z:
+              with report.open("a") as out:
+                  out.write(f"\n## Concatenated six-part ZIP\nZIP entries: {len(z.infolist())}\n")
+                  found=0
+                  for i in z.infolist():
+                      low=i.filename.lower()
+                      if (low.endswith((".uproject",".uplugin","target.cs","build.cs")) or
+                          any(x in low for x in ("/source/","/plugins/","/content/","/config/","/engine/"))):
+                          out.write("PROJECT_MARKER: "+i.filename+"\n"); found+=1
+                  out.write(f"Project marker count: {found}\n")
+          PY
+
+          7z l inspect/combined-parts.bin > inspect/reports/7z-combined-list.txt 2>&1 || true
+          echo "Inspection finished. No archive contents were extracted." | tee inspect/reports/STATUS.txt
+
+      - name: Upload inspection reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-archive-inspection
+          path: inspect/reports/
+          if-no-files-found: warn
+          retention-days: 7
