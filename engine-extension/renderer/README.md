@@ -10,10 +10,11 @@ Registration patch:
 ## SGSR1 source
 
 The official Qualcomm UE4.27 SGSR1 plugin source and shader files are vendored
-under `vendor/SGSR1/` with upstream BSD-3-Clause notices. The plugin descriptor
-is `SGSR1.uplugin`; when installing into the engine it must be placed in a
-folder named `SGSR`, because the upstream shader module resolves
-`FindPlugin("SGSR")`.
+under `vendor/SGSR1/` with upstream BSD-3-Clause notices. The descriptor is
+named `SGSR.uplugin` because Unreal resolves `FindPlugin("SGSR")` from the
+descriptor basename. Install its contents under `Plugins/SGSR/`. Startup now
+checks the plugin handle and `Shaders/` directory before registering
+`/Plugin/SGSR`, and logs a safe error if either is missing.
 
 The vendored source has these project-specific changes:
 - SGSR1 defaults to disabled (opt-in).
