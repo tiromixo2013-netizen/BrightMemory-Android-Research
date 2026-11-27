@@ -127,7 +127,7 @@ assert "AMD FidelityFX CAS portability and algorithm headers are vendored" in re
 assert "CAS RDG pass" in renderer_readme
 assert "have not been compiled against the exact Bright Memory v1.34" in renderer_readme
 assert "FSceneViewFamily owns" in renderer_source
-assert "does not replace a primary upscaler" in renderer_readme
+assert "does not replace an already-installed primary spatial upscaler" in renderer_readme
 
 patch = (root / "engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch").read_text()
 for token in ["BMISpatialUpscaler.h", "RegisterBMISpatialUpscaler()", "FRendererModule::StartupModule"]:
