@@ -124,7 +124,7 @@ for symbol in [
     assert symbol in renderer_source, f"Renderer bridge source missing: {symbol}"
 assert "default 0" in renderer_readme
 assert "does not claim to implement SGSR" in renderer_readme
-assert "not yet" in renderer_readme
+assert "Neither has been compiled" in renderer_readme
 assert "FSceneViewFamily owns" in renderer_source
 assert "does not replace a primary upscaler" in renderer_readme
 
