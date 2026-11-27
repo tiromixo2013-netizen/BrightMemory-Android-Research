@@ -152,6 +152,9 @@ jobs:
             FSceneViewState_OnStartRender:0x79e7240:288
           SPECS
           } > reports/complete-hook-disassembly.txt
+          echo "Scanning the complete ELF text for memory operations using displacement 0xc0 and nearby pointer-field candidates."
+          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E '([[:space:]](ldr|str|ldur|stur|ldp|stp)[[:alnum:]]*[[:space:]].*#0xc0([,]]|[[:space:]]))|([[:space:]](ldr|str|ldur|stur)[[:alnum:]]*[[:space:]].*#0xc8([,]]|[[:space:]]))' > reports/offset-c0-xrefs.txt || true
+          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E '[[:space:]]str[[:space:]]+x[0-9]+, \\[x[0-9]+, #0xc0\\]' > reports/pointer-store-c0-candidates.txt || true
           grep -E "LOAD|GNU_RELRO|GNU_STACK" reports/elf-program-headers.txt > reports/elf-memory-layout.txt || true
 
       - name: Upload audit evidence
