@@ -1,0 +1,49 @@
+name: Split restored Bright Memory APK for local integration
+
+on:
+  push:
+    branches: [native-integration]
+    paths:
+      - .github/workflows/split-restored-apk.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download verified restored APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-v1.34-restored-full-apk
+          path: restored
+          run-id: 45920740655
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify APK and split into transfer-sized parts
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="restored/workspace/bright-memory-infinite-v1.34.apk"
+          test -s "$APK"
+          test "$(stat -c%s "$APK")" -eq 2431306902
+          echo "APK_SHA256=$(sha256sum "$APK" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          mkdir -p split
+          split -b 300M -d -a 2 "$APK" split/brightmemory.apk.part
+          sha256sum split/* > split/SHA256SUMS
+          ls -lh split
+
+      - name: Upload each part separately (under connector size limit)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for part in split/brightmemory.apk.part*; do
+            name=$(basename "$part")
+            echo "Uploading $name"
+            gh run upload-artifact "$name" "$part" --repo "$GITHUB_REPOSITORY" || true
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
