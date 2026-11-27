@@ -111,7 +111,14 @@ namespace BMIGraphicsRuntime
             { 50.0f, 65.0f, 80.0f, 90.0f, 100.0f }
         };
         const float Sharpness[5] = { 0.90f, 0.72f, 0.52f, 0.30f, 0.12f };
-        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+        if (Method == 1)
+        {
+            // Qualcomm SGSR2 owns its temporal quality fraction. Its UE4.27
+            // plugin maps 0..3 to Ultra Quality..Performance.
+            const int32 GSR2Quality[] = { 3, 3, 2, 1, 0 };
+            SetCVarIntIfPresent(TEXT("r.SGSR2.Quality"), GSR2Quality[Preset]);
+        }
+        else if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
         {
             Settings->SetResolutionScaleValueEx(Scale[Method][Preset]);
             Settings->ApplySettings(false);
@@ -120,35 +127,63 @@ namespace BMIGraphicsRuntime
     }
 
     // Method IDs: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile,
-    // 4 Nearest, 5 Bilinear. External algorithms are enabled only if
-    // their actual plugin CVar is registered in this engine build.
+    // 4 Nearest, 5 Bilinear. SGSR1 is spatial; SGSR2 is temporal and must
+    // use Qualcomm's ITemporalUpscaler path, never BMI's spatial callback.
     static void SetUpscaler(const TArray<FString>& Args)
     {
         if (Args.Num() != 1) return;
         const int32 Method = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
-        // Only methods with a registered RDG implementation may be selected.
+        IConsoleVariable* PipelineEnabled = FindCVar(TEXT("bmi.Pipeline.Enabled"));
+
+        if (Method == 0)
+        {
+            IConsoleVariable* SGSR1 = FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"));
+            if (!SGSR1)
+            {
+                UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR1 plugin is not loaded; selection rejected."));
+                return;
+            }
+            if (PipelineEnabled) PipelineEnabled->Set(0, ECVF_SetByGameSetting);
+            SetCVarIntIfPresent(TEXT("r.SGSR2.Enabled"), 0);
+            SGSR1->Set(1, ECVF_SetByGameSetting);
+            return;
+        }
+
+        if (Method == 1)
+        {
+            IConsoleVariable* SGSR2 = FindCVar(TEXT("r.SGSR2.Enabled"));
+            if (!SGSR2)
+            {
+                UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR2 UE4.27 temporal plugin is not loaded; selection rejected."));
+                return;
+            }
+            // SGSR2 consumes velocity, depth and per-view history through
+            // ITemporalUpscaler. It is not a spatial BMI backend.
+            if (PipelineEnabled) PipelineEnabled->Set(0, ECVF_SetByGameSetting);
+            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
+            SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 1);
+            SGSR2->Set(1, ECVF_SetByGameSetting);
+            return;
+        }
+
+        // Methods 2..5 belong to the BMI spatial renderer. Do not enable them
+        // unless their actual pass is present in the registered mask.
         IConsoleVariable* Mask = FindCVar(TEXT("bmi.Pipeline.RegisteredUpscalerMask"));
         if (!Mask || (Mask->GetInt() & (1 << Method)) == 0)
         {
-            UE_LOG(LogTemp, Error, TEXT("Requested upscaler has no registered renderer pass; selection rejected."));
+            UE_LOG(LogTemp, Error, TEXT("Requested spatial upscaler has no registered renderer pass; selection rejected."));
             return;
         }
-        // Keep the renderer extension opt-in: never replace the game's
-        // original spatial path until both renderer CVars are present and a
-        // registered method has passed the availability-mask check.
         IConsoleVariable* SelectedMethod = FindCVar(TEXT("bmi.Pipeline.Upscaler"));
-        IConsoleVariable* PipelineEnabled = FindCVar(TEXT("bmi.Pipeline.Enabled"));
         if (!SelectedMethod || !PipelineEnabled)
         {
             UE_LOG(LogTemp, Error, TEXT("BMI unified renderer pipeline is not installed; keeping the game's original upscaler."));
             return;
         }
+        SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
+        SetCVarIntIfPresent(TEXT("r.SGSR2.Enabled"), 0);
         SelectedMethod->Set(Method, ECVF_SetByGameSetting);
         PipelineEnabled->Set(1, ECVF_SetByGameSetting);
-
-        // One primary Renderer RDG pipeline owns all spatial methods.
-        SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
-        SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 0);
     }
 
     static void SetUpscaleSharpness(const TArray<FString>& Args)
