@@ -26,7 +26,9 @@ for token in [
     "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit",
 ]:
     assert token in runtime, f"Missing runtime bridge symbol: {token}"
-assert "Requested upscaler has no registered renderer pass" in runtime\nassert "BMI unified renderer pipeline is not installed" in runtime\nassert "PipelineEnabled->Set(1, ECVF_SetByGameSetting)" in runtime
+assert "Requested upscaler has no registered renderer pass" in runtime
+assert "BMI unified renderer pipeline is not installed" in runtime
+assert "PipelineEnabled->Set(1, ECVF_SetByGameSetting)" in runtime
 assert "Ultra (No Queue) is unavailable" in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
 
