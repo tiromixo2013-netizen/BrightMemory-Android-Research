@@ -84,3 +84,14 @@ No APK modification is claimed by this report. The next concrete gate is to iden
 - [ ] CAS shader compiled for the actual target platform.
 - [ ] Native renderer pass connected to RDG resources.
 - [ ] APK repacked, installed, and runtime-tested.
+
+## Source staging completed
+
+The official CAS source is now vendored under `vendor/amd-fidelityfx-cas/` from upstream commit `9fabcc9a2c45f958aff55ddfda337e74ef894b7f`:
+- `ffx_a.h`
+- `ffx_cas.h`
+- `CAS_Shader.hlsl`
+- `CAS_Shader.glsl`
+- `LICENSE.txt`
+
+A GitHub Actions validation workflow was added at `.github/workflows/cas-shader-validation.yml`. Run `46007752864` confirmed the official GLSL sample compiles, while HLSL failed because the sample expects `WIDTH/HEIGHT/DEPTH` compile-time defines. The workflow was corrected to pass a 64-thread workgroup (`64,1,1`) and rerun as `46007813620`; this rerun is still in progress at the time of this report update. A successful reference compile is not the same as a UE4 Android shader build.
