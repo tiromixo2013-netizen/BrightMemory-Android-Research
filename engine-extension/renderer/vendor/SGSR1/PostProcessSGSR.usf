@@ -36,6 +36,7 @@
 // =====================================================================================
 float4 Const0;
 float4 Const1;
+float Sharpness;
 SamplerState samLinearClamp;
 
 // =====================================================================================
@@ -55,7 +56,7 @@ SamplerState samLinearClamp;
 SGSR_H4 SnapdragonGameSuperResolution(SGSR_F2 uv)
 {
 	SGSR_H4 OutColor = SGSR_H4(0,0,0,0);
-	SgsrYuvH(OutColor,uv,Const1);
+	SgsrYuvH(OutColor,uv,Const1,Sharpness);
 	return OutColor;
 }
 
