@@ -28,12 +28,13 @@ jobs:
         run: |
           set -euo pipefail
           find restored -type f -printf '%p %s bytes\\n'
-          APK="restored/workspace/bright-memory-infinite-v1.34.apk"
+          APK="restored/bright-memory-infinite-v1.34.apk"
           test -s "$APK"
           ACTUAL_SIZE="$(stat -c%s "$APK")"
           ACTUAL_SHA="$(sha256sum "$APK" | awk '{print $1}')"
           echo "APK size: $ACTUAL_SIZE bytes"
           echo "APK SHA256: $ACTUAL_SHA"
+          test "$ACTUAL_SIZE" -eq 2431306902
           test "$ACTUAL_SHA" = "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4"
           mkdir -p split
           split -b 250000000 -d -a 2 "$APK" split/brightmemory.apk.part
@@ -70,13 +71,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: brightmemory-apk-part-03
-          path: split/brightmemory.apk.part03
           compression-level: 0
       - name: Upload part 04
         uses: actions/upload-artifact@v4
         with:
           name: brightmemory-apk-part-04
-          path: split/brightmemory.apk.part04
           compression-level: 0
       - name: Upload part 05
         uses: actions/upload-artifact@v4
