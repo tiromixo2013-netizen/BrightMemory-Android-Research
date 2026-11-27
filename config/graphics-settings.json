@@ -92,15 +92,17 @@
         "SGSR2": "official_UE4_27_source_verified_variants_2passNoAlpha_2pass_fs_taau_3pass; requires TAA_temporal_upsampling_and_project_configuration; plugin absent from target binary",
         "MWSR": "algorithm_source_not_verified",
         "FSR Lite": "not an official name verified; Mobile FSR plugin/CVars absent from target binary strings",
-        "Nearest": "custom_spatial_sampler_pass_required",
-        "Bilinear": "custom_spatial_sampler_pass_required"
+        "Nearest": "implemented_in_renderer_bridge_source_via_UE4_27_ISpatialUpscaler_AddDefaultUpscalePass; mobile permutation compile support verified; not integrated into target engine",
+        "Bilinear": "implemented_in_renderer_bridge_source_via_UE4_27_ISpatialUpscaler_AddDefaultUpscalePass; mobile permutation compile support verified; not integrated into target engine"
       },
-      "status": "official_SGSR1_and_SGSR2_sources_verified_not_built_into_target",
+      "status": "renderer_bridge_source_authored_nearest_bilinear_only_target_engine_integration_pending",
       "ui_control_defined": true,
       "expose_control": false,
       "integration_requirements": [
-        "SGSR1: add official plugin to UE4.27.1+ project/engine and rebuild cooked shaders and libUE4.so",
-        "SGSR2: choose UE4.27 2pass variant only after confirming temporal AA/motion-vector path and target Android packaging"
+        "Add BMISpatialUpscaler.h/.cpp to Engine/Source/Runtime/Renderer/Private",
+        "Call RegisterBMISpatialUpscaler() once from FRendererModule::StartupModule",
+        "Compile the exact Bright Memory Android engine target and validate Vulkan output before exposing the control",
+        "SGSR1, SGSR2, MWSR and FSR Lite remain unimplemented in the target"
       ]
     },
     {
