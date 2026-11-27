@@ -43,6 +43,22 @@ for symbol in [
 
 config = json.loads((root / "config/graphics-settings.json").read_text())
 ids = [item["id"] for item in config["settings"]]
+expected_order = [
+    "resolution_controller",
+    "graphics_quality",
+    "render_scale",
+    "upscaler",
+    "upscale_sharpness",
+    "upscale_preset",
+    "amd_cas",
+    "cas_sharpness",
+    "frame_generation",
+    "frame_pacing",
+    "low_latency",
+    "performance_hud",
+    "fps_limit",
+]
+assert ids == expected_order, f"Settings order mismatch: {ids}"
 upscaler_config = next(item for item in config["settings"] if item["id"] == "upscaler")
 assert "MWSR_HLSL_source_vendored_reference" in upscaler_config["status"]
 assert upscaler_config["options"] == ["SGSR1", "SGSR2", "MWSR", "FSR Mobile", "Nearest", "Bilinear"]
