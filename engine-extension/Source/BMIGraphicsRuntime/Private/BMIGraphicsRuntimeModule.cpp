@@ -15,14 +15,20 @@ namespace BMIGraphicsRuntime
 
     static void SetRenderScale(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1)
+        if (Args.Num() != 1 || !GEngine)
         {
-            UE_LOG(LogTemp, Warning, TEXT("Usage: bmi.SetRenderScale <0.50..1.50>"));
+            UE_LOG(LogTemp, Warning, TEXT("Usage: bmi.SetRenderScale <50..150> (percent)"));
             return;
         }
-        const float Scale = FMath::Clamp(FCString::Atof(*Args[0]), 0.50f, 1.50f);
-        SetFloatCVar(TEXT("r.MobileContentScaleFactor"), Scale);
-        UE_LOG(LogTemp, Log, TEXT("BMI render scale requested: %.2f"), Scale);
+
+        const float Percent = FMath::Clamp(FCString::Atof(*Args[0]), 50.0f, 150.0f);
+        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+        {
+            // UE4.27 stores ResolutionQuality as a percentage, not a 0..1 fraction.
+            Settings->SetResolutionScaleValueEx(Percent);
+            Settings->ApplySettings(false);
+            UE_LOG(LogTemp, Log, TEXT("BMI render scale requested: %.1f%%"), Percent);
+        }
     }
 
     static void SetGraphicsQuality(const TArray<FString>& Args)
