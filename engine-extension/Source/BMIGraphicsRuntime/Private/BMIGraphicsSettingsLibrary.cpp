@@ -54,7 +54,7 @@ bool UBMIGraphicsSettingsLibrary::SetUpscalePreset(int32 Preset)
     return RunBMICommand(TEXT("bmi.SetUpscalePreset"), IntArg(Preset));
 }
 
-bool UBMIGraphicsSettingsLibrary::SetAMD CAS(bool bEnabled)
+bool UBMIGraphicsSettingsLibrary::SetAMDCAS(bool bEnabled)
 {
     return RunBMICommand(TEXT("bmi.SetCAS"), bEnabled ? TEXT("1") : TEXT("0"));
 }
