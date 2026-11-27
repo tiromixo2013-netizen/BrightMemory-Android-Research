@@ -63,3 +63,31 @@ On load, reverse the first two steps: read UserSave, restore the widget selectio
 - Vulkan is disabled in the inspected Android device profile. Any Vulkan-only implementation must be replaced or proven irrelevant to the active path.
 
 **Acceptance rule:** do not show a control in the final game menu until its UMG event, saved value, runtime implementation, and visible/measurable effect all work.
+
+## Unified rendering implementation added in source
+
+New Renderer-private files:
+- `engine-extension/renderer/BMIUnifiedSpatialUpscaler.h`
+- `engine-extension/renderer/BMIUnifiedSpatialUpscaler.cpp`
+
+The new `FBMIUnifiedSpatialUpscaler` installs as the single primary spatial upscaler through `FSceneViewExtensionBase::BeginRenderViewFamily`. Its RDG order is:
+
+`selected reconstruction method -> optional AMD CAS pass -> optional HUD composition pass`.
+
+The single dispatcher has registration points for SGSR1, SGSR2, MWSR and FSR Mobile, and built-in UE4 Nearest/Bilinear passes. It snapshots method/sharpness/CAS/HUD state per view family. Invalid pass outputs fall back safely to Bilinear or preserve the previous valid image. Unregistered algorithms are rejected by the runtime settings bridge; they are not falsely activated.
+
+Runtime source changes:
+- Six Graphics Quality IDs now map to five UE scalability tiers plus explicit Extreme mobile-CVar overrides.
+- The one shared preset maps method-specific render fractions and sharpness.
+- Selected-upscaler sharpness is passed into the unified algorithm callback as a 0..1 parameter.
+- CAS is appended after reconstruction and its menu toggle rejects activation until a real CAS RDG shader pass registers.
+- HUD has a post-reconstruction callback and Blueprint API; the toggle rejects activation until a real HUD compositor registers.
+- The old Vulkan-only Frame Pacing toggle is no longer falsely activated on the inspected target, whose profile disables Vulkan. Android OpenGL ES/Swappy pacing still needs its actual platform integration.
+- Frame Generation remains intentionally outside this spatial pipeline.
+
+Renderer registration patch updated:
+`engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch`.
+
+## Current implementation truth
+
+The unified RDG dispatcher and runtime routing are source additions only. By default, the only registered/available reconstruction methods are built-in Nearest and Bilinear. SGSR1, SGSR2, MWSR and FSR Mobile still need their adapter/shader registrations; AMD CAS and HUD still need their actual compositor passes; the active OpenGL ES pacing hook still needs implementation. No target-engine compile, APK repack, or device test has been completed. Keep unavailable menu controls hidden until each backend is registered and visually validated.
