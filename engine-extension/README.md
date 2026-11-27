@@ -6,18 +6,20 @@ This is the first native source-side implementation layer for the Bright Memory 
 
 ## Implemented in this module
 
-The runtime module registers console commands that call existing UE4 settings/CVar paths:
+The runtime module currently registers the following source-level commands:
 
-| Command | Engine path |
-|---|---|
-| `bmi.SetRenderScale 75` (percent) | `UGameUserSettings::SetResolutionScaleValueEx` (50..150 percent) |
-| `bmi.SetGraphicsQuality 0..4` | `UGameUserSettings::SetOverallScalabilityLevel` + `ApplySettings` |
-| `bmi.SetGraphicsPreset 0..4` | Eight native UE4.27 scalability groups + `ApplySettings` |
-| `bmi.SetFrameLimit 30|45|60|90|120` | `UGameUserSettings::SetFrameRateLimit` + `ApplySettings` |
-| `bmi.SetShadowQuality 0|1` | Existing `r.ShadowQuality` CVar |
-| `bmi.SetMobileAO 0|1` | Existing `r.Mobile.AmbientOcclusionQuality` CVar |
+| Command | Intended UE4 path | Verification boundary |
+|---|---|---|
+| `bmi.SetRenderScale 75` (percent) | `UGameUserSettings::SetResolutionScaleValueEx` (50..150 percent) | Source added; target engine build not compiled |
+| `bmi.SetGraphicsQuality 0..4` | `UGameUserSettings::SetOverallScalabilityLevel` + `ApplySettings` | Source added; per-tier visual effects not device-tested |
+| `bmi.SetFrameLimit 30|45|60|90|120` | `UGameUserSettings::SetFrameRateLimit` + `ApplySettings` | Source added; device-supported rates not tested |
+| `bmi.SetResolutionController 0..6` | Existing `r.MobileContentScaleFactor` path | Source added; display mapping not device-tested |
+| `bmi.SetFramePacing 0|1` | Vulkan CPU fallback frame-pacer CVars | Source added; requires VSync/platform pacing and runtime validation |
+| `bmi.SetLowLatency 0|1|2` | `r.OneFrameThreadLag` | Source added; Ultra/no-queue mode is rejected |
 
-These are native engine controls, not UI-only toggles. Render scale uses the engine's percentage-based ResolutionQuality API (not a 0..1 factor). They are intentionally kept separate from the game's cooked UMG assets at this stage.
+The Blueprint library forwards calls to these commands. This is source code only: it has not been compiled into the game's native library or exposed in the cooked settings menu.
+
+The earlier draft documentation mentioned `SetGraphicsPreset`, eight individual scalability groups, `SetShadowQuality`, and `SetMobileAO` as implemented commands. Those command implementations are not present in the current runtime module and must not be treated as available.
 
 ## Renderer integration research
 
