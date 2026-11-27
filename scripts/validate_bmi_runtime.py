@@ -26,10 +26,15 @@ for token in [
     "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit",
 ]:
     assert token in runtime, f"Missing runtime bridge symbol: {token}"
-assert "Requested upscaler has no registered renderer pass" in runtime
+assert "Requested spatial upscaler has no registered renderer pass" in runtime
 assert "BMI unified renderer pipeline is not installed" in runtime
 assert "PipelineEnabled->Set(1, ECVF_SetByGameSetting)" in runtime
 assert "Ultra (No Queue) is unavailable" in runtime
+assert 'FindCVar(TEXT("r.SGSR2.Enabled"))' in runtime
+assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
+assert 'SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 1)' in runtime
+assert "SGSR2 is temporal and must" in runtime
+assert 'SetCVarIntIfPresent(TEXT("r.SGSR2.Quality"), GSR2Quality[Preset])' in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
 
 blueprint_header = read(ENGINE / "Source/BMIGraphicsRuntime/Public/BMIGraphicsSettingsLibrary.h")
@@ -139,7 +144,25 @@ assert "claims the primary slot first" in read(RENDERER / "README.md")
 assert audit["verified_contract"]["bmi_extension_behavior"].startswith("BMI's view extension is registered from the Renderer module startup hook")
 assert audit["implementation_status"]["renderer_extension_registration_applied_to_target"] is False
 
-print("PASS: settings schema, Blueprint bridge, unified RDG dispatch, SGSR/BMI primary-slot arbitration, source provenance, safe fallback, and hidden-unverified-feature gates")
+
+# Official Qualcomm SGSR2 UE4.27 two-pass fragment implementation is vendored.
+sgsr2 = VENDOR / "SGSR2-UE427/2pass_fs_taau"
+for rel in [
+    "GSR/GSR.uplugin",
+    "GSR/Shaders/Private/gsr_common.ush",
+    "GSR/Shaders/Private/gsr_convert.usf",
+    "GSR/Shaders/Private/gsr_upscale.usf",
+    "GSR/Source/GSRTUModule/Private/GSRTU.cpp",
+    "GSR/Source/GSRTUModule/Private/GSRViewExtension.cpp",
+    "LICENSE",
+    "UPSTREAM.md",
+]:
+    assert (sgsr2 / rel).exists(), f"Missing vendored SGSR2 file: {rel}"
+assert "ITemporalUpscaler" in read(sgsr2 / "GSR/Source/GSRTUModule/Private/GSRTU.h")
+assert 'TEXT("r.SGSR2.Enabled")' in read(sgsr2 / "GSR/Source/GSRTUModule/Private/GSRViewExtension.cpp")
+assert "temporal, not spatial" in read(sgsr2 / "UPSTREAM.md")
+
+print("PASS: settings schema, Blueprint bridge, spatial/temporal SGSR routing, unified RDG dispatch, SGSR/BMI primary-slot arbitration, source provenance, safe fallback, and hidden-unverified-feature gates")
 
 
 # Target-RHI and adapter safety documentation must stay explicit.
