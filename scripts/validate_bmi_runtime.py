@@ -41,7 +41,7 @@ for symbol in [
 config = json.loads((root / "config/graphics-settings.json").read_text())
 ids = [item["id"] for item in config["settings"]]
 upscaler_config = next(item for item in config["settings"] if item["id"] == "upscaler")
-assert "renderer_bridge_source_authored" in upscaler_config["status"]
+assert "SGSR1_official_UE4_27_module" in upscaler_config["status"]
 assert "AddDefaultUpscalePass" in upscaler_config["methods"]["Nearest"]
 assert "AddDefaultUpscalePass" in upscaler_config["methods"]["Bilinear"]
 assert any("BMISpatialUpscaler.h/.cpp" in x for x in upscaler_config["integration_requirements"])
