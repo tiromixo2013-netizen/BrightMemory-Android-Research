@@ -126,3 +126,16 @@ assert status["modified_apk"] is False
 assert status["mobile_methods_exposed"] == ["Nearest", "Bilinear"]
 
 print("PASS: settings schema, Blueprint bridge, unified RDG dispatch, source provenance, safe fallback, and hidden-unverified-feature gates")
+
+
+# Target-RHI and adapter safety documentation must stay explicit.
+renderer_readme = read(RENDERER / "README.md")
+fsr_readme = read(VENDOR / "FSR-Mobile/README.md")
+audit = json.loads(read(ENGINE / "renderer-api-audit.json"))
+assert "Android OpenGL ES" in renderer_readme
+assert "Android OpenGL ES compile has been completed" in fsr_readme
+assert audit["target_rhi"]["api"] == "OpenGL ES"
+assert audit["target_rhi"]["vulkan_enabled"] is False
+assert audit["implementation_status"]["android_opengles_validation"] is False
+assert audit["implementation_status"]["fsr_mobile_adapter_registered"] is False
+assert audit["implementation_status"]["fsr_mobile_shader_compiled"] is False
