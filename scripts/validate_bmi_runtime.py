@@ -198,7 +198,7 @@ fsr_readme = read(VENDOR / "FSR-Mobile/README.md")
 audit = json.loads(read(ENGINE / "renderer-api-audit.json"))
 assert "Android OpenGL ES" in renderer_readme
 assert "UE4.27 RDG pixel-pass adapter" in fsr_readme
-assert "shader compilation has not been performed" in fsr_readme
+assert "nor Android OpenGL ES shader compilation has been performed" in fsr_readme
 assert audit["target_rhi"]["api"] == "OpenGL ES"
 assert audit["target_rhi"]["vulkan_enabled"] is False
 assert audit["implementation_status"]["android_opengles_validation"] is False
