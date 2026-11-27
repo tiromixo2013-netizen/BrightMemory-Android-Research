@@ -66,7 +66,18 @@
     "android_opengles_validation": false,
     "fsr_mobile_adapter_registered": false,
     "fsr_mobile_shader_compiled": false,
-    "renderer_extension_registration_applied_to_target": false
+    "renderer_extension_registration_applied_to_target": false,
+    "sgsr2_source_vendored": true,
+    "sgsr2_runtime_route_authored": true,
+    "sgsr2_plugin_compiled": false,
+    "sgsr2_android_opengles_shader_compiled": false,
+    "sgsr2_temporal_history_device_validated": false,
+    "mwsr_adapter_registered": false,
+    "spatial_methods_exposed": [
+      "Nearest",
+      "Bilinear"
+    ],
+    "sgsr2_route_type": "ITemporalUpscaler (separate from BMI ISpatialUpscaler)"
   },
   "target_rhi": {
     "platform": "Android",
