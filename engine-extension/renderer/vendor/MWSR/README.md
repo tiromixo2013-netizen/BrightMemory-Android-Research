@@ -5,4 +5,4 @@
 - Upstream blob: `96acdd29f18af91aa6866cc9da5cdf91fb52bb3f`
 - License: MIT; retained in `LICENSE`.
 
-This is the upstream HLSL shader, not yet a UE4.27 Mobile Vulkan shader. The upstream file targets Direct3D shader compilation and uses `ddx_coarse` / `ddy_coarse`, a custom 96-byte constant buffer and a linear-clamp sampler. UE4.27 shader parameter binding, mobile derivative behavior, shader compiler compatibility, and the RDG pass remain to be ported and compiled. Do not expose it as an active in-game method yet.
+The upstream HLSL now has a UE4.27 RDG pixel-pass adapter in `../../BMIMWSRPass.cpp` and a shader wrapper in `../../BMIShaders/Private/BMIMWSR.usf`. The adapter ports the upstream 96-byte constant law and maps `ddx_coarse` / `ddy_coarse` to fragment derivatives for the mobile path. It is wired into BMI registration but has not been compiled against the target engine or Android GLES compiler; output quality and performance still need device validation. Keep the menu option hidden until those checks pass.
