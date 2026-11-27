@@ -177,6 +177,11 @@ jobs:
           grep -nE 'FSceneViewInitOptions|SetupView\\(|BeginRenderViewFamily\\(|CreateAndInitSingleView|CalcSceneViewInitOptions' work/full-text-disassembly.txt > reports/view-init-callsite-symbols.txt || true
           echo "Full text disassembly bytes: $(stat -c%s work/full-text-disassembly.txt)" > reports/full-text-scan-meta.txt
           rm -f work/full-text-disassembly.txt
+          # Corrected xref scan: do not double-escape brackets in the ERE passed to grep.
+          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E '(ldr|str|ldur|stur|ldp|stp)[[:space:]].*#0x(b0|b8|c0|c8|d0)' > reports/view-state-offset-xrefs.txt || true
+          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E 'str[[:space:]]+x[0-9]+, \\[x[0-9]+, #0xb0\\]' > reports/pointer-store-b0-candidates.txt || true
+          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E 'str[[:space:]]+x[0-9]+, \\[x[0-9]+, #0xc0\\]' > reports/pointer-store-c0-candidates.txt || true
+          "$OBJDUMP" -d --no-show-raw-insn work/libUE4.so | grep -E 'bl[[:space:]]+0x[0-9a-f]+ <ULocalPlayer::CalcSceneViewInitOptions' > reports/calc-scene-view-callers.txt || true
           grep -E "LOAD|GNU_RELRO|GNU_STACK" reports/elf-program-headers.txt > reports/elf-memory-layout.txt || true
 
       - name: Upload audit evidence
