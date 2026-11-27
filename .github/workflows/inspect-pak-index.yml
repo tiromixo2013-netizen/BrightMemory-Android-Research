@@ -1,0 +1,88 @@
+name: Bright Memory PAK index inspection
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-pak-index.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Download verified APK parts
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 45728055093
+          pattern: downloaded-apk-part-*
+          path: parts
+          merge-multiple: true
+
+      - name: Reassemble APK and extract PAK containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat parts/downloaded-package.part-* > BrightMemory-v1.34.apk
+          echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  BrightMemory-v1.34.apk" | sha256sum -c -
+          mkdir -p paks
+          python3 - <<'PY'
+          import io, zipfile, pathlib
+          apk = zipfile.ZipFile("BrightMemory-v1.34.apk")
+          for container in ("assets/main.obb.png", "assets/data"):
+              with zipfile.ZipFile(io.BytesIO(apk.read(container))) as nested:
+                  for name in nested.namelist():
+                      if name.lower().endswith(".pak"):
+                          target = pathlib.Path("paks") / pathlib.Path(name).name
+                          with nested.open(name) as src, target.open("wb") as dst:
+                              while True:
+                                  block = src.read(8 * 1024 * 1024)
+                                  if not block: break
+                                  dst.write(block)
+                          print(f"extracted {target} {target.stat().st_size}")
+          PY
+          test "$(find paks -name '*.pak' | wc -l)" -eq 9
+          df -h
+
+      - name: Install repak CLI
+        run: |
+          set -euo pipefail
+          curl -fsSL https://github.com/trumank/repak/releases/download/v0.2.3/repak_cli-x86_64-unknown-linux-gnu.tar.xz -o /tmp/repak.tar.xz
+          tar -xJf /tmp/repak.tar.xz -C /tmp
+          install -m 0755 "$(find /tmp -type f -name repak | head -1)" /usr/local/bin/repak
+          repak --version
+          repak --help
+
+      - name: Inspect PAK headers and internal indexes
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p pak-reports
+          for pak in paks/*.pak; do
+            name="$(basename "$pak" .pak)"
+            {
+              echo "### $name"
+              echo "size=$(stat -c%s "$pak")"
+              echo "--- info ---"
+              repak info "$pak"
+              echo "--- file index ---"
+              repak list "$pak"
+            } > "pak-reports/$name.txt" 2>&1 || echo "repak inspection failed for $name (see output above)" >> "pak-reports/$name.txt"
+          done
+          grep -hE 'version:|version major:|encrypted index:|encrypted:|mount point:|error|Error' pak-reports/*.txt > pak-reports/summary.txt || true
+          cat pak-reports/summary.txt
+          df -h
+
+      - name: Upload PAK inspection reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-v1.34-pak-index-reports
+          path: pak-reports/
+          retention-days: 7
