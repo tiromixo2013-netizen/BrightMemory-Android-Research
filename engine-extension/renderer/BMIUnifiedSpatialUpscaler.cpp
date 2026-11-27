@@ -48,8 +48,9 @@ void FBMIUnifiedSpatialUpscaler::RegisterUpscaler(int32 Method,FBMIUpscalePass P
  CVarBMIRegisteredMask->Set(CVarBMIRegisteredMask.GetValueOnAnyThread() | (1 << Method),ECVF_SetByCode);
 }
 void FBMIUnifiedSpatialUpscaler::RegisterCAS(FBMICASPass Pass) {
+ const bool bAvailable=!!Pass;
  { FWriteScopeLock Lock(GRegistryLock); GCASPass=MoveTemp(Pass); }
- CVarBMICASAvailable->Set(Pass ? 1 : 0,ECVF_SetByCode);
+ CVarBMICASAvailable->Set(bAvailable ? 1 : 0,ECVF_SetByCode);
 }
 void FBMIUnifiedSpatialUpscaler::RegisterHud(FBMIHudPass Pass) { FWriteScopeLock Lock(GRegistryLock); GHudPass=MoveTemp(Pass); }
 FBMIUpscalePass FBMIUnifiedSpatialUpscaler::FindUpscaler(int32 Method) { FReadScopeLock Lock(GRegistryLock); const auto* P=GUpscalers.Find(Method); return P?*P:FBMIUpscalePass(); }
