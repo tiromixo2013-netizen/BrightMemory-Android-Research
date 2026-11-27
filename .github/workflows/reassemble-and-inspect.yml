@@ -71,3 +71,13 @@ jobs:
             package-report.json
             analysis/
           retention-days: 7
+
+      - name: Preserve recovered APK and UE4 binary as short-lived build inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-original-build-inputs
+          path: |
+            BrightMemory-v1.34.apk
+            analysis/libUE4.so
+          retention-days: 1
+          compression-level: 0
