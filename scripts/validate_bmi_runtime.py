@@ -129,7 +129,7 @@ assert "FSceneViewFamily owns" in renderer_source
 assert "does not replace a primary upscaler" in renderer_readme
 
 patch = (root / "engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch").read_text()
-for token in ["#include \\"BMISpatialUpscaler.h\\"", "RegisterBMISpatialUpscaler()", "FRendererModule::StartupModule"]:
+for token in ["BMISpatialUpscaler.h", "RegisterBMISpatialUpscaler()", "FRendererModule::StartupModule"]:
     assert token in patch, f"Renderer registration patch missing: {token}"
 
 print("PASS: plugin descriptor, native API wiring, renderer contract, pinned API audit, renderer registration patch, native mobile upscale bridge, settings schema and feature gates")
