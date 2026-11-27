@@ -118,22 +118,6 @@ jobs:
           compression-level: 0
           retention-days: 7
 
-      - name: Upload verified APK and inspection reports to MEGA
-        env:
-          MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
-          MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
-          MEGA_2FA: ${{ secrets.MEGA_2FA }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          export RCLONE_CONFIG_MEGA_TYPE=mega
-          export RCLONE_CONFIG_MEGA_USER="$MEGA_EMAIL"
-          export RCLONE_CONFIG_MEGA_PASS="$(rclone obscure "$MEGA_PASSWORD")"
-          if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
-          dest="mega:BrightMemory-Private/Restored-v1.34"
-          rclone mkdir "$dest"
-          rclone copy workspace/reports "$dest/reports" --retries 5
-          rclone copyto workspace/bright-memory-infinite-v1.34.apk "$dest/bright-memory-infinite-v1.34.apk" --retries 5
-          rclone ls "$dest"
+      # The verified APK is retained as a GitHub Actions artifact; no duplicate MEGA upload is needed.
 
 # Restore trigger marker: re-run verified six-part MEGA reconstruction for native integration.
