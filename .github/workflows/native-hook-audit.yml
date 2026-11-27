@@ -1,0 +1,138 @@
+name: Native hook point audit (existing UE4 binary)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [native-integration]
+    paths:
+      - .github/workflows/native-hook-audit.yml
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download original APK split parts
+        uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-00
+          path: parts/00
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-01
+          path: parts/01
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-02
+          path: parts/02
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-03
+          path: parts/03
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-04
+          path: parts/04
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-05
+          path: parts/05
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-06
+          path: parts/06
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-07
+          path: parts/07
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-08
+          path: parts/08
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: brightmemory-apk-part-09
+          path: parts/09
+          run-id: 45923420243
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Reassemble and verify original APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work reports
+          find parts -type f -printf '%p %s bytes\\n' | sort
+          for i in $(seq -w 0 9); do
+            f=$(find "parts/$i" -type f -name "brightmemory.apk.part$i" -print -quit)
+            test -n "$f"
+            cat "$f" >> work/original.apk
+          done
+          test "$(stat -c%s work/original.apk)" -eq 2431306902
+          echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  work/original.apk" | sha256sum -c -
+          unzip -p work/original.apk lib/arm64-v8a/libUE4.so > work/libUE4.so
+          test "$(stat -c%s work/libUE4.so)" -eq 174981736
+          sha256sum work/libUE4.so | tee reports/libUE4.sha256
+          file work/libUE4.so | tee reports/elf-file.txt
+          readelf -hW work/libUE4.so > reports/elf-header.txt
+          readelf -lW work/libUE4.so > reports/elf-program-headers.txt
+          readelf -dW work/libUE4.so > reports/elf-dynamic.txt
+          readelf -Ws work/libUE4.so > reports/elf-symbols.txt
+
+      - name: Disassemble candidate ARM64 hook sites
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y llvm
+          OBJDUMP="$(command -v llvm-objdump || command -v objdump)"
+          {
+            echo "Tool: $OBJDUMP"
+            echo "Offsets are candidate ELF virtual addresses from prior static analysis."
+            echo "This report is evidence gathering only; no bytes are patched."
+            for spec in \
+              "AddMobilePostProcessingPasses:0x78870c0" \
+              "ISpatialUpscaler_AddDefaultUpscalePass:0x78fae30" \
+              "ApplyResolutionFraction:0x79e5ba0" \
+              "Vulkan_RenderThreadPacing:0x626acb8" \
+              "Vulkan_Present:0x626aea8" \
+              "Android_GetFramePace:0x67dac90" \
+              "AnalyzeFrame:0x852dd6c" \
+              "SetFrameRateLimit:0x87359dc" \
+              "SetResolutionScaleValue:0x8735a9c" \
+              "SetResolutionScaleValueEx:0x8735b40"; do
+              name="${spec%%:*}"
+              addr="${spec##*:}"
+              echo
+              echo "===== $name @ $addr ====="
+              "$OBJDUMP" -d --demangle --no-show-raw-insn --start-address="$((addr))" --stop-address="$((addr + 0x90))" work/libUE4.so || true
+            done
+          } > reports/candidate-hook-disassembly.txt
+          grep -E "LOAD|GNU_RELRO|GNU_STACK" reports/elf-program-headers.txt > reports/elf-memory-layout.txt || true
+
+      - name: Upload audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-native-hook-audit
+          path: reports/
+          if-no-files-found: error
