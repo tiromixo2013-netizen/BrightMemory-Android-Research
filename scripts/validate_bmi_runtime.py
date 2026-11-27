@@ -175,7 +175,19 @@ assert "GatherRed" in fsr_usf and "GatherGreen" in fsr_usf and "GatherBlue" in f
 assert "AF1 sharpness" in fsr_mobile_helper
 assert "con0.x * sharpness" in fsr_mobile_helper
 
-print("PASS: settings schema, SGSR1/SGSR2 routing, FSR Mobile RDG source adapter, unified dispatch, source provenance, safe fallback, and feature gates")
+
+# MWSR now has an RDG pass using the upstream 96-byte constant contract.
+mwsr_adapter = read(RENDERER / "BMIMWSRPass.cpp")
+mwsr_usf = read(RENDERER / "BMIShaders/Private/BMIMWSR.usf")
+assert "RegisterBMIMWSRUpscaler" in mwsr_adapter
+assert "RegisterBMIMWSRUpscaler();" in unified_cpp
+assert "RegisterUpscaler(2, AddBMIMWSRPass)" in mwsr_adapter
+for field in ["texel", "scale", "dims", "across", "kc", "ft", "kg", "kwc", "kl"]:
+    assert field in mwsr_adapter
+assert "ddx_coarse" in mwsr_usf and "ddy_coarse" in mwsr_usf
+assert "#define ddx_coarse ddx" in mwsr_usf
+
+print("PASS: SGSR1/SGSR2 routes, MWSR and FSR Mobile RDG adapters, unified dispatch, source provenance, safe fallback, and feature gates")
 
 
 # Target-RHI and adapter safety documentation must stay explicit.
