@@ -5,145 +5,163 @@
 
 namespace BMIGraphicsRuntime
 {
-    static void SetFloatCVar(const TCHAR* Name, float Value)
+    static IConsoleVariable* FindCVar(const TCHAR* Name)
     {
-        if (IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(Name))
+        return IConsoleManager::Get().FindConsoleVariable(Name);
+    }
+
+    static bool SetCVarIntIfPresent(const TCHAR* Name, int32 Value)
+    {
+        if (IConsoleVariable* CVar = FindCVar(Name))
         {
             CVar->Set(Value, ECVF_SetByGameSetting);
+            return true;
         }
+        return false;
+    }
+
+    static bool SetCVarFloatIfPresent(const TCHAR* Name, float Value)
+    {
+        if (IConsoleVariable* CVar = FindCVar(Name))
+        {
+            CVar->Set(Value, ECVF_SetByGameSetting);
+            return true;
+        }
+        return false;
     }
 
     static void SetRenderScale(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1 || !GEngine)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Usage: bmi.SetRenderScale <50..150> (percent)"));
-            return;
-        }
-
+        if (Args.Num() != 1 || !GEngine) return;
         const float Percent = FMath::Clamp(FCString::Atof(*Args[0]), 50.0f, 150.0f);
         if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
         {
-            // UE4.27 stores ResolutionQuality as a percentage, not a 0..1 fraction.
             Settings->SetResolutionScaleValueEx(Percent);
             Settings->ApplySettings(false);
-            UE_LOG(LogTemp, Log, TEXT("BMI render scale requested: %.1f%%"), Percent);
         }
     }
 
     static void SetGraphicsQuality(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1 || !GEngine)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Usage: bmi.SetGraphicsQuality <0..4>"));
-            return;
-        }
+        if (Args.Num() != 1 || !GEngine) return;
         const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 4);
         if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
         {
             Settings->SetOverallScalabilityLevel(Quality);
             Settings->ApplySettings(false);
-            UE_LOG(LogTemp, Log, TEXT("BMI overall scalability level requested: %d"), Quality);
         }
     }
 
-    static void SetGraphicsPreset(const TArray<FString>& Args)
+    // Unified preset maps to render percentage; it does not silently rewrite
+    // the independent Graphics Quality setting.
+    static void SetUpscalePreset(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1 || !GEngine)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Usage: bmi.SetGraphicsPreset <0..4>"));
-            return;
-        }
-
-        const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 4);
+        if (Args.Num() != 1 || !GEngine) return;
+        const int32 Preset = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 4);
+        const float RenderPercent[] = { 50.0f, 62.5f, 75.0f, 87.5f, 100.0f };
         if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
         {
-            // Apply each UE4.27 scalability group explicitly so this preset
-            // affects real engine quality groups rather than only a menu label.
-            Settings->SetViewDistanceQuality(Quality);
-            Settings->SetShadowQuality(Quality);
-            Settings->SetAntiAliasingQuality(Quality);
-            Settings->SetTextureQuality(Quality);
-            Settings->SetVisualEffectQuality(Quality);
-            Settings->SetPostProcessingQuality(Quality);
-            Settings->SetFoliageQuality(Quality);
-            Settings->SetShadingQuality(Quality);
+            Settings->SetResolutionScaleValueEx(RenderPercent[Preset]);
             Settings->ApplySettings(false);
-            UE_LOG(LogTemp, Log, TEXT("BMI graphics preset applied to all UE4.27 scalability groups: %d"), Quality);
         }
     }
 
-    static void SetFrameLimit(const TArray<FString>& Args)
+    // Method IDs: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Lite,
+    // 4 Nearest, 5 Bilinear. External algorithms are enabled only if
+    // their actual plugin CVar is registered in this engine build.
+    static void SetUpscaler(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1 || !GEngine)
+        if (Args.Num() != 1) return;
+        const int32 Method = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
+
+        if (Method == 4 || Method == 5)
         {
-            UE_LOG(LogTemp, Warning, TEXT("Usage: bmi.SetFrameLimit <30|45|60|90|120>"));
+            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
+            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 0);
+            SetCVarIntIfPresent(TEXT("bmi.NativeUpscaleMethod"), Method == 4 ? 0 : 1);
+            SetCVarIntIfPresent(TEXT("bmi.UseNativeSpatialUpscaler"), 1);
             return;
         }
-        const int32 Requested = FCString::Atoi(*Args[0]);
-        const int32 Allowed[] = { 30, 45, 60, 90, 120 };
-        bool bSupportedValue = false;
-        for (int32 Value : Allowed)
+
+        SetCVarIntIfPresent(TEXT("bmi.UseNativeSpatialUpscaler"), 0);
+        if (Method == 0)
         {
-            bSupportedValue |= (Requested == Value);
-        }
-        if (!bSupportedValue)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Unsupported BMI frame limit: %d"), Requested);
+            if (!SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 1))
+                UE_LOG(LogTemp, Error, TEXT("SGSR1 selected but Qualcomm SGSR1 is not linked into this build."));
+            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 0);
             return;
         }
-        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+        if (Method == 1)
         {
-            Settings->SetFrameRateLimit(static_cast<float>(Requested));
-            Settings->ApplySettings(false);
-            UE_LOG(LogTemp, Log, TEXT("BMI frame limit requested: %d"), Requested);
+            if (!SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 1))
+                UE_LOG(LogTemp, Error, TEXT("SGSR2 selected but Qualcomm SGSR2 is not linked into this build."));
+            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
+            return;
         }
+        UE_LOG(LogTemp, Error, TEXT("MWSR / FSR Lite are not implemented in this engine build; selection rejected."));
     }
 
-    static void SetShadowQuality(const TArray<FString>& Args)
+    static void SetUpscaleSharpness(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Usage: bmi.SetShadowQuality <0|1>"));
-            return;
-        }
-        SetFloatCVar(TEXT("r.ShadowQuality"), FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f));
+        if (Args.Num() != 1) return;
+        const float Sharpness = FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
+        // Only forward to an explicitly integrated algorithm parameter.
+        if (!SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), Sharpness))
+            UE_LOG(LogTemp, Warning, TEXT("Selected upscaler exposes no runtime sharpness CVar in this build."));
     }
 
-    static void SetMobileAO(const TArray<FString>& Args)
+    static void SetCAS(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Usage: bmi.SetMobileAO <0|1>"));
-            return;
-        }
-        SetFloatCVar(TEXT("r.Mobile.AmbientOcclusionQuality"), FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f));
+        if (Args.Num() != 1) return;
+        const bool bEnable = FCString::Atoi(*Args[0]) != 0;
+        // A toggle is accepted only when the renderer CAS pass has registered.
+        if (!SetCVarIntIfPresent(TEXT("bmi.CAS.Enabled"), bEnable ? 1 : 0))
+            UE_LOG(LogTemp, Error, TEXT("AMD CAS pass is not registered in this build; refusing a fake toggle."));
     }
 
-    static FAutoConsoleCommand CmdRenderScale(
-        TEXT("bmi.SetRenderScale"),
-        TEXT("Set r.MobileContentScaleFactor through the existing UE4 mobile scale path."),
+    static void SetCASSharpness(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1) return;
+        const float Sharpness = FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
+        if (!SetCVarFloatIfPresent(TEXT("bmi.CAS.Sharpness"), Sharpness))
+            UE_LOG(LogTemp, Error, TEXT("AMD CAS pass is not registered; sharpness was not applied."));
+    }
+
+    static void SetLowLatency(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1) return;
+        const int32 Mode = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 2);
+        if (Mode == 0)
+        {
+            SetCVarIntIfPresent(TEXT("r.OneFrameThreadLag"), 1);
+            return;
+        }
+        if (Mode == 1)
+        {
+            // UE4's supported low-latency thread-sync path. This trades some
+            // throughput for reduced game/render thread overlap.
+            SetCVarIntIfPresent(TEXT("r.OneFrameThreadLag"), 0);
+            return;
+        }
+        UE_LOG(LogTemp, Error, TEXT("Ultra (No Queue) is unavailable: no validated Vulkan queue-depth control exists for this build."));
+    }
+
+    static FAutoConsoleCommand CmdRenderScale(TEXT("bmi.SetRenderScale"), TEXT("Set render scale percent."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetRenderScale));
-    static FAutoConsoleCommand CmdGraphicsQuality(
-        TEXT("bmi.SetGraphicsQuality"),
-        TEXT("Set the UE4 overall scalability level (0..4)."),
+    static FAutoConsoleCommand CmdGraphicsQuality(TEXT("bmi.SetGraphicsQuality"), TEXT("Set UE4 scalability quality 0..4."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetGraphicsQuality));
-    static FAutoConsoleCommand CmdGraphicsPreset(
-        TEXT("bmi.SetGraphicsPreset"),
-        TEXT("Apply UE4.27 quality level to view distance, shadows, AA, textures, effects, post process, foliage and shading."),
-        FConsoleCommandWithArgsDelegate::CreateStatic(&SetGraphicsPreset));
-    static FAutoConsoleCommand CmdFrameLimit(
-        TEXT("bmi.SetFrameLimit"),
-        TEXT("Set the UE4 GameUserSettings frame-rate limit."),
-        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameLimit));
-    static FAutoConsoleCommand CmdShadowQuality(
-        TEXT("bmi.SetShadowQuality"),
-        TEXT("Set the existing r.ShadowQuality CVar (0..1)."),
-        FConsoleCommandWithArgsDelegate::CreateStatic(&SetShadowQuality));
-    static FAutoConsoleCommand CmdMobileAO(
-        TEXT("bmi.SetMobileAO"),
-        TEXT("Set the existing r.Mobile.AmbientOcclusionQuality CVar (0..1)."),
-        FConsoleCommandWithArgsDelegate::CreateStatic(&SetMobileAO));
+    static FAutoConsoleCommand CmdUpscalePreset(TEXT("bmi.SetUpscalePreset"), TEXT("Set unified upscaler preset 0..4."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscalePreset));
+    static FAutoConsoleCommand CmdUpscaler(TEXT("bmi.SetUpscaler"), TEXT("Select upscaler: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Lite, 4 Nearest, 5 Bilinear."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscaler));
+    static FAutoConsoleCommand CmdUpscaleSharpness(TEXT("bmi.SetUpscaleSharpness"), TEXT("Set algorithm sharpness 0..1 when supported."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscaleSharpness));
+    static FAutoConsoleCommand CmdCAS(TEXT("bmi.SetCAS"), TEXT("Enable registered AMD CAS renderer pass."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetCAS));
+    static FAutoConsoleCommand CmdCASSharpness(TEXT("bmi.SetCASSharpness"), TEXT("Set registered AMD CAS sharpness 0..1."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetCASSharpness));
+    static FAutoConsoleCommand CmdLowLatency(TEXT("bmi.SetLowLatency"), TEXT("Low latency: 0 off, 1 UE4 thread sync, 2 unsupported no-queue."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetLowLatency));
 }
 
 class FBMIGraphicsRuntimeModule final : public IModuleInterface
@@ -151,12 +169,9 @@ class FBMIGraphicsRuntimeModule final : public IModuleInterface
 public:
     virtual void StartupModule() override
     {
-        UE_LOG(LogTemp, Log, TEXT("BMIGraphicsRuntime loaded. Experimental runtime controls registered."));
+        UE_LOG(LogTemp, Log, TEXT("BMIGraphicsRuntime settings bridge registered."));
     }
-    virtual void ShutdownModule() override
-    {
-        UE_LOG(LogTemp, Log, TEXT("BMIGraphicsRuntime unloaded."));
-    }
+    virtual void ShutdownModule() override {}
 };
 
 IMPLEMENT_MODULE(FBMIGraphicsRuntimeModule, BMIGraphicsRuntime)
