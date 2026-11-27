@@ -94,9 +94,19 @@ jobs:
             cat work/report/render-strings.txt
           } > work/report/REPORT.md
 
-      - name: Upload analysis reports (not APK or game binaries)
+      - name: Upload analysis reports
         uses: actions/upload-artifact@v4
         with:
           name: brightmemory-native-baseline-report
           path: work/report/
           retention-days: 7
+
+      - name: Upload recovered game inputs for modification work
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-native-inputs
+          path: |
+            work/apk/brightmemory-original.apk
+            work/apk/libUE4.so
+          retention-days: 3
+          compression-level: 0
