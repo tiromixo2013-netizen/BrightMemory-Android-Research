@@ -1,0 +1,4 @@
+// MWSR UE4.27 wrapper. Coarse derivatives are lowered to standard fragment derivatives for GLES.
+#define ddx_coarse ddx
+#define ddy_coarse ddy
+#include "/Plugin/BMI/vendor/MWSR/mwsr-up.hlsl"

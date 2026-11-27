@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "reference": {
+    "repository": "jsuk10/UE4.27plus_Custom",
+    "ref": "main",
+    "files": {
+      "Engine/Source/Runtime/Engine/Public/SceneViewExtension.h": "6a3e39488617de9f0a7f0613c3ed1929293e08d5",
+      "Engine/Source/Runtime/Engine/Public/SceneView.h": "c5719958a3f5f33d0612be846f882afd6875a404",
+      "Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessUpscale.h": "a5b978c4d217dae4661cd0f99adcd49f4185bde6",
+      "Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessUpscale.cpp": "d7c121c5777ef2ea04b7fda8fe95e93528cb6fca",
+      "Engine/Source/Runtime/Renderer/Private/ScreenPass.h": "fddc351c56a2b181647c2a701fc73f84056cac08"
+    },
+    "qualification": "Reference signatures and RDG examples are from jsuk10/UE4.27plus_Custom; exact identity with Bright Memory v1.34 engine snapshot is unverified."
+  },
+  "verified_contract": {
+    "view_extension_base": "FSceneViewExtensionBase",
+    "factory": "FSceneViewExtensions::NewExtension<T>(...)",
+    "required_overrides": [
+      "SetupViewFamily(FSceneViewFamily&)",
+      "SetupView(FSceneViewFamily&, FSceneView&)",
+      "BeginRenderViewFamily(FSceneViewFamily&)",
+      "PreRenderViewFamily_RenderThread(FRHICommandListImmediate&, FSceneViewFamily&)",
+      "PreRenderView_RenderThread(FRHICommandListImmediate&, FSceneView&)"
+    ],
+    "upscaler_header": "Renderer/Private/PostProcess/PostProcessUpscale.h",
+    "upscaler_interface": "ISpatialUpscaler",
+    "upscaler_methods": [
+      "GetDebugName() const",
+      "Fork_GameThread(const FSceneViewFamily&) const",
+      "AddPasses(FRDGBuilder&, const FViewInfo&, const FInputs&) const"
+    ],
+    "input_fields": [
+      "FScreenPassRenderTarget OverrideOutput",
+      "FScreenPassTexture SceneColor",
+      "EUpscaleStage Stage"
+    ],
+    "view_family_assignment": "SetPrimarySpatialUpscalerInterface(ISpatialUpscaler*) is assign-once and checkf-rejects a second primary assignment.",
+    "screen_pass_helper": "AddDrawScreenPass",
+    "rdg_pass_flag": "ERDGPassFlags::Raster",
+    "view_family_ownership": "FSceneViewFamily::~FSceneViewFamily deletes the primary ISpatialUpscaler through ISceneViewFamilyExtention",
+    "fork_behavior": "FSceneRenderer forks the primary upscaler with Fork_GameThread when copying a view family",
+    "sgsr_extension_behavior": "The vendored Qualcomm FSGSRViewExtension checks r.Qualcomm.SGSR.Enabled and assigns the primary slot only when GetPrimarySpatialUpscalerInterface() is null.",
+    "bmi_extension_behavior": "BMI's view extension is registered from the Renderer module startup hook and assigns the primary slot in BeginRenderViewFamily only when enabled, its selected method bit is registered, and the slot is empty."
+  },
+  "integration_constraints": [
+    "ISpatialUpscaler is declared in a Renderer private header, not a public plugin API.",
+    "FSceneViewFamily rejects a null primary upscaler and rejects a second primary assignment.",
+    "The extension must be retained by a shared reference for as long as it is registered.",
+    "A normal plugin using only public Engine headers cannot safely implement this interface.",
+    "The reference fork is not proven identical to the Bright Memory v1.34 engine snapshot.",
+    "BMI cannot overwrite a primary spatial upscaler already claimed by another active view extension; the SGSR extension must be disabled before BMI claims the empty slot."
+  ],
+  "implementation_status": {
+    "reference_signatures_inspected": true,
+    "renderer_patch_written": true,
+    "target_engine_compile": false,
+    "android_vulkan_validation": false,
+    "modified_apk": false,
+    "renderer_bridge_source_authored": true,
+    "mobile_methods_exposed": [
+      "Nearest",
+      "Bilinear"
+    ],
+    "default_enabled": false,
+    "renderer_patch_path": "engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch",
+    "android_opengles_validation": false,
+    "fsr_mobile_adapter_registered": false,
+    "fsr_mobile_shader_compiled": false,
+    "renderer_extension_registration_applied_to_target": false,
+    "sgsr2_source_vendored": true,
+    "sgsr2_runtime_route_authored": true,
+    "sgsr2_plugin_compiled": false,
+    "sgsr2_android_opengles_shader_compiled": false,
+    "sgsr2_temporal_history_device_validated": false,
+    "mwsr_adapter_registered": false,
+    "spatial_methods_exposed": [
+      "Nearest",
+      "Bilinear"
+    ],
+    "sgsr2_route_type": "ITemporalUpscaler (separate from BMI ISpatialUpscaler)",
+    "fsr_mobile_adapter_source_registered": true,
+    "fsr_mobile_adapter_compiled": false,
+    "fsr_mobile_shader_wrapper_authored": true,
+    "fsr_mobile_android_opengles_shader_compiled": false,
+    "mwsr_adapter_source_registered": true,
+    "mwsr_adapter_compiled": false,
+    "mwsr_android_opengles_shader_compiled": false,
+    "spatial_methods_source_registered": [
+      "MWSR",
+      "FSR Mobile",
+      "Nearest",
+      "Bilinear"
+    ],
+    "spatial_methods_compiled": []
+  },
+  "target_rhi": {
+    "platform": "Android",
+    "api": "OpenGL ES",
+    "vulkan_enabled": false,
+    "evidence": "DefaultEngine.ini and Android device profile inspection",
+    "shader_validation": "not_run"
+  }
+}

@@ -3,7 +3,7 @@ name: Bright Memory targeted config and UI extraction
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, work/ue427-graphics-runtime-integration]
     paths:
       - '.github/workflows/extract-config-ui.yml'
 
@@ -14,7 +14,7 @@ permissions:
 jobs:
   extract:
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - name: Download verified APK parts
         uses: actions/download-artifact@v4
@@ -26,12 +26,19 @@ jobs:
           path: parts
           merge-multiple: true
 
-      - name: Reassemble and extract PAK containers
+      - name: Verify parts and reassemble APK
         shell: bash
         run: |
           set -euo pipefail
+          test "$(find parts -maxdepth 1 -type f -name 'downloaded-package.part-*' | wc -l)" -eq 6
           cat parts/downloaded-package.part-* > BrightMemory-v1.34.apk
           echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  BrightMemory-v1.34.apk" | sha256sum -c -
+          unzip -tq BrightMemory-v1.34.apk
+
+      - name: Extract embedded PAK containers
+        shell: bash
+        run: |
+          set -euo pipefail
           mkdir -p paks
           python3 - <<'PY'
           import io, zipfile, pathlib
@@ -44,43 +51,67 @@ jobs:
                           with nested.open(name) as src, target.open("wb") as dst:
                               while True:
                                   block = src.read(8 * 1024 * 1024)
-                                  if not block: break
+                                  if not block:
+                                      break
                                   dst.write(block)
+                          print(f"Extracted {target}: {target.stat().st_size} bytes")
           PY
           test "$(find paks -name '*.pak' | wc -l)" -eq 9
+          find paks -type f -name '*.pak' -printf '%f %s bytes\n' | sort
 
-      - name: Install repak
+      - name: Install repak with explicit Oodle support
+        shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL https://github.com/trumank/repak/releases/download/v0.2.3/repak_cli-x86_64-unknown-linux-gnu.tar.xz -o /tmp/repak.tar.xz
-          tar -xJf /tmp/repak.tar.xz -C /tmp
-          sudo install -m 0755 "$(find /tmp -type f -name repak | head -1)" /usr/local/bin/repak
+          rustup update stable
+          rustup default stable
+          cargo install --git https://github.com/trumank/repak --tag v0.2.3 --locked --features oodle repak_cli
           repak --version
 
-      - name: Extract only configs and likely UI assets
+      - name: Extract targeted UI, settings and config assets
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p extracted reports
+          status=0
           for pak in paks/*.pak; do
             name="$(basename "$pak" .pak)"
             out="extracted/$name/"
-            repak unpack "$pak" --output "$out" --quiet \
+            mkdir -p "$out"
+            echo "===== $name =====" | tee -a reports/repak-unpack.log
+            if ! repak unpack "$pak" --output "$out" --quiet \
               --include 'BMI_Mobile/Config/*.ini' \
               --include 'BMI_Mobile/Content/**/UMG/**' \
               --include 'BMI_Mobile/Content/**/Settings/**' \
-              --include 'BMI_Mobile/Content/**/Menu/**'
+              --include 'BMI_Mobile/Content/**/Menu/**' \
+              >> reports/repak-unpack.log 2>&1; then
+              echo "FAILED: $name" | tee -a reports/repak-unpack.log
+              status=1
+            fi
           done
           find extracted -type f -printf '%p %s bytes\n' | sort > reports/extracted-files.txt
           grep -RInaE 'resolution|quality|graphics|setting|option|frame.?rate|shadow|texture|anti.?alias|mobile|screenpercentage' extracted --include='*.ini' > reports/config-matches.txt || true
-          cat reports/extracted-files.txt
-          du -sh extracted
+          {
+            echo "# Bright Memory v1.34 targeted extraction"
+            echo
+            echo "APK SHA256: c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4"
+            echo
+            echo "## Extracted files"
+            cat reports/extracted-files.txt
+            echo
+            echo "## Disk usage"
+            du -sh extracted
+          } > reports/EXTRACTION-REPORT.md
+          cat reports/EXTRACTION-REPORT.md
+          exit "$status"
 
-      - name: Upload extracted configs and UI candidates
+      - name: Upload extraction outputs and diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: brightmemory-v1.34-config-ui-extract
+          name: brightmemory-v1.34-config-ui-extract-oodle
           path: |
             extracted/
             reports/
+          if-no-files-found: warn
           retention-days: 7

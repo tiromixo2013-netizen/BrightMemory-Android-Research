@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] Renderer: register BMI unified spatial reconstruction pipeline
+
+Target reference:
+  jsuk10/UE4.27plus_Custom
+  Engine/Source/Runtime/Renderer/Private/Renderer.cpp
+
+This installs the BMI spatial dispatcher and maps its private shader directory.
+The dispatcher registers the FSR Mobile RDG pixel pass, then optionally chains
+CAS and HUD composition.
+Frame Generation remains a separate temporal interpolation/presentation path.
+
+Apply only after confirming the Bright Memory engine snapshot matches the
+referenced UE4.27 renderer API and after adding BMIUnifiedSpatialUpscaler.cpp/.h and BMIFSRMobilePass.cpp/BMIMWSRPass.cpp to the
+Renderer module source, and copying BMIShaders/ plus vendor/ under that module's
+Private directory. This patch is not proof of a target build.
+
+--- a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
++++ b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
+@@
+ #include "PostProcess/TemporalAA.h"
+-#include "BMISpatialUpscaler.h"
++#include "BMIUnifiedSpatialUpscaler.h"
++#include "ShaderCore.h"
++#include "Misc/Paths.h"
+ DEFINE_LOG_CATEGORY(LogRenderer);
+@@
+ void FRendererModule::StartupModule()
+ {
+  GScreenSpaceDenoiser = IScreenSpaceDenoiser::GetDefaultDenoiser();
+  GTemporalUpscaler = ITemporalUpscaler::GetDefaultTemporalUpscaler();
+ 
+  FVirtualTextureSystem::Initialize();
++ AddShaderSourceDirectoryMapping(TEXT("/Plugin/BMI"), FPaths::Combine(FPaths::EngineDir(), TEXT("Source/Runtime/Renderer/Private")));
+- RegisterBMISpatialUpscaler();
++ RegisterBMIUnifiedSpatialUpscaler();
+ }

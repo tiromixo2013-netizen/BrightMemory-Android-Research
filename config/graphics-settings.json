@@ -37,11 +37,12 @@
         "980P",
         "1080P"
       ],
-      "integration_point": "existing BMI_Graphics_Screen UMG and r.MobileContentScaleFactor; native display metrics required",
-      "status": "existing_menu_scale_commands_verified_runtime_mapping_pending",
+      "integration_point": "bmi.SetResolutionController 0..6 -> r.MobileContentScaleFactor using existing game values",
+      "status": "runtime_command_source_added_game_cvar_binding_uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "Native must preserve physical display resolution, aspect ratio, orientation and Android system DPI."
+      "note": "Native must preserve physical display resolution, aspect ratio, orientation and Android system DPI.",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetResolutionController"
     },
     {
       "id": "graphics_quality",
@@ -57,10 +58,11 @@
         "Extreme"
       ],
       "integration_point": "UGameUserSettings scalability categories and supported mobile CVars",
-      "status": "engine_scalability_setters_verified_full_visual_mapping_pending",
+      "status": "six_runtime_profiles_added; Extreme adds explicit mobile CVar overrides; uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "Each tier must change actual shadow, view distance, effects, texture, foliage, shading and post-processing settings where supported; do not expose until visual validation."
+      "note": "Each tier must change actual shadow, view distance, effects, texture, foliage, shading and post-processing settings where supported; do not expose until visual validation.",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetGraphicsQuality"
     },
     {
       "id": "render_scale",
@@ -68,10 +70,11 @@
       "label": "Render Scale",
       "type": "number",
       "integration_point": "UGameUserSettings::SetResolutionScaleValue @ 0x8735a9c; SetResolutionScaleValueEx @ 0x8735b40; FSceneRenderer::ApplyResolutionFraction @ 0x79e5ba0",
-      "status": "native_engine_api_verified",
+      "status": "runtime_command_source_added_GameUserSettings_SetResolutionScaleValueEx_uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "Game already has native resolution-scale setters; wire the unified menu to the existing GameUserSettings path instead of adding a second scale system."
+      "note": "Game already has native resolution-scale setters; wire the unified menu to the existing GameUserSettings path instead of adding a second scale system.",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetRenderScale"
     },
     {
       "id": "upscaler",
@@ -82,26 +85,31 @@
         "SGSR1",
         "SGSR2",
         "MWSR",
-        "FSR Lite",
+        "FSR Mobile",
         "Nearest",
         "Bilinear"
       ],
       "integration_point": "AddMobilePostProcessingPasses @ 0x78870c0; ISpatialUpscaler::AddDefaultUpscalePass @ 0x78fae30",
       "methods": {
-        "SGSR1": "official_UE4_27_source_verified_view_extension_and_RDG_spatial_upscaler; CVar r.Qualcomm.SGSR.Enabled; plugin absent from target libUE4.so strings",
-        "SGSR2": "official_UE4_27_source_verified_variants_2passNoAlpha_2pass_fs_taau_3pass; requires TAA_temporal_upsampling_and_project_configuration; plugin absent from target binary",
-        "MWSR": "algorithm_source_not_verified",
-        "FSR Lite": "not an official name verified; Mobile FSR plugin/CVars absent from target binary strings",
-        "Nearest": "custom_spatial_sampler_pass_required",
-        "Bilinear": "custom_spatial_sampler_pass_required"
+        "SGSR1": "official Qualcomm UE4.27 plugin source vendored; integration into shipped renderer not compiled",
+        "SGSR2": "No verified SGSR2 source is present in the current vendor tree; do not alias SGSR1; source and engine integration must be verified before implementation.",
+        "MWSR": "MIT source from linckosz/moonlight-web/mwsr vendored as HLSL reference; uses coarse derivatives and a 96-byte constants block; UE4.27 Android OpenGL ES shader adaptation and RDG registration not yet compiled",
+        "FSR Mobile": "MIT optimized mobile FSR1 source by atyuwen; single-pass EASU+RCAS variant; requires AMD FSR helper routines and UE4.27 mobile shader adaptation",
+        "Nearest": "native UE4.27 AddDefaultUpscalePass bridge source; not compiled into target",
+        "Bilinear": "native UE4.27 AddDefaultUpscalePass bridge source; not compiled into target"
       },
-      "status": "official_SGSR1_and_SGSR2_sources_verified_not_built_into_target",
+      "status": "unified_renderer_RDG_dispatcher_added; Nearest_and_Bilinear_are_builtin; SGSR1_MWSR_FSR_Mobile_adapters_not_yet_registered; SGSR2_source_not_verified",
       "ui_control_defined": true,
       "expose_control": false,
       "integration_requirements": [
-        "SGSR1: add official plugin to UE4.27.1+ project/engine and rebuild cooked shaders and libUE4.so",
-        "SGSR2: choose UE4.27 2pass variant only after confirming temporal AA/motion-vector path and target Android packaging"
-      ]
+        "SGSR1/SGSR2 plugins must be installed into the exact UE4.27 engine and compiled with Bright Memory",
+        "MWSR HLSL source is an upstream reference; adapt coarse derivatives and parameter layout to UE4.27 Android OpenGL ES shader compiler before enabling",
+        "FSR Mobile is the atyuwen optimized EASU+RCAS mobile implementation; include its required FSR helper routines and validate FP16 support on Adreno 610",
+        "Integrate each selected method in the UE4.27 renderer's actual spatial upscaler pass; do not only change CVars",
+        "Apply engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch and copy BMIUnifiedSpatialUpscaler.h/.cpp into the matching Renderer/Private directory before compiling",
+        "Compile shaders for the game's actual Android OpenGL ES RHI and visually test every method on the Adreno 610 device before exposing controls"
+      ],
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaler"
     },
     {
       "id": "upscale_sharpness",
@@ -112,9 +120,10 @@
         0,
         1
       ],
-      "status": "method_dependent_not_implemented",
+      "status": "0_to_1_parameter_added_to_unified_selected-upscaler_pass_contract; backend shader binding pending",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaleSharpness"
     },
     {
       "id": "upscale_preset",
@@ -129,9 +138,10 @@
         "Ultra Quality"
       ],
       "behavior": "map_each_preset_to_the_selected_upscaler_supported_render_scale_and_parameters",
-      "status": "configuration_mapping_required",
+      "status": "single shared preset now maps method-specific render fractions and sharpness; runtime source uncompiled",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscalePreset"
     },
     {
       "id": "amd_cas",
@@ -139,9 +149,10 @@
       "label": "AMD CAS",
       "type": "boolean",
       "integration_point": "separate_RDG_post_upscale_pass; do_not_stack_on_SGSR1_sharpening_by_default",
-      "status": "shader_port_and_RDG_registration_required",
+      "status": "CAS stage chained after selected upscaler in unified RDG path; no AMD CAS shader pass registered yet; toggle rejects unavailable",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetAMDCAS"
     },
     {
       "id": "cas_sharpness",
@@ -153,9 +164,10 @@
         1
       ],
       "depends_on": "amd_cas",
-      "status": "requires_CAS_pass",
+      "status": "CAS sharpness is a distinct parameter to the unified CAS stage; unavailable until real CAS pass registers",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetCASSharpness"
     },
     {
       "id": "frame_generation",
@@ -180,10 +192,11 @@
       "label": "Frame Pacing",
       "type": "boolean",
       "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; FAndroidPlatformRHIFramePacer::GetFramePace @ 0x67dac90; Swappy symbols present",
-      "status": "native_pacing_and_swappy_code_verified_controls_not_yet_exposed",
+      "status": "Vulkan-only implementation removed for target; Android OpenGL ES/Swappy pacer integration still pending",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "SwappyGL exports alone do not prove Vulkan path uses Swappy; Vulkan Present has its own RenderThreadPacing path."
+      "note": "On toggles r.Vulkan.CPURenderthreadFramePacer and r.Vulkan.CPURHIThreadFramePacer; it does not force pacing when VSync is off and does not replace platform FramePace/Swappy. Validate on target device.",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetFramePacing"
     },
     {
       "id": "low_latency",
@@ -195,11 +208,12 @@
         "On",
         "Ultra (No Queue)"
       ],
-      "integration_point": "Vulkan render/present synchronization; inspect queue depth and frame ownership before changing",
-      "status": "renderer_path_verified_safe_modes_not_implemented",
-      "safety": "never_insert_vkQueueWaitIdle_per_frame_or_force_zero_queue_without_validation",
+      "integration_point": "bmi.SetLowLatency 0=Off, 1=UE4 r.OneFrameThreadLag 0 supported low-latency thread sync, 2=Ultra No Queue rejected until Vulkan queue depth control is verified",
+      "status": "runtime_command_source_added_r.OneFrameThreadLag_on_off_ultra_no_queue_rejected_uncompiled",
+      "safety": "No vkQueueWaitIdle per frame; Ultra No Queue is not enabled or claimed",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetLowLatency"
     },
     {
       "id": "performance_hud",
@@ -244,7 +258,7 @@
         "FPerformanceTrackingSystem::AnalyzeFrame @ 0x852dd6c",
         "FPerformanceTrackingSystem::AnalyzeFrame(float) @ 0x852dd6c uses clock_gettime and maintains frame-duration samples"
       ],
-      "status": "frame_timing_source_verified_hud_not_implemented",
+      "status": "post-upscale HUD callback and Blueprint toggle added to unified path; no compositor/telemetry pass registered yet",
       "ui_control_defined": true,
       "expose_control": false,
       "note": "CPU/GPU utilization require separate Android/vendor telemetry; GAverageFPS and frame timing internals are not a complete GPU utilization API."
@@ -265,7 +279,8 @@
       "integration_point": "UGameUserSettings::SetFrameRateLimit(float) @ 0x87359dc stores limit; SetFrameRateLimitCVar(float) @ 0x87340ec forwards to GameUserSettings interface vtable slot +0x2e8; GetFramePace @ 0x8735500 delegates to FAndroidPlatformRHIFramePacer",
       "status": "native_limit_setting_path_verified_actual_supported_rates_need_runtime_check",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetFrameLimit"
     }
   ],
   "verified_binary_evidence": {
@@ -305,14 +320,16 @@
     "performance_hud_section_last": true,
     "hide_unimplemented_controls": true,
     "never_claim_algorithm_support_from_repository_readme_alone": true,
-    "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true
+    "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true,
+    "keep_all_controls_hidden_until_native_implementation_is_compiled_and_tested": true
   },
-  "implementation_note": "Schema corrected to the user's final 12-section order. This is configuration/specification only; it does not implement native hooks, renderer passes, shaders, or a modified APK.",
+  "implementation_note": "A single Renderer-private FBMIUnifiedSpatialUpscaler and RDG chain now owns selected spatial reconstruction, optional CAS, and optional HUD composition. Built-in Nearest/Bilinear are the only available upscalers by default. The method registry intentionally rejects unregistered SGSR1/SGSR2/MWSR/FSR Mobile backends. Frame Generation remains a separate pipeline. Source has not been compiled into the target engine or APK.",
   "integration_constraints": [
     "The game binary identifies its build source path as UE4.27Plus; exact engine patch version still needs confirmation.",
     "Target libUE4.so does not contain SGSR1, SGSR2, or Mobile FSR plugin CVar strings searched; plugin integration is not already present.",
     "A plugin built for UE4.27 requires matching engine/project build and cooked shader integration; a loose plugin folder or menu toggle cannot add its native renderer code to an already shipped APK.",
     "No game project source/UE4 build environment is present in this research repository, so a valid modified libUE4.so/APK cannot be produced from static analysis alone.",
     "Keep all controls hidden until native implementation is compiled and tested."
-  ]
+  ],
+  "integration_note": "A Blueprint-callable settings API exists in source, but no original Bright Memory UMG settings widget/assets were found in this repository or the PR file list. The API is not connected to the shipped settings screen. Native renderer passes, game UI assets, engine compilation and device validation are still required; keep all unverified controls hidden."
 }

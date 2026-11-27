@@ -1,0 +1,42 @@
+// BMI FSR Mobile: one-pass EASU reconstruction with fused RCAS-style limiter.
+// FSR portability helpers and atyuwen mobile optimization retain their upstream notices.
+#define A_GPU 1
+#define A_HLSL 1
+#define A_HALF 1
+#include "/Plugin/BMI/vendor/FSR-Mobile/ffx_a.h"
+#define FSR_EASU_H 1
+#include "/Plugin/BMI/vendor/FSR-Mobile/ffx_fsr1.h"
+
+Texture2D InputTexture;
+SamplerState LinearClamp;
+float2 InputViewportSize;
+float2 InputTextureSize;
+float2 OutputViewportSize;
+float2 InputViewportMin;
+float Sharpness;
+
+AH3 FsrEasuSampleH(AF2 p)
+{
+    return AH3(InputTexture.SampleLevel(LinearClamp, p, 0).rgb);
+}
+AH4 FsrEasuRH(AF2 p) { return AH4(InputTexture.GatherRed(LinearClamp, p)); }
+AH4 FsrEasuGH(AF2 p) { return AH4(InputTexture.GatherGreen(LinearClamp, p)); }
+AH4 FsrEasuBH(AF2 p) { return AH4(InputTexture.GatherBlue(LinearClamp, p)); }
+
+#define FSR_RCAS_LIMIT 0.25
+#include "/Plugin/BMI/vendor/FSR-Mobile/opt_fsr_bmi.fxh"
+
+float4 MainPS(float4 SvPosition : SV_POSITION) : SV_Target0
+{
+    AU4 con0, con1, con2, con3;
+    FsrEasuConOffset(con0, con1, con2, con3,
+        InputViewportSize.x, InputViewportSize.y,
+        InputTextureSize.x, InputTextureSize.y,
+        OutputViewportSize.x, OutputViewportSize.y,
+        InputViewportMin.x, InputViewportMin.y);
+    AH3 reconstructed;
+    FsrMobile(reconstructed, AF2(SvPosition.xy),
+        AF4(con0), AF4(con1), AF4(con2), AF4(con3),
+        clamp(Sharpness, 0.0, 1.0));
+    return float4(float3(reconstructed), 1.0);
+}

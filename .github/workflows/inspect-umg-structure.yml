@@ -1,0 +1,167 @@
+name: Bright Memory v1.34 UMG structure inspection
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [work/ue427-graphics-runtime-integration]
+    paths:
+      - '.github/workflows/inspect-umg-structure.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Download verified APK parts
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: 45728055093
+          pattern: downloaded-apk-part-*
+          path: parts
+          merge-multiple: true
+
+      - name: Reassemble and verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find parts -maxdepth 1 -type f -name 'downloaded-package.part-*' | wc -l)" -eq 6
+          cat parts/downloaded-package.part-* > BrightMemory-v1.34.apk
+          echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  BrightMemory-v1.34.apk" | sha256sum -c -
+          unzip -tq BrightMemory-v1.34.apk
+
+      - name: Extract embedded PAK containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p paks
+          python3 - <<'PY'
+          import io, zipfile, pathlib
+          apk = zipfile.ZipFile("BrightMemory-v1.34.apk")
+          for container in ("assets/main.obb.png", "assets/data"):
+              with zipfile.ZipFile(io.BytesIO(apk.read(container))) as nested:
+                  for name in nested.namelist():
+                      if name.lower().endswith(".pak"):
+                          target = pathlib.Path("paks") / pathlib.Path(name).name
+                          with nested.open(name) as src, target.open("wb") as dst:
+                              while True:
+                                  block = src.read(8 * 1024 * 1024)
+                                  if not block:
+                                      break
+                                  dst.write(block)
+          PY
+          test "$(find paks -name '*.pak' | wc -l)" -eq 9
+
+      - name: Install Oodle-enabled repak and extract menu plus save assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup update stable
+          rustup default stable
+          cargo install --git https://github.com/trumank/repak --tag v0.2.3 --locked --features oodle repak_cli
+          mkdir -p extracted
+          for pak in paks/*.pak; do
+            out="extracted/$(basename "$pak" .pak)"
+            mkdir -p "$out"
+            repak unpack "$pak" --output "$out" --quiet \
+              --include 'BMI_Mobile/Config/*.ini' \
+              --include 'BMI_Mobile/Content/**/UMG/**' \
+              --include 'BMI_Mobile/Content/**/Settings/**' \
+              --include 'BMI_Mobile/Content/**/Menu/**' \
+              --include 'BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save*' \
+              --include 'BMI_Mobile/Content/**/GamePlaySaveSystem*' \
+              --include 'BMI_Mobile/Content/**/UserSave*' \
+              --include 'BMI_Mobile/Content/**/BMFunctionLibrary*' \
+              --include 'BMI_Mobile/Content/**/SaveAge*'
+          done
+          test -f extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/UISystem_BMI/Menu/Seting/Graphics/BMI_Graphics_UMG.uasset
+          test -f extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save.uasset
+
+      - name: Clone UE4.27 read-only asset parser
+        run: |
+          git clone --depth 1 https://github.com/conaman/ue4-uasset-tools.git parser
+
+      - name: Parse graphics widgets and save Blueprint metadata
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p inspection/summaries inspection/metadata inspection/logs
+          root="extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/UISystem_BMI/Menu"
+          save="extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save.uasset"
+          for asset in \
+            "$root/MainMenu/Two/BMI_Menu_Seting_UMG.uasset" \
+            "$root/Seting/Graphics/BMI_Graphics_UMG.uasset" \
+            "$root/Seting/Graphics/BMI_Graphics_Screen.uasset" \
+            "$root/Seting/Graphics/BMI_Graphics_Shadows.uasset" \
+            "$root/Seting/Graphics/BMI_Graphics_SSAO.uasset" \
+            "$root/Seting/Graphics/BMI_Graphics_FPSLimb_Android.uasset" \
+            "$root/Seting/Graphics/BMI_GamePlay_AdvGraphics_TexBox.uasset" \
+            "$root/Seting/Graphics/BMI_GamePlay_DisPlay_TexBox.uasset" \
+            "$root/Seting/Graphics/BMI_Graphics_FANSHE.uasset" \
+            "$root/Seting/Graphics/BMI_Graphics_FOV.uasset" \
+            "$save"; do
+            name="$(basename "$asset" .uasset)"
+            if [ ! -f "$asset" ]; then
+              echo "MISSING: $asset" >> inspection/logs/parser-status.txt
+              continue
+            fi
+            echo "PARSING: $name"
+            if python3 parser/uasset_umg_summary.py "$asset" > "inspection/summaries/$name.txt" 2> "inspection/logs/$name-summary.err"; then
+              echo "SUMMARY_OK: $name" >> inspection/logs/parser-status.txt
+            else
+              echo "SUMMARY_UNAVAILABLE_OR_FAILED: $name" >> inspection/logs/parser-status.txt
+            fi
+            if python3 parser/uasset_to_text.py "$asset" -o "inspection/metadata/$name.json" > "inspection/logs/$name-json.out" 2> "inspection/logs/$name-json.err"; then
+              echo "JSON_OK: $name" >> inspection/logs/parser-status.txt
+            else
+              echo "JSON_FAILED: $name" >> inspection/logs/parser-status.txt
+            fi
+          done
+          # Parse the exact save-system dependencies imported by BMI_Save and graphics widgets.
+          while IFS= read -r asset; do
+            name="$(basename "$asset" .uasset)"
+            echo "PARSING_DEPENDENCY: $asset"
+            python3 parser/uasset_to_text.py "$asset" -o "inspection/metadata/$name.json" > "inspection/logs/$name-json.out" 2> "inspection/logs/$name-json.err"               && echo "DEPENDENCY_JSON_OK: $name" >> inspection/logs/parser-status.txt               || echo "DEPENDENCY_JSON_FAILED: $name" >> inspection/logs/parser-status.txt
+          done < <(find extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content -type f -name '*.uasset' \
+            \( -name 'GamePlaySaveSystem.uasset' -o -name 'UserSave.uasset' -o -name 'BMFunctionLibrary.uasset' -o -name 'SaveAge.uasset' \) | sort)
+          cp extracted/pakchunk0-Android_ASTC/BMI_Mobile/Config/*.ini inspection/ 2>/dev/null || true
+          {
+            echo "# Bright Memory v1.34 expanded UMG and save inspection"
+            echo
+            echo "- APK SHA256: c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4"
+            echo "- Parser: conaman/ue4-uasset-tools (UE4.27 read-only metadata parser)"
+            echo "- Scope: settings parent, graphics page, all known graphics row widgets, Advanced Graphics label widget, BMI_Save, and its referenced save-system dependencies (when present)."
+            echo "- Metadata only: this does not edit cooked assets or establish Blueprint execution semantics."
+            echo
+            echo "## Parser status"
+            cat inspection/logs/parser-status.txt
+            echo
+            echo "## Widget summaries"
+            for f in inspection/summaries/*.txt; do
+              echo
+              echo "### $(basename "$f")"
+              cat "$f"
+            done
+          } > inspection/INSPECTION-REPORT.md
+          cat inspection/INSPECTION-REPORT.md
+
+      - name: Upload expanded inspection and source assets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-v1.34-expanded-graphics-save-inspection
+          path: |
+            inspection/
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/UISystem_BMI/Menu/
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save*
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/**/GamePlaySaveSystem*
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/**/UserSave*
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/**/BMFunctionLibrary*
+            extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/**/SaveAge*
+          if-no-files-found: warn
+          retention-days: 14
