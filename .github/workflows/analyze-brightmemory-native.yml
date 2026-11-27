@@ -1,0 +1,102 @@
+name: Analyze Bright Memory APK native baseline
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-brightmemory-native.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Install tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y rclone p7zip-full binutils-aarch64-linux-gnu aapt
+
+      - name: Download and reassemble MEGA parts
+        env:
+          MEGA_EMAIL: ${{ secrets.MEGA_EMAIL }}
+          MEGA_PASSWORD: ${{ secrets.MEGA_PASSWORD }}
+          MEGA_2FA: ${{ secrets.MEGA_2FA }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${MEGA_EMAIL:-}" && test -n "${MEGA_PASSWORD:-}"
+          export RCLONE_CONFIG_MEGA_TYPE=mega
+          export RCLONE_CONFIG_MEGA_USER="$MEGA_EMAIL"
+          export RCLONE_CONFIG_MEGA_PASS="$(rclone obscure "$MEGA_PASSWORD")"
+          if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
+          mkdir -p work/wrappers work/parts work/apk work/report
+          rclone lsf mega: --recursive --files-only > work/report/mega-files.txt
+          mapfile -t candidates < <(grep -E '(^|/)(brightmemory-part-0[0-5]\.zip|downloaded-package\.part-0[0-5])$' work/report/mega-files.txt | sort -V)
+          if [[ ${#candidates[@]} -ne 6 ]]; then
+            echo "Expected six MEGA part files; found ${#candidates[@]}." >&2
+            cat work/report/mega-files.txt
+            exit 2
+          fi
+          : > work/report/parts.txt
+          for remote in "${candidates[@]}"; do
+            name="${remote##*/}"
+            rclone copyto "mega:$remote" "work/wrappers/$name"
+            if [[ "$name" == *.zip ]]; then
+              member="$(7z -slt "work/wrappers/$name" | sed -n 's/^Path = //p' | grep -vE '^(work/|$)' | head -n 1)"
+              test -n "$member"
+              7z x -so "work/wrappers/$name" "$member" > "work/parts/${name%.zip}.raw"
+              printf '%s %s\n' "$name" "$(stat -c %s "work/parts/${name%.zip}.raw")" >> work/report/parts.txt
+            else
+              cp "work/wrappers/$name" "work/parts/$name"
+              printf '%s %s\n' "$name" "$(stat -c %s "work/parts/$name")" >> work/report/parts.txt
+            fi
+          done
+          mapfile -t rawparts < <(find work/parts -maxdepth 1 -type f | sort -V)
+          test "${#rawparts[@]}" -eq 6
+          cat "${rawparts[@]}" > work/apk/brightmemory-original.apk
+          file work/apk/brightmemory-original.apk | tee work/report/apk-file.txt
+          sha256sum work/apk/brightmemory-original.apk | tee work/report/apk-sha256.txt
+          unzip -t work/apk/brightmemory-original.apk > work/report/zip-integrity.txt
+
+      - name: Inspect manifest and native library
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=work/apk/brightmemory-original.apk
+          aapt dump badging "$APK" > work/report/manifest-badging.txt
+          unzip -l "$APK" > work/report/apk-contents.txt
+          unzip -p "$APK" lib/arm64-v8a/libUE4.so > work/apk/libUE4.so
+          test -s work/apk/libUE4.so
+          file work/apk/libUE4.so > work/report/libue4-file.txt
+          aarch64-linux-gnu-readelf -h work/apk/libUE4.so > work/report/libue4-elf-header.txt
+          aarch64-linux-gnu-readelf -n work/apk/libUE4.so > work/report/libue4-build-id.txt
+          aarch64-linux-gnu-readelf -d work/apk/libUE4.so > work/report/libue4-dynamic.txt
+          aarch64-linux-gnu-readelf -Ws work/apk/libUE4.so > work/report/libue4-symbols.txt
+          strings -a work/apk/libUE4.so | grep -Ei 'ISpatialUpscaler|SpatialUpscaler|PrimarySpatial|AddMobilePostProcessingPasses|SetResolutionScaleValueEx|r\.ScreenPercentage|r\.MobileContentScaleFactor|CAS|SGSR|FSR|MWSR' > work/report/render-strings.txt || true
+          {
+            echo "# Bright Memory native baseline"
+            echo
+            echo "APK SHA256: $(cut -d' ' -f1 work/report/apk-sha256.txt)"
+            echo "libUE4.so SHA256: $(sha256sum work/apk/libUE4.so | cut -d' ' -f1)"
+            echo
+            echo "## Package identity"
+            cat work/report/manifest-badging.txt
+            echo
+            echo "## ELF identity"
+            cat work/report/libue4-file.txt
+            cat work/report/libue4-build-id.txt
+            echo
+            echo "## Renderer-related strings (discovery only; not proof of callable ABI)"
+            cat work/report/render-strings.txt
+          } > work/report/REPORT.md
+
+      - name: Upload analysis reports (not APK or game binaries)
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-native-baseline-report
+          path: work/report/
+          retention-days: 7
