@@ -65,7 +65,7 @@ bool UBMIGraphicsSettingsLibrary::SetCASSharpness(float Sharpness)
     return RunBMICommand(TEXT("bmi.SetCASSharpness"), FloatArg(Sharpness));
 }
 
-bool UBMIGraphicsSettingsLibrary::SetLowLatency(int32 Mode)
+bool UBMIGraphicsSettingsLibrary::SetFramePacing(bool bEnabled)\n{\n    return RunBMICommand(TEXT("bmi.SetFramePacing"), bEnabled ? TEXT("1") : TEXT("0"));\n}\n\nbool UBMIGraphicsSettingsLibrary::SetLowLatency(int32 Mode)
 {
     if (Mode < 0 || Mode > 2) return false;
     return RunBMICommand(TEXT("bmi.SetLowLatency"), IntArg(Mode));
