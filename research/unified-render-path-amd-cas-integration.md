@@ -109,3 +109,40 @@ SHA-256:
 - GLSL FP32 SPIR-V: `afdc874571c2f012da05931ef8b0545986d663d11ea8d98fea5f98fb8c2310f0`
 
 This validates the upstream reference shader source and the portable shader compiler path only. It is not a UE4 Android shader library, does not validate the BMI render graph bindings, and is not proof of execution on the phone GPU.
+
+## Android RHI / shader-platform evidence from the shipped project config
+
+The extracted cooked project config was re-opened from the successful config/UI extraction artifact (brightmemory-v1.34-config-ui-extract). Relevant values in BMI_Mobile/Config/DefaultEngine.ini:
+
+- bBuildForES31=True
+- bSupportsVulkan=False
+- bSupportsVulkanSM5=False
+- bDetectVulkanByDefault=True
+- bAndroidOpenGLSupportsBackbufferSampling=True
+
+The same DefaultDeviceProfiles.ini contains an Android_Adreno6xx profile and a child Android_Adreno6xx_Vulkan profile which sets r.Android.DisableVulkanSupport=0. Generic Android settings set r.Android.DisableVulkanSupport=1.
+
+### Interpretation — do not overclaim the active runtime RHI
+
+The strongest packaged-build signal is that OpenGL ES 3.1 is the explicitly enabled Android build target, while Vulkan support flags are disabled in the project packaging config. The Adreno Vulkan device profile proves a Vulkan-specific profile was authored, but does not prove the shipped APK contains the matching Vulkan shader library or that Vulkan is the active runtime RHI. bDetectVulkanByDefault=True is a detection setting, not proof of successful Vulkan packaging.
+
+Therefore:
+- Treat OpenGL ES 3.1 / Android shader platform as the first CAS target to investigate.
+- Keep Vulkan as an unconfirmed alternate until cooked shader libraries and runtime RHI selection are inspected.
+- The previously validated GLSL 450 Vulkan SPIR-V is not an Android GLES 3.1 shader and cannot be inserted into the game's cooked shader data.
+- The upstream CAS GLSL sample is a Vulkan reference. A GLES 3.1 port/permutation must be compiled with the engine's shader toolchain and validated against the target's actual format, precision, texture/storage bindings, and RDG path.
+- Do not flip bSupportsVulkan or device-profile CVars in the APK as a shortcut; that cannot create missing Vulkan cooked shaders.
+
+### Evidence source files
+
+- DefaultEngine.ini: Android build flags listed above.
+- DefaultDeviceProfiles.ini: Android_Adreno6xx, Android_Adreno6xx_Vulkan, generic Android Vulkan-disable defaults.
+- Extraction artifact: brightmemory-v1.34-config-ui-extract, produced by workflow run 45918390607.
+
+### Updated status
+
+- [x] Android project config extracted and inspected.
+- [x] GLES 3.1 build target confirmed as enabled in packaged project config.
+- [ ] Active runtime RHI confirmed from device log / engine startup evidence.
+- [ ] Exact cooked UE shader format and shader-library contents enumerated.
+- [ ] CAS GLES 3.1 shader permutation compiled with matching UE4 shader toolchain.
