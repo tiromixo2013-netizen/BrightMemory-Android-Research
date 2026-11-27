@@ -162,7 +162,20 @@ assert "ITemporalUpscaler" in read(sgsr2 / "GSR/Source/GSRTUModule/Private/GSRTU
 assert 'TEXT("r.SGSR2.Enabled")' in read(sgsr2 / "GSR/Source/GSRTUModule/Private/GSRViewExtension.cpp")
 assert "temporal, not spatial" in read(sgsr2 / "UPSTREAM.md")
 
-print("PASS: settings schema, Blueprint bridge, spatial/temporal SGSR routing, unified RDG dispatch, SGSR/BMI primary-slot arbitration, source provenance, safe fallback, and hidden-unverified-feature gates")
+
+# FSR Mobile has a UE4.27 RDG pixel-pass adapter wired into BMI registration.
+fsr_adapter = read(RENDERER / "BMIFSRMobilePass.cpp")
+fsr_usf = read(RENDERER / "BMIShaders/Private/BMIFSRMobile.usf")
+fsr_mobile_helper = read(VENDOR / "FSR-Mobile/opt_fsr_bmi.fxh")
+assert "RegisterBMIFSRMobileUpscaler" in fsr_adapter
+assert "RegisterBMIFSRMobileUpscaler();" in unified_cpp
+assert "RegisterUpscaler(3, AddBMIFSRMobilePass)" in fsr_adapter
+assert "FsrEasuConOffset" in fsr_usf and "FsrMobile(reconstructed" in fsr_usf
+assert "GatherRed" in fsr_usf and "GatherGreen" in fsr_usf and "GatherBlue" in fsr_usf
+assert "AF1 sharpness" in fsr_mobile_helper
+assert "con0.x * sharpness" in fsr_mobile_helper
+
+print("PASS: settings schema, SGSR1/SGSR2 routing, FSR Mobile RDG source adapter, unified dispatch, source provenance, safe fallback, and feature gates")
 
 
 # Target-RHI and adapter safety documentation must stay explicit.
