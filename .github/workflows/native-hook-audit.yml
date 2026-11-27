@@ -105,9 +105,13 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y llvm
-          OBJDUMP="$(find /usr/bin -maxdepth 1 -name "llvm-objdump*" -type f | sort -V | head -1)"
-          test -n "$OBJDUMP"
+          sudo apt-get install -y llvm-21
+          OBJDUMP="$(find /usr/lib/llvm-* /usr/bin -type f -name 'llvm-objdump*' 2>/dev/null | sort -V | head -1)"
+          if [ -z "$OBJDUMP" ]; then
+            echo "llvm-objdump was not installed; available LLVM binaries:"
+            find /usr/lib/llvm-* /usr/bin -type f -name '*objdump*' 2>/dev/null | sort -V || true
+            exit 1
+          fi
           {
             echo "Tool: $OBJDUMP"
             echo "Offsets are candidate ELF virtual addresses from prior static analysis."
