@@ -9,19 +9,59 @@
     "engine": "Unreal Engine 4.27"
   },
   "menu_order": [
+    "resolution_controller",
+    "graphics_quality",
     "render_scale",
     "upscaler",
     "upscale_sharpness",
     "upscale_preset",
     "amd_cas",
     "cas_sharpness",
-    "low_latency",
-    "frame_pacing",
-    "fps_limit",
     "frame_generation",
+    "frame_pacing",
+    "low_latency",
     "performance_hud"
   ],
   "settings": [
+    {
+      "id": "resolution_controller",
+      "section": "Display",
+      "label": "Resolution Controller",
+      "type": "enum",
+      "options": [
+        "Native",
+        "540P",
+        "640P",
+        "720P",
+        "900P",
+        "980P",
+        "1080P"
+      ],
+      "integration_point": "existing BMI_Graphics_Screen UMG and r.MobileContentScaleFactor; native display metrics required",
+      "status": "existing_menu_scale_commands_verified_runtime_mapping_pending",
+      "ui_control_defined": true,
+      "expose_control": false,
+      "note": "Native must preserve physical display resolution, aspect ratio, orientation and Android system DPI."
+    },
+    {
+      "id": "graphics_quality",
+      "section": "Graphics",
+      "label": "Graphics Quality",
+      "type": "enum",
+      "options": [
+        "Low",
+        "Medium",
+        "High",
+        "Very High",
+        "Ultra",
+        "Extreme"
+      ],
+      "integration_point": "UGameUserSettings scalability categories and supported mobile CVars",
+      "status": "engine_scalability_setters_verified_full_visual_mapping_pending",
+      "ui_control_defined": true,
+      "expose_control": false,
+      "note": "Each tier must change actual shadow, view distance, effects, texture, foliage, shading and post-processing settings where supported; do not expose until visual validation."
+    },
     {
       "id": "render_scale",
       "section": "Upscaling",
@@ -118,51 +158,6 @@
       "expose_control": false
     },
     {
-      "id": "low_latency",
-      "section": "Latency",
-      "label": "Low Latency",
-      "type": "enum",
-      "options": [
-        "Off",
-        "On",
-        "Ultra (No Queue)"
-      ],
-      "integration_point": "Vulkan render/present synchronization; inspect queue depth and frame ownership before changing",
-      "status": "renderer_path_verified_safe_modes_not_implemented",
-      "safety": "never_insert_vkQueueWaitIdle_per_frame_or_force_zero_queue_without_validation",
-      "ui_control_defined": true,
-      "expose_control": false
-    },
-    {
-      "id": "frame_pacing",
-      "section": "Frame Pacing",
-      "label": "Frame Pacing",
-      "type": "boolean",
-      "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; FAndroidPlatformRHIFramePacer::GetFramePace @ 0x67dac90; Swappy symbols present",
-      "status": "native_pacing_and_swappy_code_verified_controls_not_yet_exposed",
-      "ui_control_defined": true,
-      "expose_control": false,
-      "note": "SwappyGL exports alone do not prove Vulkan path uses Swappy; Vulkan Present has its own RenderThreadPacing path."
-    },
-    {
-      "id": "fps_limit",
-      "section": "Frame Pacing",
-      "label": "FPS Limit",
-      "type": "enum",
-      "options": [
-        30,
-        60,
-        90,
-        120,
-        144,
-        180
-      ],
-      "integration_point": "UGameUserSettings::SetFrameRateLimit(float) @ 0x87359dc stores limit; SetFrameRateLimitCVar(float) @ 0x87340ec forwards to GameUserSettings interface vtable slot +0x2e8; GetFramePace @ 0x8735500 delegates to FAndroidPlatformRHIFramePacer",
-      "status": "native_limit_setting_path_verified_actual_supported_rates_need_runtime_check",
-      "ui_control_defined": true,
-      "expose_control": false
-    },
-    {
       "id": "frame_generation",
       "section": "Frame Generation",
       "label": "Frame Generation",
@@ -178,6 +173,33 @@
       "expose_control": false,
       "note": "Qualcomm Adreno Neural Fusion provides Frame Generation only in UE5 plugin branches (UE5.0–5.8), not UE4.27. Do not transplant UE5 plugin into this UE4.27 game.",
       "ui_control_defined": true
+    },
+    {
+      "id": "frame_pacing",
+      "section": "Frame Pacing",
+      "label": "Frame Pacing",
+      "type": "boolean",
+      "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; FAndroidPlatformRHIFramePacer::GetFramePace @ 0x67dac90; Swappy symbols present",
+      "status": "native_pacing_and_swappy_code_verified_controls_not_yet_exposed",
+      "ui_control_defined": true,
+      "expose_control": false,
+      "note": "SwappyGL exports alone do not prove Vulkan path uses Swappy; Vulkan Present has its own RenderThreadPacing path."
+    },
+    {
+      "id": "low_latency",
+      "section": "Latency",
+      "label": "Low Latency",
+      "type": "enum",
+      "options": [
+        "Off",
+        "On",
+        "Ultra (No Queue)"
+      ],
+      "integration_point": "Vulkan render/present synchronization; inspect queue depth and frame ownership before changing",
+      "status": "renderer_path_verified_safe_modes_not_implemented",
+      "safety": "never_insert_vkQueueWaitIdle_per_frame_or_force_zero_queue_without_validation",
+      "ui_control_defined": true,
+      "expose_control": false
     },
     {
       "id": "performance_hud",
@@ -226,6 +248,24 @@
       "ui_control_defined": true,
       "expose_control": false,
       "note": "CPU/GPU utilization require separate Android/vendor telemetry; GAverageFPS and frame timing internals are not a complete GPU utilization API."
+    },
+    {
+      "id": "fps_limit",
+      "section": "Frame Pacing",
+      "label": "FPS Limit",
+      "type": "enum",
+      "options": [
+        30,
+        60,
+        90,
+        120,
+        144,
+        180
+      ],
+      "integration_point": "UGameUserSettings::SetFrameRateLimit(float) @ 0x87359dc stores limit; SetFrameRateLimitCVar(float) @ 0x87340ec forwards to GameUserSettings interface vtable slot +0x2e8; GetFramePace @ 0x8735500 delegates to FAndroidPlatformRHIFramePacer",
+      "status": "native_limit_setting_path_verified_actual_supported_rates_need_runtime_check",
+      "ui_control_defined": true,
+      "expose_control": false
     }
   ],
   "verified_binary_evidence": {
@@ -267,7 +307,7 @@
     "never_claim_algorithm_support_from_repository_readme_alone": true,
     "do_not_modify_or_repack_original_game_until_native_hook_and_ABI_are_validated": true
   },
-  "implementation_note": "Updated with verified official Qualcomm UE4.27 plugin source locations and target binary API evidence. This remains an integration plan; no native hook, plugin binary, shader package, or modified APK has been built.",
+  "implementation_note": "Schema corrected to the user's final 12-section order. This is configuration/specification only; it does not implement native hooks, renderer passes, shaders, or a modified APK.",
   "integration_constraints": [
     "The game binary identifies its build source path as UE4.27Plus; exact engine patch version still needs confirmation.",
     "Target libUE4.so does not contain SGSR1, SGSR2, or Mobile FSR plugin CVar strings searched; plugin integration is not already present.",
