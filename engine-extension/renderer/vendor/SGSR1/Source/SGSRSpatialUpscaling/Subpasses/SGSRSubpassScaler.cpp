@@ -9,6 +9,13 @@
 #include "SGSRSettings.h"
 
 //#SGSR_TARGET_Definitions
+static TAutoConsoleVariable<float> SGSR_SharpnessCVar(
+    TEXT("r.Qualcomm.SGSR.Sharpness"),
+    0.5f,
+    TEXT("SGSR1 edge sharpness [0..1]."),
+    ECVF_RenderThreadSafe
+);
+
 static TAutoConsoleVariable<int32> SGSR_TargetCVar(
     TEXT(SGSR_CVAR_NAME_TARGET),
     0,
@@ -138,6 +145,7 @@ void FSGSRSubpassScaler::Upscale(FRDGBuilder& GraphBuilder, const FViewInfo& Vie
 			PassParameters->SGSR.Const1[i] = const1[i];
 		}
 		PassParameters->SGSR.InputTexture = Data->CurrentInputTexture;
+        PassParameters->SGSR.Sharpness = FMath::Clamp(SGSR_SharpnessCVar.GetValueOnAnyThread(), 0.0f, 1.0f);
 		PassParameters->SGSR.samLinearClamp = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 		PassParameters->RenderTargets[0] = FRenderTargetBinding(Output.Texture, ERenderTargetLoadAction::ENoAction);
 
