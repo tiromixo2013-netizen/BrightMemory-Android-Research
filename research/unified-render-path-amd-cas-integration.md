@@ -95,3 +95,17 @@ The official CAS source is now vendored under `vendor/amd-fidelityfx-cas/` from 
 - `LICENSE.txt`
 
 A GitHub Actions validation workflow was added at `.github/workflows/cas-shader-validation.yml`. Run `46007752864` confirmed the official GLSL sample compiles, while HLSL failed because the sample expects `WIDTH/HEIGHT/DEPTH` compile-time defines. The workflow was corrected to pass a 64-thread workgroup (`64,1,1`) and rerun as `46007813620`; this rerun is still in progress at the time of this report update. A successful reference compile is not the same as a UE4 Android shader build.
+
+## Reference shader compile validation — passed
+
+Workflow run: https://github.com/tiromixo2013-netizen/BrightMemory-Android-Research/actions/runs/46007831390
+Artifact ID: `15200694503`
+Artifact: `amd-cas-reference-shader-validation`
+
+Both the official GLSL compute sample and HLSL compute sample compiled to SPIR-V, and both binaries passed `spirv-val --target-env vulkan1.0`.
+
+SHA-256:
+- HLSL FP32 sharpen-only SPIR-V: `2ecd2012302f4cdf1efc4c0a4abecc54b43fe66e958a7a5b0580474600542e29`
+- GLSL FP32 SPIR-V: `afdc874571c2f012da05931ef8b0545986d663d11ea8d98fea5f98fb8c2310f0`
+
+This validates the upstream reference shader source and the portable shader compiler path only. It is not a UE4 Android shader library, does not validate the BMI render graph bindings, and is not proof of execution on the phone GPU.
