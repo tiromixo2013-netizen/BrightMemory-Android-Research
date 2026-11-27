@@ -83,6 +83,11 @@ FBMIUnifiedUpscalerViewExtension::FBMIUnifiedUpscalerViewExtension(const FAutoRe
 void FBMIUnifiedUpscalerViewExtension::SetupViewFamily(FSceneViewFamily& InViewFamily) {}
 void FBMIUnifiedUpscalerViewExtension::SetupView(FSceneViewFamily& InViewFamily,FSceneView& InView) {}
 void FBMIUnifiedUpscalerViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewFamily) {
+ // Do not replace the game's primary upscaler unless BMI is enabled and
+ // the selected backend is present in the availability mask.
+ if (CVarBMIPipelineEnabled.GetValueOnGameThread() == 0) return;
+ const int32 Method = FMath::Clamp(CVarBMIMethod.GetValueOnGameThread(), 0, 5);
+ if ((CVarBMIRegisteredMask.GetValueOnGameThread() & (1 << Method)) == 0) return;
  if (InViewFamily.GetPrimarySpatialUpscalerInterface()==nullptr) {
   InViewFamily.SetPrimarySpatialUpscalerInterface(new FBMIUnifiedSpatialUpscaler());
  }
