@@ -139,6 +139,17 @@ jobs:
             SetResolutionScaleNormalized:0x8735be0:168
             ApplySettings:0x8734cfc:72
             SaveSettings:0x873500c:92
+            FViewInfo_Init:0x79e0948:820
+            FViewInfo_Ctor_FromSceneView:0x79e0c7c:1596
+            FViewInfo_Ctor_FromInitOptions:0x79e030c:1596
+            FSceneViewState_Ctor:0x7981ad4:2736
+            FSceneViewState_Dtor:0x7982eb8:1688
+            FSceneViewState_Destroy:0x79d6058:936
+            FSceneViewStateReference_Allocate:0x8b348f8:88
+            FSceneViewStateReference_Destroy:0x8b34880:84
+            FSceneViewStateReference_AllocateAll:0x8b349a0:68
+            FSceneViewStateReference_DestroyAll:0x8b3495c:68
+            FSceneViewState_OnStartRender:0x79e7240:288
           SPECS
           } > reports/complete-hook-disassembly.txt
           grep -E "LOAD|GNU_RELRO|GNU_STACK" reports/elf-program-headers.txt > reports/elf-memory-layout.txt || true
