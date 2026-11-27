@@ -126,7 +126,20 @@ assert status["android_vulkan_validation"] is False
 assert status["modified_apk"] is False
 assert status["mobile_methods_exposed"] == ["Nearest", "Bilinear"]
 
-print("PASS: settings schema, Blueprint bridge, unified RDG dispatch, source provenance, safe fallback, and hidden-unverified-feature gates")
+# Primary-slot arbitration: the vendored SGSR extension and BMI must never
+# attempt a second assignment. BMI registration comes from the Renderer
+# startup patch; the runtime disables SGSR before enabling BMI.
+sgsr_extension = read(sgsr / "Source/SGSRSpatialUpscaling/SGSRViewExtension.cpp")
+assert "if (InViewFamily.GetPrimarySpatialUpscalerInterface() == nullptr)" in sgsr_extension
+assert "InViewFamily.SetPrimarySpatialUpscalerInterface(new FSGSRSpatialUpscaler" in sgsr_extension
+assert 'SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0)' in runtime
+assert "RegisterBMIUnifiedSpatialUpscaler();" in patch
+assert "Renderer startup patch replaces the old BMI registration call" in renderer_readme
+assert "If another extension claims the primary slot first" in renderer_readme
+assert audit["verified_contract"]["bmi_extension_behavior"].startswith("BMI's view extension is registered from the Renderer module startup hook")
+assert audit["implementation_status"]["renderer_extension_registration_applied_to_target"] is False
+
+print("PASS: settings schema, Blueprint bridge, unified RDG dispatch, SGSR/BMI primary-slot arbitration, source provenance, safe fallback, and hidden-unverified-feature gates")
 
 
 # Target-RHI and adapter safety documentation must stay explicit.
