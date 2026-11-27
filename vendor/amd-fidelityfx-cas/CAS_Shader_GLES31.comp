@@ -1,0 +1,61 @@
+#version 310 es
+#extension GL_GOOGLE_include_directive : require
+
+precision highp float;
+precision highp int;
+precision highp image2D;
+
+// AMD FidelityFX CAS — Android OpenGL ES 3.1 FP32 sharpen-only port.
+// Copyright (c) 2017-2019 Advanced Micro Devices, Inc.
+// Distributed under the AMD MIT license; see ../LICENSE.txt.
+// This is a GLES shader adaptation of the upstream CAS reference, not a UE4 shader yet.
+
+layout(std140, binding = 0) uniform CasConstants
+{
+    uvec4 const0;
+    uvec4 const1;
+} cb;
+
+layout(rgba16f, binding = 1) readonly uniform highp image2D imgSrc;
+layout(rgba16f, binding = 2) writeonly uniform highp image2D imgDst;
+
+#define A_GPU 1
+#define A_GLSL 1
+#include "ffx_a.h"
+
+AF3 CasLoad(ASU2 p)
+{
+    ivec2 size = imageSize(imgSrc);
+    ivec2 coord = clamp(ivec2(p), ivec2(0), size - ivec2(1));
+    return imageLoad(imgSrc, coord).rgb;
+}
+
+// Input is expected to be linear RGB in [0,1], matching AMD CAS requirements.
+void CasInput(inout AF1 r, inout AF1 g, inout AF1 b) {}
+
+#include "ffx_cas.h"
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+void StoreCasPixel(uvec2 pixel)
+{
+    ivec2 size = imageSize(imgDst);
+    if (pixel.x >= uint(size.x) || pixel.y >= uint(size.y))
+        return;
+
+    AF4 color;
+    CasFilter(color.r, color.g, color.b, pixel, cb.const0, cb.const1, true);
+    imageStore(imgDst, ivec2(pixel), color);
+}
+
+void main()
+{
+    // AMD's 64-lane remap covers a 16x16 tile through four 8x8 quadrants.
+    AU2 base = ARmp8x8(gl_LocalInvocationID.x)
+             + AU2(gl_WorkGroupID.x << 4u, gl_WorkGroupID.y << 4u);
+
+    StoreCasPixel(base);
+    StoreCasPixel(base + AU2(8u, 0u));
+    StoreCasPixel(base + AU2(8u, 8u));
+    StoreCasPixel(base + AU2(0u, 8u));
+}
