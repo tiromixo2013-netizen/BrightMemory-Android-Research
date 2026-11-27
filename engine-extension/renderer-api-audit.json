@@ -81,7 +81,17 @@
     "fsr_mobile_adapter_source_registered": true,
     "fsr_mobile_adapter_compiled": false,
     "fsr_mobile_shader_wrapper_authored": true,
-    "fsr_mobile_android_opengles_shader_compiled": false
+    "fsr_mobile_android_opengles_shader_compiled": false,
+    "mwsr_adapter_source_registered": true,
+    "mwsr_adapter_compiled": false,
+    "mwsr_android_opengles_shader_compiled": false,
+    "spatial_methods_source_registered": [
+      "MWSR",
+      "FSR Mobile",
+      "Nearest",
+      "Bilinear"
+    ],
+    "spatial_methods_compiled": []
   },
   "target_rhi": {
     "platform": "Android",
