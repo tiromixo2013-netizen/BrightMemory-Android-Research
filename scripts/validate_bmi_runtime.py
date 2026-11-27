@@ -20,13 +20,13 @@ runtime = read(ENGINE / "Source/BMIGraphicsRuntime/Private/BMIGraphicsRuntimeMod
 for token in [
     "SetResolutionController", "r.MobileContentScaleFactor",
     "SetOverallScalabilityLevel", "SetUpscalePreset", "SetUpscaler",
-    "bmi.Pipeline.RegisteredUpscalerMask", "SetUpscaleSharpness",
+    "bmi.Pipeline.RegisteredUpscalerMask", "bmi.Pipeline.Enabled", "SetUpscaleSharpness",
     "bmi.Pipeline.CASAvailable", "SetCAS", "SetCASSharpness",
     "SetFramePacing", "r.OneFrameThreadLag", "SetPerformanceHUD",
     "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit",
 ]:
     assert token in runtime, f"Missing runtime bridge symbol: {token}"
-assert "Requested upscaler has no registered renderer pass" in runtime
+assert "Requested upscaler has no registered renderer pass" in runtime\nassert "BMI unified renderer pipeline is not installed" in runtime\nassert "PipelineEnabled->Set(1, ECVF_SetByGameSetting)" in runtime
 assert "Ultra (No Queue) is unavailable" in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
 
