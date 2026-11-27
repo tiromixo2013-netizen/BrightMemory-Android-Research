@@ -146,3 +146,17 @@ Therefore:
 - [ ] Active runtime RHI confirmed from device log / engine startup evidence.
 - [ ] Exact cooked UE shader format and shader-library contents enumerated.
 - [ ] CAS GLES 3.1 shader permutation compiled with matching UE4 shader toolchain.
+
+## Android GLES 3.1 CAS port — reference compile passed
+
+A separate FP32 sharpen-only GLES 3.1 compute shader adaptation was added at vendor/amd-fidelityfx-cas/CAS_Shader_GLES31.comp. It uses GLES-style image bindings, explicit high precision, clamped source reads, bounds-checked stores for non-16-aligned extents, and AMD's original CAS filter functions. The upstream CAS setup header needed one unsigned-literal portability correction (const1[3]=AU1_(0)); the AMD license and source attribution remain present.
+
+Validation workflow run: https://github.com/tiromixo2013-netizen/BrightMemory-Android-Research/actions/runs/46008810503
+Artifact: amd-cas-reference-shader-validation (ID 15202620952).
+
+The workflow successfully compiled and validated all three shader outputs:
+- GLES 3.1 adaptation: cas-gles31-fp32-sharpen.spv — SHA-256 2850a1d21c271b73c96e24f46975215c7ccf4a7d87cbec7b22643dd1a91efc56
+- Official HLSL reference: cas-hlsl-fp32-sharpen.spv — SHA-256 2ecd2012302f4cdf1efc4c0a4abecc54b43fe66e958a7a5b0580474600542e29
+- Official Vulkan GLSL reference: cas-vulkan-fp32.spv — SHA-256 afdc874571c2f012da05931ef8b0545986d663d11ea8d98fea5f98fb8c2310f0
+
+The GLES shader's successful glslang/ SPIR-V validation is a source-level compile gate only. It does not mean the SPIR-V file is a cooked UE4 Android shader or that it can be loaded by BMI. UE4's GLES shader compiler, shader platform format, RDG bindings, actual GLES driver compilation/execution, and visual/performance behavior remain to be tested.
