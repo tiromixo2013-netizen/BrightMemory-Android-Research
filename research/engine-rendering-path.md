@@ -43,3 +43,10 @@ The first functional change should bind the game's settings UI to its own `UGame
 - Reassembly run: https://github.com/tiromixo2013-netizen/BrightMemory-Android-Research/actions/runs/46025795349
 - Short-lived original input artifact: `brightmemory-original-build-inputs`
 - Engine analysis artifact: `brightmemory-v1.34-engine-analysis`
+
+## Verified built-in spatial upscale algorithms
+The game's `GetUpscaleMethod()` has the same 0..5 clamp and dispatch structure as Unreal's `r.Upscale.Quality` implementation. Epic documents the six modes as: 0 Nearest, 1 Bilinear, 2 Directional/unsharp, 3 Catmull-Rom bicubic, 4 Lanczos 3, and 5 Gaussian unsharp. Source: https://dev.epicgames.com/documentation/unreal-engine/screen-percentage-with-temporal-upscale-in-unreal-engine?lang=en-US
+
+The game's `AddDefaultUpscalePass` disassembly reads the method enum and passes it to `FGlobalShaderMap::GetShader` as the pixel-shader permutation index. This is a real shader dispatch path, not a label-only selector. A nearby render-thread float global is clamped and written into the upscale pass's `UpscaleSoftness` parameter, consistent with Unreal's `r.Upscale.Softness` control for Gaussian unsharp mode.
+
+This confirms built-in Nearest/Bilinear/Directional/Catmull-Rom/Lanczos/Gaussian spatial scaling in the engine binary. It does not establish SGSR, FSR, MWSR, or AMD CAS support.
