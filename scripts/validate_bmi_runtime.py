@@ -149,7 +149,8 @@ sgsr_module = (sgsr_vendor / "Source/SGSRSpatialUpscaling/SGSRSpatialUpscaling.c
 assert "FindPlugin(TEXT(\"SGSR\"))" in sgsr_module
 assert "SGSRPlugin.IsValid()" in sgsr_module
 assert "FPaths::DirectoryExists(PluginShaderDir)" in sgsr_module
-assert "SGSR1.uplugin" not in str(sgsr_vendor) if False else True
+assert (sgsr_vendor / "SGSR.uplugin").exists()
+assert not (sgsr_vendor / "SGSR1.uplugin").exists()
 sgsr_scaler = (sgsr_vendor / "Source/SGSRSpatialUpscaling/Subpasses/SGSRSubpassScaler.cpp").read_text()
 assert "r.Qualcomm.SGSR.Sharpness" in sgsr_scaler
 assert "PassParameters->SGSR.Sharpness" in sgsr_scaler
