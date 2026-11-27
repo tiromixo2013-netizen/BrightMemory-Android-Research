@@ -126,12 +126,17 @@ namespace BMIGraphicsRuntime
     {
         if (Args.Num() != 1) return;
         const int32 Method = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
+        // Only methods with a registered RDG implementation may be selected.
+        IConsoleVariable* Mask = FindCVar(TEXT("bmi.Pipeline.RegisteredUpscalerMask"));
+        if (!Mask || (Mask->GetInt() & (1 << Method)) == 0)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Requested upscaler has no registered renderer pass; selection rejected."));
+            return;
+        }
         // One primary Renderer RDG pipeline owns all spatial methods.
-        // Disable vendor extensions so they cannot install a competing upscaler.
         SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
         SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 0);
-        if (!SetCVarIntIfPresent(TEXT("bmi.Pipeline.Upscaler"), Method))
-            UE_LOG(LogTemp, Error, TEXT("BMI unified renderer pipeline is not registered; method selection rejected."));
+        SetCVarIntIfPresent(TEXT("bmi.Pipeline.Upscaler"), Method);
     }
 
     static void SetUpscaleSharpness(const TArray<FString>& Args)
@@ -156,8 +161,9 @@ namespace BMIGraphicsRuntime
     {
         if (Args.Num() != 1) return;
         const float Sharpness = FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
-        if (!SetCVarFloatIfPresent(TEXT("bmi.Pipeline.CASSharpness"), Sharpness))
-            UE_LOG(LogTemp, Error, TEXT("AMD CAS pass is not registered; sharpness was not applied."));
+        IConsoleVariable* Available = FindCVar(TEXT("bmi.Pipeline.CASAvailable"));
+        if (!Available || Available->GetInt() == 0) return;
+        SetCVarFloatIfPresent(TEXT("bmi.Pipeline.CASSharpness"), Sharpness);
     }
 
     static void SetFramePacing(const TArray<FString>& Args)
