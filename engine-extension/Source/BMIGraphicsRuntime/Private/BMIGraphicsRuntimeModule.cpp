@@ -90,7 +90,7 @@ namespace BMIGraphicsRuntime
         }
     }
 
-    // Method IDs: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Lite,
+    // Method IDs: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile,
     // 4 Nearest, 5 Bilinear. External algorithms are enabled only if
     // their actual plugin CVar is registered in this engine build.
     static void SetUpscaler(const TArray<FString>& Args)
@@ -122,7 +122,7 @@ namespace BMIGraphicsRuntime
             SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
             return;
         }
-        UE_LOG(LogTemp, Error, TEXT("MWSR / FSR Lite are not implemented in this engine build; selection rejected."));
+        UE_LOG(LogTemp, Error, TEXT("MWSR / FSR Mobile are not implemented in this engine build; selection rejected."));
     }
 
     static void SetUpscaleSharpness(const TArray<FString>& Args)
