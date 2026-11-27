@@ -56,7 +56,7 @@ controls are not yet visible in the shipped game's settings menu.
 - SGSR2 requires temporal history and motion-vector integration.
 - MWSR and FSR Lite do not yet have verified UE4.27 renderer implementations.
 - AMD CAS needs a real RDG pass and shader integration after tonemapping.
-- Frame pacing requires a validated Android Vulkan/Swappy control path.
+- Frame pacing now has a runtime command and Blueprint entry point for UE4.27 Vulkan CPU fallback pacing (`r.Vulkan.CPURenderthreadFramePacer` and `r.Vulkan.CPURHIThreadFramePacer`). It only operates when VSync/platform sync interval is active; it does not force pacing or replace Swappy/platform pacing. The code is not compiled into the game.
 - Frame generation and Performance HUD are not implemented.
 - Low Latency On maps to UE4's `r.OneFrameThreadLag=0`; Ultra/No Queue remains
   rejected because no supported Vulkan queue-depth control is verified.
