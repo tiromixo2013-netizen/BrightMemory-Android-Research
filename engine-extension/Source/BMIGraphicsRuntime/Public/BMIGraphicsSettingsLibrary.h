@@ -38,6 +38,9 @@ public:
     static bool SetCASSharpness(float Sharpness);
 
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
+    static bool SetFramePacing(bool bEnabled);
+
+    UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
     static bool SetLowLatency(int32 Mode);
 
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
