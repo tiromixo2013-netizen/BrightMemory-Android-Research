@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "reference": {
+    "repository": "jsuk10/UE4.27plus_Custom",
+    "ref": "main",
+    "files": {
+      "Engine/Source/Runtime/Engine/Public/SceneViewExtension.h": "6a3e39488617de9f0a7f0613c3ed1929293e08d5",
+      "Engine/Source/Runtime/Engine/Public/SceneView.h": "c5719958a3f5f33d0612be846f882afd6875a404",
+      "Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessUpscale.h": "a5b978c4d217dae4661cd0f99adcd49f4185bde6",
+      "Engine/Source/Runtime/Renderer/Private/PostProcess/PostProcessUpscale.cpp": "d7c121c5777ef2ea04b7fda8fe95e93528cb6fca",
+      "Engine/Source/Runtime/Renderer/Private/ScreenPass.h": "fddc351c56a2b181647c2a701fc73f84056cac08"
+    }
+  },
+  "verified_contract": {
+    "view_extension_base": "FSceneViewExtensionBase",
+    "factory": "FSceneViewExtensions::NewExtension<T>(...)",
+    "required_overrides": [
+      "SetupViewFamily(FSceneViewFamily&)",
+      "SetupView(FSceneViewFamily&, FSceneView&)",
+      "BeginRenderViewFamily(FSceneViewFamily&)",
+      "PreRenderViewFamily_RenderThread(FRHICommandListImmediate&, FSceneViewFamily&)",
+      "PreRenderView_RenderThread(FRHICommandListImmediate&, FSceneView&)"
+    ],
+    "upscaler_header": "Renderer/Private/PostProcess/PostProcessUpscale.h",
+    "upscaler_interface": "ISpatialUpscaler",
+    "upscaler_methods": [
+      "GetDebugName() const",
+      "Fork_GameThread(const FSceneViewFamily&) const",
+      "AddPasses(FRDGBuilder&, const FViewInfo&, const FInputs&) const"
+    ],
+    "input_fields": [
+      "FScreenPassRenderTarget OverrideOutput",
+      "FScreenPassTexture SceneColor",
+      "EUpscaleStage Stage"
+    ],
+    "view_family_assignment": "SetPrimarySpatialUpscalerInterface(ISpatialUpscaler*)",
+    "screen_pass_helper": "AddDrawScreenPass",
+    "rdg_pass_flag": "ERDGPassFlags::Raster"
+  },
+  "integration_constraints": [
+    "ISpatialUpscaler is declared in a Renderer private header, not a public plugin API.",
+    "FSceneViewFamily rejects a null primary upscaler and rejects a second primary assignment.",
+    "The extension must be retained by a shared reference for as long as it is registered.",
+    "A normal plugin using only public Engine headers cannot safely implement this interface.",
+    "The reference fork is not proven identical to the Bright Memory v1.34 engine snapshot."
+  ],
+  "implementation_status": {
+    "reference_signatures_inspected": true,
+    "renderer_patch_written": false,
+    "target_engine_compile": false,
+    "android_vulkan_validation": false,
+    "modified_apk": false
+  }
+}
