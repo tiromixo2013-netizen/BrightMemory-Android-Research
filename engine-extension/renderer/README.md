@@ -69,9 +69,9 @@ has not been compiled against the shipped engine snapshot.
 
 ## Target constraints and verification
 
-The inspected target profile disables Vulkan and uses Android OpenGL ES.
+The inspected target profile disables Vulkan and uses Android OpenGL ES. The public UE4.27 reference confirms the general RDG screen-pass API shape, but does not prove that the shipped game uses an identical renderer snapshot.
 Consequently Vulkan-only frame-pacing CVars are not presented as a working
-solution. The active GLES/Swappy pacing path still needs integration. Low
+solution. The active GLES/Swappy pacing path still needs integration. FSR Mobile remains source-only: its gather callbacks, half-precision path, shader-directory mapping, and UE shader compiler output must be checked against the game's exact GLES target before an adapter can be registered. Low
 Latency On currently maps to UE4's `r.OneFrameThreadLag=0`; Ultra/No Queue is
 rejected because no supported active-RHI queue-depth control is verified.
 
