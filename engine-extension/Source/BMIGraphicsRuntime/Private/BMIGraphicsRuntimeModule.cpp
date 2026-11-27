@@ -151,6 +151,19 @@ namespace BMIGraphicsRuntime
             UE_LOG(LogTemp, Error, TEXT("AMD CAS pass is not registered; sharpness was not applied."));
     }
 
+    static void SetFramePacing(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1) return;
+        const int32 Enabled = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 1);
+        // UE4.27 Vulkan CPU fallback pacers. These CVars are registered in
+        // VulkanSwapChain.cpp; they only pace when the platform/VSync path
+        // requests a frame interval. Do not force pacing when VSync is off.
+        const bool bRenderThread = SetCVarIntIfPresent(TEXT("r.Vulkan.CPURenderthreadFramePacer"), Enabled);
+        const bool bRHIThread = SetCVarIntIfPresent(TEXT("r.Vulkan.CPURHIThreadFramePacer"), Enabled);
+        if (!bRenderThread && !bRHIThread)
+            UE_LOG(LogTemp, Warning, TEXT("Vulkan CPU frame-pacing CVars are unavailable in this RHI build."));
+    }
+
     static void SetLowLatency(const TArray<FString>& Args)
     {
         if (Args.Num() != 1) return;
@@ -188,7 +201,7 @@ namespace BMIGraphicsRuntime
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetCAS));
     static FAutoConsoleCommand CmdCASSharpness(TEXT("bmi.SetCASSharpness"), TEXT("Set registered AMD CAS sharpness 0..1."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetCASSharpness));
-    static FAutoConsoleCommand CmdLowLatency(TEXT("bmi.SetLowLatency"), TEXT("Low latency: 0 off, 1 UE4 thread sync, 2 unsupported no-queue."),
+    static FAutoConsoleCommand CmdFramePacing(TEXT("bmi.SetFramePacing"), TEXT("Enable/disable UE4.27 Vulkan CPU fallback frame pacing."),\n        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFramePacing));\n    static FAutoConsoleCommand CmdLowLatency(TEXT("bmi.SetLowLatency"), TEXT("Low latency: 0 off, 1 UE4 thread sync, 2 unsupported no-queue."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetLowLatency));
 }
 
