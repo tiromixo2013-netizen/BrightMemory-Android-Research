@@ -136,3 +136,5 @@ jobs:
           rclone copy workspace/reports "$dest/reports" --retries 5
           rclone copyto workspace/bright-memory-infinite-v1.34.apk "$dest/bright-memory-infinite-v1.34.apk" --retries 5
           rclone ls "$dest"
+
+# Restore trigger marker: re-run verified six-part MEGA reconstruction for native integration.
