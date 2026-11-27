@@ -1,0 +1,18 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0",
+  "FriendlyName": "Bright Memory Graphics Runtime",
+  "Description": "UE4.27 runtime controls for Bright Memory Android graphics settings. Renderer features remain gated until their render-pass implementations are compiled and validated.",
+  "Category": "Rendering",
+  "CreatedBy": "Project integration",
+  "CanContainContent": false,
+  "IsBetaVersion": true,
+  "Modules": [
+    {
+      "Name": "BMIGraphicsRuntime",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ]
+}
