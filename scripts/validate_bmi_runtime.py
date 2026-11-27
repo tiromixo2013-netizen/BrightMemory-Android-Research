@@ -26,6 +26,19 @@ required = [
 for symbol in required:
     assert symbol in source, f"Missing runtime integration: {symbol}"
 
+contract = (root / "engine-extension/RENDERER-INTEGRATION-CONTRACT.md").read_text()
+for symbol in [
+    "FSceneViewExtensionBase",
+    "FSceneViewExtensions::NewExtension",
+    "BeginRenderViewFamily",
+    "ISpatialUpscaler",
+    "Fork_GameThread",
+    "FRDGBuilder",
+    "Renderer/Private/PostProcess/PostProcessUpscale.h",
+    "private header",
+]:
+    assert symbol in contract, f"Missing verified renderer contract detail: {symbol}"
+
 config = json.loads((root / "config/graphics-settings.json").read_text())
 ids = [item["id"] for item in config["settings"]]
 for expected in ["render_scale", "graphics_quality", "upscaler", "amd_cas",
@@ -38,4 +51,4 @@ for item in config["settings"]:
             f"Unimplemented feature must remain hidden: {item['id']}"
         )
 
-print("PASS: plugin descriptor, native API wiring, settings schema and feature gates")
+print("PASS: plugin descriptor, native API wiring, renderer contract, settings schema and feature gates")
