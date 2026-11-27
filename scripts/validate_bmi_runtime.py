@@ -123,7 +123,8 @@ for symbol in [
     assert symbol in renderer_source, f"Renderer bridge source missing: {symbol}"
 assert "defaults to disabled (opt-in)" in renderer_readme
 assert "official Qualcomm UE4.27 SGSR1 plugin source" in renderer_readme
-assert "not yet connected to an RDG shader pass" in renderer_readme
+assert "AMD FidelityFX CAS portability and algorithm headers are vendored" in renderer_readme
+assert "CAS RDG pass" in renderer_readme
 assert "have not been compiled against the exact Bright Memory v1.34" in renderer_readme
 assert "FSceneViewFamily owns" in renderer_source
 assert "does not replace a primary upscaler" in renderer_readme
