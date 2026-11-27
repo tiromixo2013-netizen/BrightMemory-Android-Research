@@ -82,6 +82,7 @@ assert "Method<0||Method>3" in unified_cpp
 assert "if (Method==4||Method==5)" in unified_cpp
 assert "\\\\n TAutoConsoleVariable<int32> CVarBMIMethod" not in unified_cpp, "Malformed escaped newline in C++ declarations"
 assert "CVarBMIPipelineEnabled.GetValueOnGameThread() == 0" in unified_cpp
+assert "InViewFamily.GetPrimarySpatialUpscalerInterface() == nullptr" in unified_cpp
 assert "InViewFamily.SetPrimarySpatialUpscalerInterface(new FBMIUnifiedSpatialUpscaler());" in unified_cpp
 assert "Copy->bCAS=CVarBMICASEnabled.GetValueOnGameThread()!=0" in unified_cpp
 
@@ -139,3 +140,5 @@ assert audit["target_rhi"]["vulkan_enabled"] is False
 assert audit["implementation_status"]["android_opengles_validation"] is False
 assert audit["implementation_status"]["fsr_mobile_adapter_registered"] is False
 assert audit["implementation_status"]["fsr_mobile_shader_compiled"] is False
+
+assert "SetPrimarySpatialUpscalerInterface is assign-once" in unified_cpp
