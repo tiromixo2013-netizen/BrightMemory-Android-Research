@@ -85,27 +85,28 @@
         "SGSR1",
         "SGSR2",
         "MWSR",
-        "FSR Lite",
+        "FSR Mobile",
         "Nearest",
         "Bilinear"
       ],
       "integration_point": "AddMobilePostProcessingPasses @ 0x78870c0; ISpatialUpscaler::AddDefaultUpscalePass @ 0x78fae30",
       "methods": {
-        "SGSR1": "official_Qualcomm_UE4_27_plugin_source_and_mobile_shader_vendored_under_engine-extension/renderer/vendor/SGSR1; opt-in CVar; runtime sharpness slider wired to shader parameter; not compiled into Bright Memory",
-        "SGSR2": "official temporal algorithm source exists upstream; not integrated; requires motion vectors, history and UE4.27 temporal pipeline integration",
-        "MWSR": "algorithm source and UE4.27 integration not verified; unavailable",
-        "FSR Lite": "not an official AMD feature name; FSR1 source/integration not yet ported; unavailable",
-        "Nearest": "native Renderer bridge source; uses UE4.27 AddDefaultUpscalePass; not compiled into target",
-        "Bilinear": "native Renderer bridge source; uses UE4.27 AddDefaultUpscalePass; not compiled into target"
+        "SGSR1": "official Qualcomm UE4.27 plugin source vendored; integration into shipped renderer not compiled",
+        "SGSR2": "official Qualcomm UE4.27 plugin source is available upstream; vendoring/integration not yet completed; temporal history and motion vectors must be verified for game path",
+        "MWSR": "MIT source from linckosz/moonlight-web/mwsr vendored as HLSL reference; uses coarse derivatives and a 96-byte constants block; UE4.27 mobile Vulkan shader adaptation and RDG registration not yet compiled",
+        "FSR Mobile": "MIT optimized mobile FSR1 source by atyuwen; single-pass EASU+RCAS variant; requires AMD FSR helper routines and UE4.27 mobile shader adaptation",
+        "Nearest": "native UE4.27 AddDefaultUpscalePass bridge source; not compiled into target",
+        "Bilinear": "native UE4.27 AddDefaultUpscalePass bridge source; not compiled into target"
       },
-      "status": "SGSR1_official_UE4_27_module_and_shader_vendored_sharpness_parameter_added_native_nearest_bilinear_bridge_source_only_uncompiled",
+      "status": "SGSR1_source_vendored; SGSR2_official_UE4_27_upstream_available; MWSR_HLSL_source_vendored_reference; FSR_Mobile_MIT_source_verified; all custom renderer integrations require UE4.27 mobile shader compile",
       "ui_control_defined": true,
       "expose_control": false,
       "integration_requirements": [
-        "Install vendored SGSR1 plugin as Engine/Plugins/Runtime/SGSR (folder name must be SGSR because plugin shader mapping looks up FindPlugin('SGSR')) and enable SGSR.uplugin in the game project",
-        "Copy BMISpatialUpscaler.h/.cpp into Engine/Source/Runtime/Renderer/Private and apply 0001-register-bmi-spatial-upscaler.patch",
-        "Compile exact Bright Memory Android UE4.27 target and validate Vulkan before exposing menu controls",
-        "SGSR2, MWSR and FSR Lite remain unavailable until their complete renderer passes are ported"
+        "SGSR1/SGSR2 plugins must be installed into the exact UE4.27 engine and compiled with Bright Memory",
+        "MWSR HLSL source is an upstream reference; adapt its coarse derivatives and parameter layout to UE4.27 Mobile Vulkan shader compiler before enabling",
+        "FSR Mobile is the atyuwen optimized EASU+RCAS mobile implementation; include its required FSR helper routines and validate FP16 support on Adreno 610",
+        "Integrate each selected method in the UE4.27 renderer's actual spatial upscaler pass; do not only change CVars",
+        "Compile Android Vulkan shaders and visually test every method on device before exposing controls"
       ],
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaler"
     },
@@ -147,7 +148,7 @@
       "label": "AMD CAS",
       "type": "boolean",
       "integration_point": "separate_RDG_post_upscale_pass; do_not_stack_on_SGSR1_sharpening_by_default",
-      "status": "official_AMD_CAS_headers_vendored_only_RDG_pass_and_shader_binding_not_implemented",
+      "status": "AMD CAS headers vendored only; no RDG pass or shader binding",
       "ui_control_defined": true,
       "expose_control": false,
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetAMDCAS"
@@ -190,7 +191,7 @@
       "label": "Frame Pacing",
       "type": "boolean",
       "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; FAndroidPlatformRHIFramePacer::GetFramePace @ 0x67dac90; Swappy symbols present",
-      "status": "native_pacing_and_swappy_code_verified_controls_not_yet_exposed",
+      "status": "native Vulkan pacing path identified in exact UE4.27 source; runtime On/Off bridge and UMG control not yet implemented",
       "ui_control_defined": true,
       "expose_control": false,
       "note": "SwappyGL exports alone do not prove Vulkan path uses Swappy; Vulkan Present has its own RenderThreadPacing path."
