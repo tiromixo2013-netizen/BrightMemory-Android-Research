@@ -44,3 +44,19 @@ void FBMIUnifiedSpatialUpscaler::RegisterHud(FBMIHudPass Pass) { FWriteScopeLock
 FBMIUpscalePass FBMIUnifiedSpatialUpscaler::FindUpscaler(int32 Method) { FReadScopeLock Lock(GRegistryLock); const auto* P=GUpscalers.Find(Method); return P?*P:FBMIUpscalePass(); }
 FBMICASPass FBMIUnifiedSpatialUpscaler::FindCAS() { FReadScopeLock Lock(GRegistryLock); return GCASPass; }
 FBMIHudPass FBMIUnifiedSpatialUpscaler::FindHud() { FReadScopeLock Lock(GRegistryLock); return GHudPass; }
+
+FBMIUnifiedUpscalerViewExtension::FBMIUnifiedUpscalerViewExtension(const FAutoRegister& AutoRegister)
+ : FSceneViewExtensionBase(AutoRegister) {}
+void FBMIUnifiedUpscalerViewExtension::SetupViewFamily(FSceneViewFamily& InViewFamily) {}
+void FBMIUnifiedUpscalerViewExtension::SetupView(FSceneViewFamily& InViewFamily,FSceneView& InView) {}
+void FBMIUnifiedUpscalerViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewFamily) {
+ if (InViewFamily.GetPrimarySpatialUpscalerInterface()==nullptr) {
+  InViewFamily.SetPrimarySpatialUpscalerInterface(new FBMIUnifiedSpatialUpscaler());
+ }
+}
+void FBMIUnifiedUpscalerViewExtension::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList,FSceneViewFamily& InViewFamily) {}
+void FBMIUnifiedUpscalerViewExtension::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList,FSceneView& InView) {}
+void RegisterBMIUnifiedSpatialUpscaler() {
+ static TSharedPtr<FBMIUnifiedUpscalerViewExtension,ESPMode::ThreadSafe> Extension;
+ if (!Extension.IsValid()) Extension=FSceneViewExtensions::NewExtension<FBMIUnifiedUpscalerViewExtension>();
+}
