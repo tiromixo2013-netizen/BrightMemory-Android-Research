@@ -155,9 +155,9 @@ for rel in [
     "GSR/Source/GSRTUModule/Private/GSRTU.cpp",
     "GSR/Source/GSRTUModule/Private/GSRViewExtension.cpp",
     "LICENSE",
-    "UPSTREAM.md",
 ]:
     assert (sgsr2 / rel).exists(), f"Missing vendored SGSR2 file: {rel}"
+assert (VENDOR / "SGSR2-UE427/UPSTREAM.md").exists()
 assert "ITemporalUpscaler" in read(sgsr2 / "GSR/Source/GSRTUModule/Private/GSRTU.h")
 assert 'TEXT("r.SGSR2.Enabled")' in read(sgsr2 / "GSR/Source/GSRTUModule/Private/GSRViewExtension.cpp")
 assert "temporal, not spatial" in read(VENDOR / "SGSR2-UE427/UPSTREAM.md")
