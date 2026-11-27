@@ -139,7 +139,7 @@ jobs:
             SetResolutionScaleNormalized:0x8735be0:168
             ApplySettings:0x8734cfc:72
             SaveSettings:0x873500c:92
-            SPECS
+          SPECS
           } > reports/complete-hook-disassembly.txt
           grep -E "LOAD|GNU_RELRO|GNU_STACK" reports/elf-program-headers.txt > reports/elf-memory-layout.txt || true
 
