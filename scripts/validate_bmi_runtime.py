@@ -92,7 +92,8 @@ assert status["mobile_methods_exposed"] == ["Nearest", "Bilinear"]
 assert status["default_enabled"] is False
 assert audit["verified_contract"]["view_family_ownership"].startswith("FSceneViewFamily::~FSceneViewFamily")
 assert audit["verified_contract"]["fork_behavior"].startswith("FSceneRenderer forks")
-assert status["renderer_patch_written"] is False
+assert status["renderer_patch_written"] is True
+assert status["renderer_patch_path"] == "engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch"
 assert status["target_engine_compile"] is False
 assert status["android_vulkan_validation"] is False
 assert status["modified_apk"] is False
@@ -127,4 +128,8 @@ assert "not yet" in renderer_readme
 assert "FSceneViewFamily owns" in renderer_source
 assert "does not replace a primary upscaler" in renderer_readme
 
-print("PASS: plugin descriptor, native API wiring, renderer contract, pinned API audit, native mobile upscale bridge, settings schema and feature gates")
+patch = (root / "engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch").read_text()
+for token in ["#include \\"BMISpatialUpscaler.h\\"", "RegisterBMISpatialUpscaler()", "FRendererModule::StartupModule"]:
+    assert token in patch, f"Renderer registration patch missing: {token}"
+
+print("PASS: plugin descriptor, native API wiring, renderer contract, pinned API audit, renderer registration patch, native mobile upscale bridge, settings schema and feature gates")
