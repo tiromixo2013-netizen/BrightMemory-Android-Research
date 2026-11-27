@@ -47,6 +47,32 @@ namespace BMIGraphicsRuntime
         }
     }
 
+    static void SetGraphicsPreset(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1 || !GEngine)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Usage: bmi.SetGraphicsPreset <0..4>"));
+            return;
+        }
+
+        const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 4);
+        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+        {
+            // Apply each UE4.27 scalability group explicitly so this preset
+            // affects real engine quality groups rather than only a menu label.
+            Settings->SetViewDistanceQuality(Quality);
+            Settings->SetShadowQuality(Quality);
+            Settings->SetAntiAliasingQuality(Quality);
+            Settings->SetTextureQuality(Quality);
+            Settings->SetVisualEffectQuality(Quality);
+            Settings->SetPostProcessingQuality(Quality);
+            Settings->SetFoliageQuality(Quality);
+            Settings->SetShadingQuality(Quality);
+            Settings->ApplySettings(false);
+            UE_LOG(LogTemp, Log, TEXT("BMI graphics preset applied to all UE4.27 scalability groups: %d"), Quality);
+        }
+    }
+
     static void SetFrameLimit(const TArray<FString>& Args)
     {
         if (Args.Num() != 1 || !GEngine)
@@ -102,6 +128,10 @@ namespace BMIGraphicsRuntime
         TEXT("bmi.SetGraphicsQuality"),
         TEXT("Set the UE4 overall scalability level (0..4)."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetGraphicsQuality));
+    static FAutoConsoleCommand CmdGraphicsPreset(
+        TEXT("bmi.SetGraphicsPreset"),
+        TEXT("Apply UE4.27 quality level to view distance, shadows, AA, textures, effects, post process, foliage and shading."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetGraphicsPreset));
     static FAutoConsoleCommand CmdFrameLimit(
         TEXT("bmi.SetFrameLimit"),
         TEXT("Set the UE4 GameUserSettings frame-rate limit."),
