@@ -41,6 +41,15 @@ namespace BMIGraphicsRuntime
         }
     }
 
+    static void SetResolutionController(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1) return;
+        const int32 Choice = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 6);
+        const float Scale[] = { 0.0f, 0.75f, 0.85f, 1.0f, 1.2f, 1.35f, 1.5f };
+        if (!SetCVarFloatIfPresent(TEXT("r.MobileContentScaleFactor"), Scale[Choice]))
+            UE_LOG(LogTemp, Error, TEXT("Game mobile content scale CVar is unavailable."));
+    }
+
     static void SetGraphicsQuality(const TArray<FString>& Args)
     {
         if (Args.Num() != 1 || !GEngine) return;
@@ -48,6 +57,21 @@ namespace BMIGraphicsRuntime
         if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
         {
             Settings->SetOverallScalabilityLevel(Quality);
+            Settings->ApplySettings(false);
+        }
+    }
+
+    static void SetFrameLimit(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1 || !GEngine) return;
+        const int32 Requested = FCString::Atoi(*Args[0]);
+        const int32 Allowed[] = { 30, 45, 60, 90, 120 };
+        bool bAllowed = false;
+        for (int32 Rate : Allowed) bAllowed |= Requested == Rate;
+        if (!bAllowed) return;
+        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+        {
+            Settings->SetFrameRateLimit(static_cast<float>(Requested));
             Settings->ApplySettings(false);
         }
     }
@@ -146,6 +170,10 @@ namespace BMIGraphicsRuntime
         UE_LOG(LogTemp, Error, TEXT("Ultra (No Queue) is unavailable: no validated Vulkan queue-depth control exists for this build."));
     }
 
+    static FAutoConsoleCommand CmdResolutionController(TEXT("bmi.SetResolutionController"), TEXT("Set native/540P..1080P mobile content scale option 0..6."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetResolutionController));
+    static FAutoConsoleCommand CmdFrameLimit(TEXT("bmi.SetFrameLimit"), TEXT("Set UE4 frame limit 30,45,60,90,120."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameLimit));
     static FAutoConsoleCommand CmdRenderScale(TEXT("bmi.SetRenderScale"), TEXT("Set render scale percent."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetRenderScale));
     static FAutoConsoleCommand CmdGraphicsQuality(TEXT("bmi.SetGraphicsQuality"), TEXT("Set UE4 scalability quality 0..4."),
