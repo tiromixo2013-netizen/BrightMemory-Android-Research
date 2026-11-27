@@ -35,7 +35,9 @@
     ],
     "view_family_assignment": "SetPrimarySpatialUpscalerInterface(ISpatialUpscaler*)",
     "screen_pass_helper": "AddDrawScreenPass",
-    "rdg_pass_flag": "ERDGPassFlags::Raster"
+    "rdg_pass_flag": "ERDGPassFlags::Raster",
+    "view_family_ownership": "FSceneViewFamily::~FSceneViewFamily deletes the primary ISpatialUpscaler through ISceneViewFamilyExtention",
+    "fork_behavior": "FSceneRenderer forks the primary upscaler with Fork_GameThread when copying a view family"
   },
   "integration_constraints": [
     "ISpatialUpscaler is declared in a Renderer private header, not a public plugin API.",
@@ -49,6 +51,12 @@
     "renderer_patch_written": false,
     "target_engine_compile": false,
     "android_vulkan_validation": false,
-    "modified_apk": false
+    "modified_apk": false,
+    "renderer_bridge_source_authored": true,
+    "mobile_methods_exposed": [
+      "Nearest",
+      "Bilinear"
+    ],
+    "default_enabled": false
   }
 }
