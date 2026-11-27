@@ -57,3 +57,31 @@ Use this source only as a reference/base candidate while verifying the exact tar
 - only then choose between a compatible native extension, a carefully verified binary hook, or a source-based engine rebuild.
 
 Do not write to the discovered offsets or install a custom vtable until the object layout and lifetime are proven.
+
+
+## Follow-up: verified interface assignment/lifetime in the candidate source
+
+Additional candidate files inspected:
+- `Engine/Source/Runtime/Engine/Public/SceneView.h`
+- `Engine/Source/Runtime/Engine/Public/SceneViewExtension.h`
+- `Engine/Source/Runtime/Renderer/Private/SceneRendering.cpp`
+
+Findings:
+1. `FSceneViewFamily` owns the primary spatial-upscaler interface pointer and exposes `SetPrimarySpatialUpscalerInterface(ISpatialUpscaler*)` / `GetPrimarySpatialUpscalerInterface()`.
+2. The setter checks for a non-null pointer and rejects a second assignment. The field is private to the view-family class.
+3. In the scene-rendering setup path, the engine asserts that primary and secondary spatial upscalers are still unset, then invokes each registered `ISceneViewExtension::BeginRenderViewFamily(FSceneViewFamily&)`.
+4. This is the intended assignment point for a custom upscaler in this source candidate: a registered scene-view extension can set the primary spatial-upscaler interface during `BeginRenderViewFamily`.
+5. `ISceneViewExtension` declares `BeginRenderViewFamily` as a virtual method. The renderer later forks the interface via `Fork_GameThread(ViewFamily)` while copying the view family for rendering.
+
+### Engineering implication
+
+For a source-based integration, the preferred architecture is now:
+- implement a game-thread-safe `ISpatialUpscaler` (or suitable base implementation);
+- register an `ISceneViewExtension`;
+- assign the upscaler from `BeginRenderViewFamily` through `SetPrimarySpatialUpscalerInterface`;
+- implement the render-graph `AddPasses` method for the selected algorithm;
+- ensure correct ownership/lifetime and `Fork_GameThread` behavior.
+
+This is materially safer than patching a guessed `FSceneViewInitOptions` or view-state offset. It also means the earlier binary observation at `view-state +0xc0` must not be assumed to be the same pointer as `FSceneViewFamily::PrimarySpatialUpscalerInterface`; they are different object paths until proven otherwise.
+
+The candidate source's exact match to the shipped BMI binary remains an assumption supplied by the project owner, not independently proven by the available binary/source comparison. This assumption is accepted as the working base for implementation, but all target ABI and Android build integration checks remain required.
