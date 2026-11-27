@@ -100,7 +100,10 @@ void FBMIUnifiedUpscalerViewExtension::BeginRenderViewFamily(FSceneViewFamily& I
 }
 void FBMIUnifiedUpscalerViewExtension::PreRenderViewFamily_RenderThread(FRHICommandListImmediate& RHICmdList,FSceneViewFamily& InViewFamily) {}
 void FBMIUnifiedUpscalerViewExtension::PreRenderView_RenderThread(FRHICommandListImmediate& RHICmdList,FSceneView& InView) {}
+void RegisterBMIFSRMobileUpscaler();
+
 void RegisterBMIUnifiedSpatialUpscaler() {
+ RegisterBMIFSRMobileUpscaler();
  static TSharedPtr<FBMIUnifiedUpscalerViewExtension,ESPMode::ThreadSafe> Extension;
  if (!Extension.IsValid()) Extension=FSceneViewExtensions::NewExtension<FBMIUnifiedUpscalerViewExtension>();
 }
