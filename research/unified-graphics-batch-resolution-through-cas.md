@@ -72,3 +72,7 @@ The contract deliberately keeps all new controls hidden until their actual runti
 | Repacked/signature-verified modified APK | Not yet |
 
 A correct final APK requires native UE4 renderer integration against the exact stripped engine ABI and its Android shader pipeline, plus safe cooked-UMG editing or a validated runtime UI route. Changing only the JSON contract, project INI, or CVar strings would not implement the requested in-game controls or upscalers.
+
+### Contract validation
+
+The static settings contract validator passed on commit `3c374cae5eb11dbdb4acf89bd11da6e855474152`: [GitHub Actions run 46009503264](https://github.com/tiromixo2013-netizen/BrightMemory-Android-Research/actions/runs/46009503264). This checks ordering, single-upscaler fallback, separation of render scale from display mode, all six quality tiers, CAS placement, and that incomplete controls are not exposed. It is not an engine or APK build.
