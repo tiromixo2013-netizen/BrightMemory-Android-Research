@@ -97,32 +97,12 @@ namespace BMIGraphicsRuntime
     {
         if (Args.Num() != 1) return;
         const int32 Method = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
-
-        if (Method == 4 || Method == 5)
-        {
-            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
-            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 0);
-            SetCVarIntIfPresent(TEXT("bmi.NativeUpscaleMethod"), Method == 4 ? 0 : 1);
-            SetCVarIntIfPresent(TEXT("bmi.UseNativeSpatialUpscaler"), 1);
-            return;
-        }
-
-        SetCVarIntIfPresent(TEXT("bmi.UseNativeSpatialUpscaler"), 0);
-        if (Method == 0)
-        {
-            if (!SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 1))
-                UE_LOG(LogTemp, Error, TEXT("SGSR1 selected but Qualcomm SGSR1 is not linked into this build."));
-            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 0);
-            return;
-        }
-        if (Method == 1)
-        {
-            if (!SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 1))
-                UE_LOG(LogTemp, Error, TEXT("SGSR2 selected but Qualcomm SGSR2 is not linked into this build."));
-            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
-            return;
-        }
-        UE_LOG(LogTemp, Error, TEXT("MWSR / FSR Mobile are not implemented in this engine build; selection rejected."));
+        // One primary Renderer RDG pipeline owns all spatial methods.
+        // Disable vendor extensions so they cannot install a competing upscaler.
+        SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
+        SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR2.Enabled"), 0);
+        if (!SetCVarIntIfPresent(TEXT("bmi.Pipeline.Upscaler"), Method))
+            UE_LOG(LogTemp, Error, TEXT("BMI unified renderer pipeline is not registered; method selection rejected."));
     }
 
     static void SetUpscaleSharpness(const TArray<FString>& Args)
@@ -130,7 +110,7 @@ namespace BMIGraphicsRuntime
         if (Args.Num() != 1) return;
         const float Sharpness = 1.0f + FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
         // Map the user slider 0..1 to SGSR1's documented 1..2 edge-strength range.
-        if (!SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), Sharpness))
+        if (!SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness))
             UE_LOG(LogTemp, Warning, TEXT("Selected upscaler exposes no runtime sharpness CVar in this build."));
     }
 
@@ -139,7 +119,7 @@ namespace BMIGraphicsRuntime
         if (Args.Num() != 1) return;
         const bool bEnable = FCString::Atoi(*Args[0]) != 0;
         // A toggle is accepted only when the renderer CAS pass has registered.
-        if (!SetCVarIntIfPresent(TEXT("bmi.CAS.Enabled"), bEnable ? 1 : 0))
+        if (!SetCVarIntIfPresent(TEXT("bmi.Pipeline.CAS"), bEnable ? 1 : 0))
             UE_LOG(LogTemp, Error, TEXT("AMD CAS pass is not registered in this build; refusing a fake toggle."));
     }
 
@@ -147,7 +127,7 @@ namespace BMIGraphicsRuntime
     {
         if (Args.Num() != 1) return;
         const float Sharpness = FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
-        if (!SetCVarFloatIfPresent(TEXT("bmi.CAS.Sharpness"), Sharpness))
+        if (!SetCVarFloatIfPresent(TEXT("bmi.Pipeline.CASSharpness"), Sharpness))
             UE_LOG(LogTemp, Error, TEXT("AMD CAS pass is not registered; sharpness was not applied."));
     }
 
