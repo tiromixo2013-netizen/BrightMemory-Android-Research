@@ -142,19 +142,21 @@ namespace BMIGraphicsRuntime
     static void SetUpscaleSharpness(const TArray<FString>& Args)
     {
         if (Args.Num() != 1) return;
-        const float Sharpness = 1.0f + FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
-        // Map the user slider 0..1 to SGSR1's documented 1..2 edge-strength range.
-        if (!SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness))
-            UE_LOG(LogTemp, Warning, TEXT("Selected upscaler exposes no runtime sharpness CVar in this build."));
+        const float Sharpness = FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
+        SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness);
     }
 
     static void SetCAS(const TArray<FString>& Args)
     {
         if (Args.Num() != 1) return;
         const bool bEnable = FCString::Atoi(*Args[0]) != 0;
-        // A toggle is accepted only when the renderer CAS pass has registered.
-        if (!SetCVarIntIfPresent(TEXT("bmi.Pipeline.CAS"), bEnable ? 1 : 0))
-            UE_LOG(LogTemp, Error, TEXT("AMD CAS pass is not registered in this build; refusing a fake toggle."));
+        IConsoleVariable* Available = FindCVar(TEXT("bmi.Pipeline.CASAvailable"));
+        if (!Available || Available->GetInt() == 0)
+        {
+            UE_LOG(LogTemp, Error, TEXT("No AMD CAS RDG pass is registered; refusing a non-functional toggle."));
+            return;
+        }
+        SetCVarIntIfPresent(TEXT("bmi.Pipeline.CAS"), bEnable ? 1 : 0);
     }
 
     static void SetCASSharpness(const TArray<FString>& Args)
@@ -170,13 +172,15 @@ namespace BMIGraphicsRuntime
     {
         if (Args.Num() != 1) return;
         const int32 Enabled = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 1);
-        // UE4.27 Vulkan CPU fallback pacers. These CVars are registered in
-        // VulkanSwapChain.cpp; they only pace when the platform/VSync path
-        // requests a frame interval. Do not force pacing when VSync is off.
-        const bool bRenderThread = SetCVarIntIfPresent(TEXT("r.Vulkan.CPURenderthreadFramePacer"), Enabled);
-        const bool bRHIThread = SetCVarIntIfPresent(TEXT("r.Vulkan.CPURHIThreadFramePacer"), Enabled);
-        if (!bRenderThread && !bRHIThread)
-            UE_LOG(LogTemp, Warning, TEXT("Vulkan CPU frame-pacing CVars are unavailable in this RHI build."));
+        // The inspected target profile disables Vulkan. Vulkan-only fallback
+        // pacers must not be presented as working on this OpenGL ES build.
+        if (Enabled == 0)
+        {
+            SetCVarIntIfPresent(TEXT("r.Vulkan.CPURenderthreadFramePacer"), 0);
+            SetCVarIntIfPresent(TEXT("r.Vulkan.CPURHIThreadFramePacer"), 0);
+            return;
+        }
+        UE_LOG(LogTemp, Error, TEXT("Frame Pacing is not enabled: the active Android OpenGL ES pacer/Swappy path has not yet been integrated."));
     }
 
     static void SetLowLatency(const TArray<FString>& Args)
@@ -195,7 +199,7 @@ namespace BMIGraphicsRuntime
             SetCVarIntIfPresent(TEXT("r.OneFrameThreadLag"), 0);
             return;
         }
-        UE_LOG(LogTemp, Error, TEXT("Ultra (No Queue) is unavailable: no validated Vulkan queue-depth control exists for this build."));
+        UE_LOG(LogTemp, Error, TEXT("Ultra (No Queue) is unavailable: no validated active-RHI queue-depth control exists for this build."));
     }
 
     static FAutoConsoleCommand CmdResolutionController(TEXT("bmi.SetResolutionController"), TEXT("Set native/540P..1080P mobile content scale option 0..6."),
@@ -204,7 +208,7 @@ namespace BMIGraphicsRuntime
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameLimit));
     static FAutoConsoleCommand CmdRenderScale(TEXT("bmi.SetRenderScale"), TEXT("Set render scale percent."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetRenderScale));
-    static FAutoConsoleCommand CmdGraphicsQuality(TEXT("bmi.SetGraphicsQuality"), TEXT("Set UE4 scalability quality 0..4."),
+    static FAutoConsoleCommand CmdGraphicsQuality(TEXT("bmi.SetGraphicsQuality"), TEXT("Set UE4 scalability quality 0..5."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetGraphicsQuality));
     static FAutoConsoleCommand CmdUpscalePreset(TEXT("bmi.SetUpscalePreset"), TEXT("Set unified upscaler preset 0..4."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscalePreset));
@@ -216,7 +220,7 @@ namespace BMIGraphicsRuntime
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetCAS));
     static FAutoConsoleCommand CmdCASSharpness(TEXT("bmi.SetCASSharpness"), TEXT("Set registered AMD CAS sharpness 0..1."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetCASSharpness));
-    static FAutoConsoleCommand CmdFramePacing(TEXT("bmi.SetFramePacing"), TEXT("Enable/disable UE4.27 Vulkan CPU fallback frame pacing."),
+    static FAutoConsoleCommand CmdFramePacing(TEXT("bmi.SetFramePacing"), TEXT("Frame pacing; refuses Vulkan-only mode on the inspected GLES target."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetFramePacing));
     static FAutoConsoleCommand CmdLowLatency(TEXT("bmi.SetLowLatency"), TEXT("Low latency: 0 off, 1 UE4 thread sync, 2 unsupported no-queue."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetLowLatency));
