@@ -37,8 +37,8 @@ jobs:
           set -euo pipefail
           glslangValidator -D -V -S comp -e mainCS \
             -Ivendor/amd-fidelityfx-cas \
-            -DCAS_SAMPLE_FP16=0 -DCAS_SAMPLE_SHARPEN_ONLY=1 \\
-            -DWIDTH=64 -DHEIGHT=1 -DDEPTH=1 \\
+            -DCAS_SAMPLE_FP16=0 -DCAS_SAMPLE_SHARPEN_ONLY=1 \
+            -DWIDTH=64 -DHEIGHT=1 -DDEPTH=1 \
             vendor/amd-fidelityfx-cas/CAS_Shader.hlsl \
             -o build/cas/cas-hlsl-fp32-sharpen.spv
 
