@@ -191,10 +191,11 @@
       "label": "Frame Pacing",
       "type": "boolean",
       "integration_point": "FVulkanSwapChain::RenderThreadPacing @ 0x626acb8; FVulkanSwapChain::Present @ 0x626aea8; FAndroidPlatformRHIFramePacer::GetFramePace @ 0x67dac90; Swappy symbols present",
-      "status": "native Vulkan pacing path identified in exact UE4.27 source; runtime On/Off bridge and UMG control not yet implemented",
+      "status": "runtime command and Blueprint API added for UE4.27 Vulkan CPU fallback pacers; exact Vulkan CVar names verified in reference source; not compiled into game",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "SwappyGL exports alone do not prove Vulkan path uses Swappy; Vulkan Present has its own RenderThreadPacing path."
+      "note": "On toggles r.Vulkan.CPURenderthreadFramePacer and r.Vulkan.CPURHIThreadFramePacer; it does not force pacing when VSync is off and does not replace platform FramePace/Swappy. Validate on target device.",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetFramePacing"
     },
     {
       "id": "low_latency",
