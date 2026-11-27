@@ -13,22 +13,37 @@ chains optional post-reconstruction stages in this order:
 Frame Generation is deliberately separate; it is not a spatial upscaler pass.
 The dispatcher currently contains only UE4's built-in Nearest and Bilinear
 fallbacks. External methods are accepted by the registry API but none of the
-four external adapters is registered yet. The view extension is opt-in: its `bmi.Pipeline.Enabled` CVar defaults to 0, and the runtime only enables it after confirming that the requested method's registration bit is available. It assigns BMI only when the view family has no primary spatial upscaler. UE4.27's setter is assign-once and asserts on a second assignment; therefore the Renderer integration must replace the engine's original assignment point. The current patch only registers the extension and is not sufficient to replace an already assigned primary upscaler. Until that exact integration is applied to a matching engine source, the game's original path remains in control.
+four external adapters is registered yet.
+
+The view extension is opt-in: `bmi.Pipeline.Enabled` defaults to 0. The
+Renderer startup patch replaces the old BMI registration call with
+`RegisterBMIUnifiedSpatialUpscaler()`, which retains/registers the BMI view
+extension. During `BeginRenderViewFamily`, BMI claims the primary slot only
+when the pipeline is enabled, the selected method is registered, and the
+family has no primary spatial upscaler. UE4.27's setter is assign-once and
+asserts on a second assignment, so BMI never overwrites another extension.
+
+The vendored Qualcomm SGSR extension also assigns the primary slot only when
+it is empty. Its `r.Qualcomm.SGSR.Enabled` CVar must therefore be disabled
+before BMI claims the slot; `SetUpscaler` explicitly disables that CVar
+(and the SGSR2 CVar if present) after validating BMI's method mask. If another
+extension claims the primary slot first, BMI safely leaves it untouched and
+will not become active for that view family.
 
 Registration patch:
 `patches/0001-register-bmi-spatial-upscaler.patch`.
 
 The patch targets the inspected reference source
 `jsuk10/UE4.27plus_Custom`. That reference is not proven identical to the
-Bright Memory v1.34 engine snapshot. Do not apply it to the game engine until
-the matching Renderer source has been obtained and its API checked.
+Bright Memory v1.34 engine snapshot. The patch is a reference integration
+change, not proof it has been applied to or compiled with the game's engine.
 
 ## Backend source status
 
 - **SGSR1:** Qualcomm UE4.27 plugin source is vendored under `vendor/SGSR1/`.
   It still needs to be adapted/registered as a BMI backend and compiled with
-  the target engine. Do not let the vendor view extension compete for the
-  primary spatial upscaler.
+  the target engine. Its vendor view extension must remain disabled when BMI
+  owns the primary slot.
 - **SGSR2:** no verified SGSR2 source is present in this vendor tree. It must
   not be represented by an SGSR1 alias.
 - **MWSR:** MIT HLSL source from `linckosz/moonlight-web/mwsr` is vendored.
@@ -69,11 +84,16 @@ has not been compiled against the shipped engine snapshot.
 
 ## Target constraints and verification
 
-The inspected target profile disables Vulkan and uses Android OpenGL ES. The public UE4.27 reference confirms the general RDG screen-pass API shape, but does not prove that the shipped game uses an identical renderer snapshot.
+The inspected target profile disables Vulkan and uses Android OpenGL ES. The
+public UE4.27 reference confirms the general RDG screen-pass API shape, but
+does not prove that the shipped game uses an identical renderer snapshot.
 Consequently Vulkan-only frame-pacing CVars are not presented as a working
-solution. The active GLES/Swappy pacing path still needs integration. FSR Mobile remains source-only: its gather callbacks, half-precision path, shader-directory mapping, and UE shader compiler output must be checked against the game's exact GLES target before an adapter can be registered. Low
-Latency On currently maps to UE4's `r.OneFrameThreadLag=0`; Ultra/No Queue is
-rejected because no supported active-RHI queue-depth control is verified.
+solution. The active GLES/Swappy pacing path still needs integration. FSR
+Mobile remains source-only: its gather callbacks, half-precision path, shader-
+directory mapping, and UE shader compiler output must be checked against the
+game's exact GLES target before an adapter can be registered. Low Latency On
+currently maps to UE4's `r.OneFrameThreadLag=0`; Ultra/No Queue is rejected
+because no supported active-RHI queue-depth control is verified.
 
 Run `python scripts/validate_bmi_runtime.py` for source/schema consistency.
 That is a static source check only. It does not compile UE shaders, prove
