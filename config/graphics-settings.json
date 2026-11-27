@@ -41,7 +41,8 @@
       "status": "runtime_command_source_added_game_cvar_binding_uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "Native must preserve physical display resolution, aspect ratio, orientation and Android system DPI."
+      "note": "Native must preserve physical display resolution, aspect ratio, orientation and Android system DPI.",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetResolutionController"
     },
     {
       "id": "graphics_quality",
@@ -60,7 +61,8 @@
       "status": "runtime_command_source_added_UE4_scalability_groups_uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "Each tier must change actual shadow, view distance, effects, texture, foliage, shading and post-processing settings where supported; do not expose until visual validation."
+      "note": "Each tier must change actual shadow, view distance, effects, texture, foliage, shading and post-processing settings where supported; do not expose until visual validation.",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetGraphicsQuality"
     },
     {
       "id": "render_scale",
@@ -71,7 +73,8 @@
       "status": "runtime_command_source_added_GameUserSettings_SetResolutionScaleValueEx_uncompiled",
       "ui_control_defined": true,
       "expose_control": false,
-      "note": "Game already has native resolution-scale setters; wire the unified menu to the existing GameUserSettings path instead of adding a second scale system."
+      "note": "Game already has native resolution-scale setters; wire the unified menu to the existing GameUserSettings path instead of adding a second scale system.",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetRenderScale"
     },
     {
       "id": "upscaler",
@@ -99,11 +102,12 @@
       "ui_control_defined": true,
       "expose_control": false,
       "integration_requirements": [
-        "Install vendored SGSR1 plugin as Engine/Plugins/Runtime/SGSR (folder name must be SGSR because plugin shader mapping looks up FindPlugin('SGSR')) and enable SGSR1.uplugin in the game project",
+        "Install vendored SGSR1 plugin as Engine/Plugins/Runtime/SGSR (folder name must be SGSR because plugin shader mapping looks up FindPlugin('SGSR')) and enable SGSR.uplugin in the game project",
         "Copy BMISpatialUpscaler.h/.cpp into Engine/Source/Runtime/Renderer/Private and apply 0001-register-bmi-spatial-upscaler.patch",
         "Compile exact Bright Memory Android UE4.27 target and validate Vulkan before exposing menu controls",
         "SGSR2, MWSR and FSR Lite remain unavailable until their complete renderer passes are ported"
-      ]
+      ],
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaler"
     },
     {
       "id": "upscale_sharpness",
@@ -116,7 +120,8 @@
       ],
       "status": "SGSR1_runtime_shader_parameter_added_source_not_compiled_other_algorithms_method_dependent",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaleSharpness"
     },
     {
       "id": "upscale_preset",
@@ -133,7 +138,8 @@
       "behavior": "map_each_preset_to_the_selected_upscaler_supported_render_scale_and_parameters",
       "status": "runtime_render_scale_preset_command_added_source_uncompiled_algorithm_specific_mapping_pending",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscalePreset"
     },
     {
       "id": "amd_cas",
@@ -143,7 +149,8 @@
       "integration_point": "separate_RDG_post_upscale_pass; do_not_stack_on_SGSR1_sharpening_by_default",
       "status": "official_AMD_CAS_headers_vendored_only_RDG_pass_and_shader_binding_not_implemented",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetAMDCAS"
     },
     {
       "id": "cas_sharpness",
@@ -157,7 +164,8 @@
       "depends_on": "amd_cas",
       "status": "blocked_until_AMD_CAS_RDG_pass_is_implemented",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetCASSharpness"
     },
     {
       "id": "frame_generation",
@@ -201,7 +209,8 @@
       "status": "runtime_command_source_added_r.OneFrameThreadLag_on_off_ultra_no_queue_rejected_uncompiled",
       "safety": "No vkQueueWaitIdle per frame; Ultra No Queue is not enabled or claimed",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetLowLatency"
     },
     {
       "id": "performance_hud",
@@ -267,7 +276,8 @@
       "integration_point": "UGameUserSettings::SetFrameRateLimit(float) @ 0x87359dc stores limit; SetFrameRateLimitCVar(float) @ 0x87340ec forwards to GameUserSettings interface vtable slot +0x2e8; GetFramePace @ 0x8735500 delegates to FAndroidPlatformRHIFramePacer",
       "status": "native_limit_setting_path_verified_actual_supported_rates_need_runtime_check",
       "ui_control_defined": true,
-      "expose_control": false
+      "expose_control": false,
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetFrameLimit"
     }
   ],
   "verified_binary_evidence": {
@@ -316,5 +326,6 @@
     "A plugin built for UE4.27 requires matching engine/project build and cooked shader integration; a loose plugin folder or menu toggle cannot add its native renderer code to an already shipped APK.",
     "No game project source/UE4 build environment is present in this research repository, so a valid modified libUE4.so/APK cannot be produced from static analysis alone.",
     "Keep all controls hidden until native implementation is compiled and tested."
-  ]
+  ],
+  "integration_note": "A Blueprint-callable settings API now exists in source for the UMG layer. It is not yet wired into the shipped game's actual settings widget. Resolution/quality/render-scale commands, upscaler selection, CAS, and latency remain uncompiled; unsupported algorithms/pass controls must stay hidden until engine integration and device validation."
 }
