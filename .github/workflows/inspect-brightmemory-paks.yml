@@ -36,7 +36,7 @@ jobs:
           if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
           mkdir -p work/wrappers work/parts work/apk work/paks-data work/paks-main work/report
           rclone lsf mega: --recursive --files-only > work/report/mega-files.txt
-          mapfile -t candidates < <(grep -E '(^|/)(brightmemory-part-0[0-5]\\.zip|downloaded-package\\.part-0[0-5])$' work/report/mega-files.txt | sort -V)
+          mapfile -t candidates < <(grep -E '(^|/)(brightmemory-part-0[0-5]\.zip|downloaded-package\.part-0[0-5])$' work/report/mega-files.txt | sort -V)
           if [[ ${#candidates[@]} -ne 6 ]]; then
             echo "Expected six MEGA part files; found ${#candidates[@]}." >&2
             cat work/report/mega-files.txt
@@ -68,7 +68,7 @@ jobs:
           unzip -p "$APK" assets/main.obb.png > work/apk/main-obb.zip
           7z x -y -owork/paks-data work/apk/assets-data.zip '*.pak' > work/report/extract-data-paks.txt
           7z x -y -owork/paks-main work/apk/main-obb.zip '*.pak' > work/report/extract-main-pak.txt
-          find work/paks-data work/paks-main -type f -name '*.pak' -printf '%p %s bytes\\n' | sort > work/report/pak-files.txt
+          find work/paks-data work/paks-main -type f -name '*.pak' -printf '%p %s bytes\n' | sort > work/report/pak-files.txt
           test "$(find work/paks-data work/paks-main -type f -name '*.pak' | wc -l)" -ge 1
 
       - name: Parse Pak indexes and enumerate game assets
@@ -83,7 +83,7 @@ jobs:
             repak list "$pak" > "work/report/pak-indexes/$base.txt"
           done < <(find work/paks-data work/paks-main -type f -name '*.pak' | sort)
           cat work/report/pak-indexes/*.txt > work/report/all-asset-paths.txt
-          grep -Ei '\\.(uasset|uexp|ubulk)$|UI|Menu|Settings|Graphics|Quality|Resolution|GameUserSettings|Widget' work/report/all-asset-paths.txt > work/report/ui-and-settings-candidates.txt || true
+          grep -Ei '\.(uasset|uexp|ubulk)$|UI|Menu|Settings|Graphics|Quality|Resolution|GameUserSettings|Widget' work/report/all-asset-paths.txt > work/report/ui-and-settings-candidates.txt || true
           {
             echo "# Bright Memory Unreal Pak inspection"
             echo
