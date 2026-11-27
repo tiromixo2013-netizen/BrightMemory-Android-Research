@@ -9,7 +9,7 @@ cfg = json.loads((ROOT / "config/native-graphics-integration.json").read_text())
 expected = [
     "display_resolution", "graphics_quality", "render_scale",
     "one_spatial_upscaler", "upscale_sharpness",
-    "upscale_preset_mapping", "amd_cas"
+    "upscale_preset_mapping", "amd_cas_sharpen_only"
 ]
 assert cfg["pipeline_order"] == expected
 assert cfg["upscaling"]["single_active_method"] is True
