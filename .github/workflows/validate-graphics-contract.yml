@@ -1,0 +1,21 @@
+name: Validate unified graphics contract
+
+on:
+  push:
+    branches: [native-integration]
+    paths:
+      - 'config/native-graphics-integration.json'
+      - 'tools/validate_graphics_contract.py'
+      - '.github/workflows/validate-graphics-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate settings order and safety invariants
+        run: python3 tools/validate_graphics_contract.py
