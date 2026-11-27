@@ -18,7 +18,9 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y rclone p7zip-full unzip cargo
+          sudo apt-get install -y curl p7zip-full unzip cargo
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+          rclone version
           cargo install --git https://github.com/trumank/repak --locked --no-default-features repak_cli
 
       - name: Recover original APK from MEGA
