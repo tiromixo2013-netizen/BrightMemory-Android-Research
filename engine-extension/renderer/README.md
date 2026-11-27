@@ -8,7 +8,7 @@ Registration patch:
 `patches/0001-register-bmi-spatial-upscaler.patch`.
 
 The bridge defaults to disabled (opt-in) and does not replace an upscaler already
-installed by the game or another extension. It must be copied into the exact
+an already-installed primary spatial upscaler supplied by the game or another extension. It must be copied into the exact
 engine's `Renderer/Private` directory and registered from
 `FRendererModule::StartupModule()`. This source has not been compiled against
 the shipped Bright Memory v1.34 engine snapshot.
@@ -34,7 +34,7 @@ cooking, engine compilation, and Android Vulkan validation.
 
 Official AMD FidelityFX CAS portability and algorithm headers are vendored
 under `vendor/AMD-CAS/` with their MIT notices. They are not yet connected to
-an RDG shader pass or the game's post-process chain. The runtime bridge refuses
+a CAS RDG pass or the game's post-process chain. The runtime bridge refuses
 to claim CAS is enabled when the renderer pass CVar is absent. Do not replace
 the CAS algorithm with `r.Tonemapper.Sharpen`.
 
@@ -49,8 +49,7 @@ runtime commands without embedding console strings in Blueprint graphs.
 
 This is an API seam, not a completed in-game menu. The Bright Memory v1.34
 settings-widget assets/source are not present in this repository, and the
-library and renderer sources have not been compiled against the exact Bright
-Memory v1.34 engine snapshot. The
+library and renderer sources have not been compiled against the exact Bright Memory v1.34 engine snapshot. The
 controls are not yet visible in the shipped game's settings menu.
 
 ## Remaining implementation and verification
