@@ -82,8 +82,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p work reports
+          : > work/original.apk
           find parts -type f -printf '%p %s bytes\\n' | sort
-          for i in $(seq -w 0 9); do
+          for i in {00..09}; do
             f=$(find "parts/$i" -type f -name "brightmemory.apk.part$i" -print -quit)
             test -n "$f"
             cat "$f" >> work/original.apk
@@ -105,7 +106,8 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y llvm
-          OBJDUMP="$(command -v llvm-objdump || command -v objdump)"
+          OBJDUMP="$(find /usr/bin -maxdepth 1 -name "llvm-objdump*" -type f | sort -V | head -1)"
+          test -n "$OBJDUMP"
           {
             echo "Tool: $OBJDUMP"
             echo "Offsets are candidate ELF virtual addresses from prior static analysis."
