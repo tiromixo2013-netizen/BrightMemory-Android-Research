@@ -30,20 +30,62 @@ jobs:
           APK="restored/workspace/bright-memory-infinite-v1.34.apk"
           test -s "$APK"
           test "$(stat -c%s "$APK")" -eq 2431306902
-          echo "APK_SHA256=$(sha256sum "$APK" | cut -d' ' -f1)" >> "$GITHUB_ENV"
           mkdir -p split
           split -b 300M -d -a 2 "$APK" split/brightmemory.apk.part
-          sha256sum split/* > split/SHA256SUMS
+          sha256sum split/brightmemory.apk.part* > split/SHA256SUMS
+          test "$(find split -name 'brightmemory.apk.part*' | wc -l)" -eq 8
           ls -lh split
 
-      - name: Upload each part separately (under connector size limit)
-        shell: bash
-        run: |
-          set -euo pipefail
-          for part in split/brightmemory.apk.part*; do
-            name=$(basename "$part")
-            echo "Uploading $name"
-            gh run upload-artifact "$name" "$part" --repo "$GITHUB_REPOSITORY" || true
-          done
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload part 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-00
+          path: split/brightmemory.apk.part00
+          compression-level: 0
+      - name: Upload part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-01
+          path: split/brightmemory.apk.part01
+          compression-level: 0
+      - name: Upload part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-02
+          path: split/brightmemory.apk.part02
+          compression-level: 0
+      - name: Upload part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-03
+          path: split/brightmemory.apk.part03
+          compression-level: 0
+      - name: Upload part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-04
+          path: split/brightmemory.apk.part04
+          compression-level: 0
+      - name: Upload part 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-05
+          path: split/brightmemory.apk.part05
+          compression-level: 0
+      - name: Upload part 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-06
+          path: split/brightmemory.apk.part06
+          compression-level: 0
+      - name: Upload part 07
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-part-07
+          path: split/brightmemory.apk.part07
+          compression-level: 0
+      - name: Upload checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-apk-parts-checksums
+          path: split/SHA256SUMS
