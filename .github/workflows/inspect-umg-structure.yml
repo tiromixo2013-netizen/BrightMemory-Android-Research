@@ -2,6 +2,10 @@ name: Bright Memory v1.34 UMG structure inspection
 
 on:
   workflow_dispatch:
+  push:
+    branches: [work/ue427-graphics-runtime-integration]
+    paths:
+      - '.github/workflows/inspect-umg-structure.yml'
 
 permissions:
   actions: read
