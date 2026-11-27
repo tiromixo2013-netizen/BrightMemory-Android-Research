@@ -157,4 +157,15 @@ assert "PassParameters->SGSR.Sharpness" in sgsr_scaler
 cas_vendor = root / "engine-extension/renderer/vendor/AMD-CAS"
 assert (cas_vendor / "ffx_a.h").exists() and (cas_vendor / "ffx_cas.h").exists()
 
-print("PASS: runtime settings bridge, SGSR1 source package and sharpness wiring, AMD CAS source provenance, renderer API audit, low-latency safety gates and settings schema")
+
+blueprint_header = (root / "engine-extension/Source/BMIGraphicsRuntime/Public/BMIGraphicsSettingsLibrary.h").read_text()
+blueprint_source = (root / "engine-extension/Source/BMIGraphicsRuntime/Private/BMIGraphicsSettingsLibrary.cpp").read_text()
+for method in ["SetResolutionController", "SetGraphicsQuality", "SetRenderScale",
+               "SetUpscaler", "SetUpscaleSharpness", "SetUpscalePreset",
+               "SetAMDCAS", "SetCASSharpness", "SetLowLatency", "SetFrameLimit"]:
+    assert f"static bool {method}(" in blueprint_header, f"Missing Blueprint setting API: {method}"
+    assert f"UBMIGraphicsSettingsLibrary::{method}(" in blueprint_source, f"Missing Blueprint implementation: {method}"
+assert "UBlueprintFunctionLibrary" in blueprint_header
+assert "GEngine->Exec(nullptr" in blueprint_source
+
+print("PASS: runtime settings bridge, Blueprint-callable controls, SGSR1 plugin identity/shader mapping, AMD CAS source provenance, renderer API audit, low-latency safety gates and settings schema")
