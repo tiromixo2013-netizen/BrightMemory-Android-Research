@@ -160,7 +160,7 @@ for rel in [
     assert (sgsr2 / rel).exists(), f"Missing vendored SGSR2 file: {rel}"
 assert "ITemporalUpscaler" in read(sgsr2 / "GSR/Source/GSRTUModule/Private/GSRTU.h")
 assert 'TEXT("r.SGSR2.Enabled")' in read(sgsr2 / "GSR/Source/GSRTUModule/Private/GSRViewExtension.cpp")
-assert "temporal, not spatial" in read(sgsr2 / "UPSTREAM.md")
+assert "temporal, not spatial" in read(VENDOR / "SGSR2-UE427/UPSTREAM.md")
 
 
 # FSR Mobile has a UE4.27 RDG pixel-pass adapter wired into BMI registration.
