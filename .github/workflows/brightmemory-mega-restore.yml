@@ -132,7 +132,6 @@ jobs:
           if [[ -n "${MEGA_2FA:-}" ]]; then export RCLONE_CONFIG_MEGA_2FA="$MEGA_2FA"; fi
           dest="mega:BrightMemory-Private/Restored-v1.34"
           rclone mkdir "$dest"
-          tar -czf workspace/reports/inspection-reports.tar.gz workspace/reports
           rclone copy workspace/reports "$dest/reports" --retries 5
           rclone copyto workspace/bright-memory-infinite-v1.34.apk "$dest/bright-memory-infinite-v1.34.apk" --retries 5
           rclone ls "$dest"
