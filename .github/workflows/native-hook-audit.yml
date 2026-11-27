@@ -155,6 +155,11 @@ jobs:
             FSceneView_MoveCtor:0x79b6988:996
             ULocalPlayer_CalcSceneViewInitOptions:0x884a708:780
             FSceneViewFamily_Ctor:0x8b3b840:728
+            FSceneViewFamily_CopyCtor:0x79e5a04:412
+            FSceneViewFamily_Dtor:0x8b3bb18:276
+            FSceneRenderer_Ctor:0x79e5618:1004
+            FMobileSceneRenderer_Ctor:0x782be54:448
+            FSceneViewFamilyContext_Dtor:0x8b3bdcc:108
             FSceneViewInitOptions_CopyCtor:0x79abfc4:404
             FSceneViewInitOptions_MoveCtor:0x79b6d6c:348
             FRendererModule_AllocateViewState:0x79a1cc4:44
