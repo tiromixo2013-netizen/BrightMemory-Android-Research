@@ -9,6 +9,7 @@ namespace {
  FBMICASPass GCASPass;
  FBMIHudPass GHudPass;
  TAutoConsoleVariable<int32> CVarBMIMethod(TEXT("bmi.Pipeline.Upscaler"),5,TEXT("0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile, 4 Nearest, 5 Bilinear."),ECVF_RenderThreadSafe);
+ TAutoConsoleVariable<float> CVarBMIUpscaleSharpness(TEXT("bmi.Pipeline.UpscaleSharpness"),0.5f,TEXT("Selected spatial method sharpness 0..1."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<int32> CVarBMICASEnabled(TEXT("bmi.Pipeline.CAS"),0,TEXT("Append registered CAS pass after spatial reconstruction."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<float> CVarBMICASSSharpness(TEXT("bmi.Pipeline.CASSharpness"),0.5f,TEXT("CAS sharpness 0..1."),ECVF_RenderThreadSafe);
  TAutoConsoleVariable<int32> CVarBMIHudEnabled(TEXT("bmi.Pipeline.HUD"),0,TEXT("Append registered HUD pass after reconstruction."),ECVF_RenderThreadSafe);
@@ -17,6 +18,7 @@ const TCHAR* FBMIUnifiedSpatialUpscaler::GetDebugName() const { return TEXT("BMI
 ISpatialUpscaler* FBMIUnifiedSpatialUpscaler::Fork_GameThread(const FSceneViewFamily& ViewFamily) const {
  auto* Copy=new FBMIUnifiedSpatialUpscaler();
  Copy->Method=FMath::Clamp(CVarBMIMethod.GetValueOnGameThread(),0,5);
+ Copy->UpscaleSharpness=FMath::Clamp(CVarBMIUpscaleSharpness.GetValueOnGameThread(),0.0f,1.0f);
  Copy->bCAS=CVarBMICASEnabled.GetValueOnGameThread()!=0;
  Copy->CASSharpness=FMath::Clamp(CVarBMICASSSharpness.GetValueOnGameThread(),0.0f,1.0f);
  Copy->bHud=CVarBMIHudEnabled.GetValueOnGameThread()!=0;
@@ -26,7 +28,7 @@ FScreenPassTexture FBMIUnifiedSpatialUpscaler::AddPasses(FRDGBuilder& GraphBuild
  check(PassInputs.SceneColor.IsValid());
  FScreenPassTexture Output;
  FBMIUpscalePass Upscale=FindUpscaler(Method);
- if (Upscale) Output=Upscale(GraphBuilder,View,PassInputs);
+ if (Upscale) Output=Upscale(GraphBuilder,View,PassInputs,UpscaleSharpness);
  else if (Method==4||Method==5) {
   const EUpscaleMethod NativeMethod=Method==4?EUpscaleMethod::Nearest:EUpscaleMethod::Bilinear;
   Output=ISpatialUpscaler::AddDefaultUpscalePass(GraphBuilder,View,PassInputs,NativeMethod,FPaniniProjectionConfig());
