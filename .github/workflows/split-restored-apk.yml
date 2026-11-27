@@ -71,11 +71,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: brightmemory-apk-part-03
+          path: split/brightmemory.apk.part03
           compression-level: 0
       - name: Upload part 04
         uses: actions/upload-artifact@v4
         with:
           name: brightmemory-apk-part-04
+          path: split/brightmemory.apk.part04
           compression-level: 0
       - name: Upload part 05
         uses: actions/upload-artifact@v4
