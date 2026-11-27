@@ -183,6 +183,19 @@ namespace BMIGraphicsRuntime
         UE_LOG(LogTemp, Error, TEXT("Frame Pacing is not enabled: the active Android OpenGL ES pacer/Swappy path has not yet been integrated."));
     }
 
+    static void SetPerformanceHUD(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1) return;
+        const bool bEnabled = FCString::Atoi(*Args[0]) != 0;
+        IConsoleVariable* Available = FindCVar(TEXT("bmi.Pipeline.HUDAvailable"));
+        if (bEnabled && (!Available || Available->GetInt() == 0))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("No in-pipeline performance HUD compositor is registered yet."));
+            return;
+        }
+        SetCVarIntIfPresent(TEXT("bmi.Pipeline.HUD"), bEnabled ? 1 : 0);
+    }
+
     static void SetLowLatency(const TArray<FString>& Args)
     {
         if (Args.Num() != 1) return;
@@ -222,6 +235,8 @@ namespace BMIGraphicsRuntime
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetCASSharpness));
     static FAutoConsoleCommand CmdFramePacing(TEXT("bmi.SetFramePacing"), TEXT("Frame pacing; refuses Vulkan-only mode on the inspected GLES target."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetFramePacing));
+    static FAutoConsoleCommand CmdPerformanceHUD(TEXT("bmi.SetPerformanceHUD"), TEXT("Enable the registered post-upscale performance HUD pass."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetPerformanceHUD));
     static FAutoConsoleCommand CmdLowLatency(TEXT("bmi.SetLowLatency"), TEXT("Low latency: 0 off, 1 UE4 thread sync, 2 unsupported no-queue."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetLowLatency));
 }
