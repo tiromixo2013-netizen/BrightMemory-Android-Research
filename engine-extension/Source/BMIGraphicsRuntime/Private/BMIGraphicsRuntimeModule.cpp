@@ -96,12 +96,27 @@ namespace BMIGraphicsRuntime
     {
         if (Args.Num() != 1 || !GEngine) return;
         const int32 Preset = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 4);
-        const float RenderPercent[] = { 50.0f, 62.5f, 75.0f, 87.5f, 100.0f };
+        int32 Method = 5;
+        if (IConsoleVariable* Selected = FindCVar(TEXT("bmi.Pipeline.Upscaler")))
+            Method = FMath::Clamp(Selected->GetInt(), 0, 5);
+
+        // Method-specific render fractions, one shared preset selector.
+        // Rows: SGSR1, SGSR2, MWSR, FSR Mobile, Nearest, Bilinear.
+        const float Scale[6][5] = {
+            { 50.0f, 60.0f, 72.0f, 86.0f, 100.0f },
+            { 50.0f, 62.5f, 75.0f, 87.5f, 100.0f },
+            { 50.0f, 60.0f, 75.0f, 90.0f, 100.0f },
+            { 50.0f, 62.5f, 75.0f, 87.5f, 100.0f },
+            { 50.0f, 65.0f, 80.0f, 90.0f, 100.0f },
+            { 50.0f, 65.0f, 80.0f, 90.0f, 100.0f }
+        };
+        const float Sharpness[5] = { 0.90f, 0.72f, 0.52f, 0.30f, 0.12f };
         if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
         {
-            Settings->SetResolutionScaleValueEx(RenderPercent[Preset]);
+            Settings->SetResolutionScaleValueEx(Scale[Method][Preset]);
             Settings->ApplySettings(false);
         }
+        SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness[Preset]);
     }
 
     // Method IDs: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile,
