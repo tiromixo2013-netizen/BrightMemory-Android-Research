@@ -121,7 +121,7 @@ for symbol in [
     "bmi.NativeUpscaleMethod",
 ]:
     assert symbol in renderer_source, f"Renderer bridge source missing: {symbol}"
-assert "default 0" in renderer_readme
+assert "defaults to disabled (opt-in)" in renderer_readme
 assert "official Qualcomm UE4.27 SGSR1 plugin source" in renderer_readme
 assert "not yet connected to an RDG shader pass" in renderer_readme
 assert "have not been compiled against the exact Bright Memory v1.34" in renderer_readme
