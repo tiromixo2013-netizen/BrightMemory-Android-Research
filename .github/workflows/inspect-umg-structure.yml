@@ -73,10 +73,10 @@ jobs:
               --include 'BMI_Mobile/Content/**/UMG/**' \
               --include 'BMI_Mobile/Content/**/Settings/**' \
               --include 'BMI_Mobile/Content/**/Menu/**' \
-              --include 'BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save*' \\
-              --include 'BMI_Mobile/Content/**/GamePlaySaveSystem*' \\
-              --include 'BMI_Mobile/Content/**/UserSave*' \\
-              --include 'BMI_Mobile/Content/**/BMFunctionLibrary*' \\
+              --include 'BMI_Mobile/Content/PlayerBP/Blueprints/BMI_Save*' \
+              --include 'BMI_Mobile/Content/**/GamePlaySaveSystem*' \
+              --include 'BMI_Mobile/Content/**/UserSave*' \
+              --include 'BMI_Mobile/Content/**/BMFunctionLibrary*' \
               --include 'BMI_Mobile/Content/**/SaveAge*'
           done
           test -f extracted/pakchunk0-Android_ASTC/BMI_Mobile/Content/UISystem_BMI/Menu/Seting/Graphics/BMI_Graphics_UMG.uasset
