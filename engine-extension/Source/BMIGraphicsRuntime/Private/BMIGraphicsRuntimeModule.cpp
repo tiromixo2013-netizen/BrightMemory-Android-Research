@@ -308,7 +308,15 @@ namespace BMIGraphicsRuntime
             return;
         }
         IConsoleVariable* MultiplierVar = FindCVar(TEXT("bmi.FrameGeneration.Multiplier"));
-        const int32 Multiplier = MultiplierVar ? MultiplierVar->GetInt() : 2;
+        int32 Multiplier = MultiplierVar ? MultiplierVar->GetInt() : 2;
+
+        // AFME is x2-only. Selecting it while x3/x4 was stored resets the
+        // multiplier to x2; higher multipliers belong to the GLES backend.
+        if (Method == 1 && Multiplier != 2)
+        {
+            Multiplier = 2;
+            SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Multiplier"), 2);
+        }
         if (!IsFrameGenerationAvailable(Method, Multiplier))
         {
             UE_LOG(LogTemp, Warning, TEXT("Frame Generation backend %d is unavailable for x%d."), Method, Multiplier);
@@ -327,6 +335,19 @@ namespace BMIGraphicsRuntime
         if (Method == 0)
         {
             // Store the selection for when a backend is chosen, without enabling FG.
+            SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Multiplier"), Multiplier);
+            return;
+        }
+        if (Method == 1 && Multiplier > 2)
+        {
+            // AFME cannot generate x3/x4. Route the request to the portable
+            // GLES backend only when that exact multiplier is registered.
+            if (!IsFrameGenerationAvailable(2, Multiplier))
+            {
+                UE_LOG(LogTemp, Warning, TEXT("AFME is x2-only and GLES x%d is not registered."), Multiplier);
+                return;
+            }
+            SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Method"), 2);
             SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Multiplier"), Multiplier);
             return;
         }
