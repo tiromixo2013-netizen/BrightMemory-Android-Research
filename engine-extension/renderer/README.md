@@ -1,63 +1,40 @@
 # BMI renderer integration
 
-## Unified spatial dispatcher
+## Active SGSR1 path
 
-`BMIUnifiedSpatialUpscaler.h/.cpp` define one renderer-private UE4.27
-`ISpatialUpscaler` implementation. It owns the spatial dispatch point and
-chains optional post-reconstruction stages in this order:
+The active minimal profile uses Qualcomm's official UE4.27 SGSR1 plugin as
+its only upscaler. The plugin owns the primary spatial-upscale stage through
+its `FSGSRViewExtension` and `FSGSRSpatialUpscaler`; the runtime enables
+`r.Qualcomm.SGSR.Enabled` and keeps `bmi.Pipeline.Enabled` off. This avoids
+two extensions competing for UE4.27's assign-once primary-upscaler slot.
 
-1. Selected spatial reconstruction backend.
-2. Optional AMD CAS pass, only when a real pass is registered.
-3. Optional performance HUD compositor, only when a real pass is registered.
+The Qualcomm source is vendored under `vendor/SGSR1/`. Its stock UE4.27
+mobile shader hardcodes edge sharpness to 2.0. Patch
+`patches/0002-sgsr1-runtime-sharpness.patch` adds a real RDG shader parameter
+and `r.Qualcomm.SGSR.Sharpness` CVar. The user-facing 0..1 slider maps to the
+shader's supported 1..2 range. The shared five-level preset sets the render
+percentage and a recommended SGSR1 sharpness value; it does not add a second
+upscaler or a second render-scale control.
 
-Frame Generation is deliberately separate; it is not a spatial upscaler pass. A dedicated `BMIFrameGeneration` capability gate and independent runtime selectors now distinguish Qualcomm AFME from portable GLES Motion Reprojection, and select x2/x3/x4 independently. AFME is restricted to x2; GLES multipliers are individually gated. The portable GLSL ES 3.0 fragment prototype and adapter contract are in `BMIShaders/Private/BMIGLESFrameReprojection.frag`, `GLES-FRAME-REPROJECTION.md`, and `FRAME-GENERATION-ADAPTER-CONTRACT.md`. The gate remains fail-closed: no backend is registered by the current source, and the shader prototype alone does not provide motion vectors, disocclusion handling, generated-frame scheduling, or presentation.
-The dispatcher currently contains only UE4's built-in Nearest and Bilinear
-fallbacks. SGSR1 is selected through Qualcomm's original spatial extension;
-SGSR2 uses Qualcomm's separate temporal extension. MWSR and FSR Mobile now have BMI RDG pixel-pass adapters and are registered as spatial methods 2 and 3. MWSR ports the upstream 96-byte constants law and maps coarse derivatives to standard fragment derivatives. FSR Mobile uses the fused EASU/RCAS mobile shader wrapper. Both are source-level integrations only; exact UE4.27 engine compilation, GLES shader compilation and Adreno 610 image/performance tests remain outstanding.
+`patches/0001-register-bmi-spatial-upscaler.patch` registers the optional BMI
+research dispatcher in the reference Renderer module. It is not required to
+activate Qualcomm SGSR1 and remains disabled in the agreed minimal profile.
+The dispatcher retains safe built-in Nearest/Bilinear fallbacks and source
+adapters for research; MWSR, FSR Mobile and SGSR2 are not exposed as choices
+in this profile. The optional BMI extension never overwrites an existing
+primary upscaler. If another extension claims the primary slot first, BMI
+leaves it untouched.
 
-The view extension is opt-in: `bmi.Pipeline.Enabled` defaults to 0. The
-Renderer startup patch replaces the old BMI registration call with
-`RegisterBMIUnifiedSpatialUpscaler()`, which retains/registers the BMI view
-extension. During `BeginRenderViewFamily`, BMI claims the primary slot only
-when the pipeline is enabled, the selected method is registered, and the
-family has no primary spatial upscaler. UE4.27's setter is assign-once and
-asserts on a second assignment, so BMI never overwrites another extension.
+The official Qualcomm SGSR extension also checks that the primary slot is
+empty before assigning it. Do not enable the BMI dispatcher and Qualcomm
+SGSR1 as competing primary spatial upscalers.
 
-The vendored Qualcomm SGSR extension also assigns the primary slot only when
-it is empty. Its `r.Qualcomm.SGSR.Enabled` CVar must therefore be disabled
-before BMI claims the slot; `SetUpscaler` explicitly disables that CVar
-(and the SGSR2 CVar if present) after validating BMI's method mask. If another
-extension claims the primary slot first, BMI safely leaves it untouched and
-will not become active for that view family.
+## Optional research components
 
-Registration patch:
-`patches/0001-register-bmi-spatial-upscaler.patch`.
-
-The patch targets the inspected reference source
-`jsuk10/UE4.27plus_Custom`. That reference is not proven identical to the
-Bright Memory v1.34 engine snapshot. The patch is a reference integration
-change, not proof it has been applied to or compiled with the game's engine.
-
-## Backend source status
-
-- **SGSR1:** Qualcomm UE4.27 plugin source is vendored under `vendor/SGSR1/`.
-  It still needs to be adapted/registered as a BMI backend and compiled with
-  the target engine. Its vendor view extension must remain disabled when BMI
-  owns the primary slot.
-- **SGSR2:** no verified SGSR2 source is present in this vendor tree. It must
-  not be represented by an SGSR1 alias.
-- **MWSR:** MIT HLSL source from `linckosz/moonlight-web/mwsr` is vendored.
-  The shader uses `ddx_coarse/ddy_coarse`, a 96-byte constants block and a
-  linear-clamp sampler. It requires an UE4.27 global-shader/RDG adapter and
-  validation against the actual target RHI/compiler before registration.
-- **FSR Mobile:** atyuwen's MIT optimized FSR1 source is vendored under
-  `vendor/FSR-Mobile/`. It combines EASU reconstruction and an RCAS-style
-  limiter/resolve in one pixel-shader function. The host must supply the
-  sampling callback, EASU constants and AMD portability helpers. This is the
-  only FSR option; do not add a duplicate generic FSR1 entry.
-- **Nearest/Bilinear:** use UE4.27's built-in
-  `ISpatialUpscaler::AddDefaultUpscalePass` path. These are the only methods
-  represented in the current default registered-method mask.
+The BMI dispatcher includes optional source adapters for MWSR and FSR Mobile,
+but they are not part of the active menu and are not claimed to be compiled or
+validated on the target. Qualcomm SGSR2 research source is also separate from
+the active SGSR1-only path; do not expose it as an alias for SGSR1.
 
 ## Optional stages
 
