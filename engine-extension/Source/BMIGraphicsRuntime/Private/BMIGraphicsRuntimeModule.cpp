@@ -2,6 +2,7 @@
 #include "Engine/Engine.h"
 #include "GameFramework/GameUserSettings.h"
 #include "HAL/IConsoleManager.h"
+#include "Misc/DefaultValueHelper.h"
 
 namespace BMIGraphicsRuntime
 {
@@ -48,13 +49,45 @@ namespace BMIGraphicsRuntime
 
     static void SetRenderScale(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1 || !GEngine) return;
-        const float Percent = FMath::Clamp(FCString::Atof(*Args[0]), 50.0f, 150.0f);
-        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+        if (Args.Num() != 1 || !GEngine)
         {
-            Settings->SetResolutionScaleValueEx(Percent);
-            Settings->ApplySettings(false);
+            UE_LOG(LogTemp, Warning, TEXT("Render Scale: expected one percentage value from 50 to 150."));
+            return;
         }
+
+        float Percent = 0.0f;
+        if (!FDefaultValueHelper::ParseFloat(Args[0], Percent) ||
+            !FMath::IsFinite(Percent) || Percent < 50.0f || Percent > 150.0f)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Render Scale: invalid value '%s'; valid range is 50..150."), *Args[0]);
+            return;
+        }
+
+        UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+        if (!Settings)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Render Scale: GameUserSettings is unavailable."));
+            return;
+        }
+
+        Settings->SetResolutionScaleValueEx(Percent);
+        Settings->ApplySettings(false);
+
+        float Normalized = 0.0f;
+        float Applied = 0.0f;
+        float Minimum = 0.0f;
+        float Maximum = 0.0f;
+        Settings->GetResolutionScaleInformationEx(Normalized, Applied, Minimum, Maximum);
+
+        if (!FMath::IsNearlyEqual(Applied, Percent, 0.1f))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Render Scale: requested %.1f%%, engine applied %.1f%% (supported range %.1f..%.1f%%)."),
+                Percent, Applied, Minimum, Maximum);
+            return;
+        }
+
+        UE_LOG(LogTemp, Log, TEXT("Render Scale: %.1f%% applied and verified (engine range %.1f..%.1f%%). Resolution Controller and Android display/DPI remain unchanged."),
+            Applied, Minimum, Maximum);
     }
 
     static void SetResolutionController(const TArray<FString>& Args)
