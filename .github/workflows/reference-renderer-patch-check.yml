@@ -1,0 +1,31 @@
+name: Reference UE4.27 renderer patch check
+
+on:
+  push:
+    branches: [experimental/minimal-sgsr1-cas]
+    paths:
+      - 'engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch'
+      - '.github/workflows/reference-renderer-patch-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apply-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout research repository
+        uses: actions/checkout@v4
+
+      - name: Fetch reference UE4.27 source
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/jsuk10/UE4.27plus_Custom.git /tmp/ue427-reference
+
+      - name: Verify renderer patch applies cleanly
+        run: |
+          set -euo pipefail
+          git -C /tmp/ue427-reference apply --check "$GITHUB_WORKSPACE/engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch"
+          git -C /tmp/ue427-reference apply --numstat "$GITHUB_WORKSPACE/engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch"
