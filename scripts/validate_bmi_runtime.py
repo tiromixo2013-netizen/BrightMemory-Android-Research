@@ -41,6 +41,7 @@ assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" 
 
 blueprint_header = read(ENGINE / "Source/BMIGraphicsRuntime/Public/BMIGraphicsSettingsLibrary.h")
 blueprint_source = read(ENGINE / "Source/BMIGraphicsRuntime/Private/BMIGraphicsSettingsLibrary.cpp")
+assert "QualityLevel > 6" in blueprint_source, "Blueprint API does not accept Extreme tier"
 for method in [
     "SetResolutionController", "SetGraphicsQuality", "SetRenderScale",
     "SetUpscaler", "SetUpscaleSharpness", "SetUpscalePreset", "SetAMDCAS",
