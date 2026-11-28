@@ -19,7 +19,7 @@ assert any(m["Name"] == "BMIGraphicsRuntime" and m["Type"] == "Runtime"
 runtime = read(ENGINE / "Source/BMIGraphicsRuntime/Private/BMIGraphicsRuntimeModule.cpp")
 for token in [
     "SetResolutionController", "r.MobileContentScaleFactor",
-    "SetOverallScalabilityLevel", "SetUpscalePreset", "SetUpscaler",
+    "SetOverallScalabilityLevel", "SetViewDistanceQuality", "SetShadowQuality", "SetAntiAliasingQuality", "SetTextureQuality", "SetVisualEffectQuality", "SetFoliageQuality", "SetShadingQuality", "SetPostProcessingQuality", "SetUpscalePreset",
     "bmi.Pipeline.Enabled", "SetUpscaleSharpness",
     "bmi.Pipeline.CASAvailable", "SetCAS", "SetCASSharpness",
     "SetFramePacing", "r.OneFrameThreadLag", "SetPerformanceHUD",
@@ -27,6 +27,10 @@ for token in [
 ]:
     assert token in runtime, f"Missing runtime bridge symbol: {token}"
 assert "Ultra (Zero Queue) is unavailable" in runtime or "Ultra (No Queue) is unavailable" in runtime
+for method in ["SetViewDistanceQuality", "SetShadowQuality", "SetAntiAliasingQuality", "SetTextureQuality", "SetVisualEffectQuality", "SetFoliageQuality", "SetShadingQuality", "SetPostProcessingQuality"]:
+    assert f"Settings->{method}(Group)" in runtime, f"Graphics quality category not applied: {method}"
+assert "const int32 GroupQuality[] = { 0, 1, 2, 3, 4, 4 };" in runtime
+assert "console" in runtime and "A/B tested" in runtime
 assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
 
