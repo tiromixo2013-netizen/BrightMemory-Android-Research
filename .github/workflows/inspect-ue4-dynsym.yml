@@ -35,8 +35,8 @@ jobs:
           test -n "$entry"
           unzip -p "$APK" "$entry" > report/libUE4.so
           file report/libUE4.so | tee report/file.txt
-          llvm-readelf -h report/libUE4.so > report/elf-header.txt
-          llvm-readelf --dyn-syms -W report/libUE4.so > report/dynsym-full.txt
+          readelf -h report/libUE4.so > report/elf-header.txt
+          readelf --dyn-syms -W report/libUE4.so > report/dynsym-full.txt
           grep -E 'IConsoleManager|FindConsoleVariable|Swappy' report/dynsym-full.txt > report/dynsym-filtered.txt || true
           grep -E 'Machine:|Class:|Data:' report/elf-header.txt
           cat report/dynsym-filtered.txt
