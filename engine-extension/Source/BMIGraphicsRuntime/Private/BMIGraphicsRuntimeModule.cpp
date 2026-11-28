@@ -54,16 +54,15 @@ namespace BMIGraphicsRuntime
     {
         if (Args.Num() != 1 || !GEngine) return;
 
-        // 0 Low, 1 Medium, 2 High, 3 Very High, 4 Ultra, 5 Extreme.
-        // The shipped UE4.27 binary exposes individual UGameUserSettings setters
-        // for all eight scalability groups. Extreme uses the highest stock
-        // group plus bounded mobile overrides; it is not claimed to be console
-        // quality until the actual game is visually A/B tested.
-        const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
+        // 0 Very Low, 1 Low, 2 Medium, 3 High, 4 Very High, 5 Ultra, 6 Extreme.
+        // Native UE4 scalability tops out at group 4. Extreme therefore keeps
+        // the maximum stock group and raises only supported mobile effect CVars
+        // above Ultra; missing CVars are skipped, never represented as applied.
+        const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 6);
         UGameUserSettings* Settings = GEngine->GetGameUserSettings();
         if (!Settings) return;
 
-        const int32 GroupQuality[] = { 0, 1, 2, 3, 4, 4 };
+        const int32 GroupQuality[] = { 0, 0, 1, 2, 3, 4, 4 };
         const int32 Group = GroupQuality[Quality];
         Settings->SetOverallScalabilityLevel(Group);
         Settings->SetViewDistanceQuality(Group);
@@ -76,12 +75,12 @@ namespace BMIGraphicsRuntime
         Settings->SetPostProcessingQuality(Group);
         Settings->ApplySettings(false);
 
-        const float ViewDistance[] = { 0.60f, 0.80f, 1.00f, 1.10f, 1.20f, 1.30f };
-        const float MipBias[] = { 1.0f, 0.5f, 0.0f, 0.0f, -0.25f, -0.5f };
-        // Keep the stock scalability CVar range bounded; Extreme is expressed
-        // through the explicit per-category setters and supported mobile CVars.
-        const int32 Effects[] = { 0, 1, 2, 3, 3, 3 };
-        const int32 Aniso[] = { 2, 4, 8, 8, 16, 16 };
+        const float ViewDistance[] = { 0.50f, 0.65f, 0.80f, 1.00f, 1.10f, 1.20f, 1.35f };
+        const float MipBias[] = { 1.5f, 1.0f, 0.5f, 0.0f, -0.25f, -0.5f, -0.75f };
+        const int32 Effects[] = { 0, 0, 1, 2, 3, 3, 3 };
+        const int32 Aniso[] = { 1, 2, 4, 8, 8, 16, 16 };
+        const int32 Shadows[] = { 0, 0, 1, 2, 3, 4, 5 };
+        const int32 MobileAO[] = { 0, 0, 0, 1, 1, 2, 3 };
 
         int32 Applied = 0;
         Applied += SetCVarFloatIfPresent(TEXT("r.ViewDistanceScale"), ViewDistance[Quality]) ? 1 : 0;
@@ -89,9 +88,10 @@ namespace BMIGraphicsRuntime
         Applied += SetCVarIntIfPresent(TEXT("r.EffectsQuality"), Effects[Quality]) ? 1 : 0;
         Applied += SetCVarIntIfPresent(TEXT("r.PostProcessQuality"), Effects[Quality]) ? 1 : 0;
         Applied += SetCVarIntIfPresent(TEXT("r.MaxAnisotropy"), Aniso[Quality]) ? 1 : 0;
-        Applied += SetCVarIntIfPresent(TEXT("r.Mobile.AmbientOcclusionQuality"), Quality >= 2 ? 1 : 0) ? 1 : 0;
+        Applied += SetCVarIntIfPresent(TEXT("r.ShadowQuality"), Shadows[Quality]) ? 1 : 0;
+        Applied += SetCVarIntIfPresent(TEXT("r.Mobile.AmbientOcclusionQuality"), MobileAO[Quality]) ? 1 : 0;
 
-        UE_LOG(LogTemp, Log, TEXT("BMI Graphics Quality %d: all 8 scalability groups requested at tier %d; %d/6 optional mobile CVars applied."),
+        UE_LOG(LogTemp, Log, TEXT("BMI Graphics Quality %d: 8 scalability groups requested at tier %d; %d/7 optional mobile CVars found."),
             Quality, Group, Applied);
     }
 
@@ -351,7 +351,7 @@ namespace BMIGraphicsRuntime
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameLimit));
     static FAutoConsoleCommand CmdRenderScale(TEXT("bmi.SetRenderScale"), TEXT("Set render scale percent."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetRenderScale));
-    static FAutoConsoleCommand CmdGraphicsQuality(TEXT("bmi.SetGraphicsQuality"), TEXT("Set UE4 scalability quality 0..5."),
+    static FAutoConsoleCommand CmdGraphicsQuality(TEXT("bmi.SetGraphicsQuality"), TEXT("Set UE4 scalability quality 0..6 (Very Low..Extreme)."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetGraphicsQuality));
     static FAutoConsoleCommand CmdUpscalePreset(TEXT("bmi.SetUpscalePreset"), TEXT("Set unified upscaler preset 0..4."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscalePreset));
