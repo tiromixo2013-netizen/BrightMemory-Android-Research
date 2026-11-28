@@ -97,6 +97,10 @@ assert config.get("ui_integration", {}).get("target_widget_class") == "BMI_Graph
 for item, api in zip(minimal["settings"], ["SetResolutionController","SetGraphicsQuality","SetRenderScale","SetUpscaler","SetUpscaleSharpness","SetUpscalePreset","SetAMDCAS","SetCASSharpness","SetLowLatency","SetFrameGenerationMethod","SetFrameGenerationMultiplier"]):
     assert item.get("blueprint_api", "").endswith("::" + api), f"Missing Blueprint binding for {item['id']}"
 assert "cooked widget graph has not been edited or rebound" in minimal["ui_integration"]["status"]
+umg_map = read(RENDERER / "UMG-RUNTIME-BINDING-MAP.md")
+assert "BMI_Graphics_UMG_C" in umg_map and "BMI_Menu_Seting_UMG_C" in umg_map
+assert "has not yet been rebound" in umg_map
+
 
 
 unified_h = read(RENDERER / "BMIUnifiedSpatialUpscaler.h")
