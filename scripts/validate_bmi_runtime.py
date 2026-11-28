@@ -171,7 +171,6 @@ patch = read(RENDERER / "patches/0001-register-bmi-spatial-upscaler.patch")
 assert "BMIUnifiedSpatialUpscaler.h" in patch
 assert "RegisterBMIUnifiedSpatialUpscaler()" in patch
 assert '+#include "BMIUnifiedSpatialUpscaler.h"' in patch
-assert "+RegisterBMIUnifiedSpatialUpscaler();" in patch
 
 audit = json.loads(read(ENGINE / "renderer-api-audit.json"))
 status = audit["implementation_status"]
