@@ -194,23 +194,44 @@ namespace BMIGraphicsRuntime
         SetCVarIntIfPresent(TEXT("bmi.Pipeline.HUD"), bEnabled ? 1 : 0);
     }
 
+    static bool SetCVarIntAndVerify(const TCHAR* Name, int32 Value)
+    {
+        IConsoleVariable* CVar = FindCVar(Name);
+        if (!CVar) return false;
+        CVar->Set(Value, ECVF_SetByGameSetting);
+        return CVar->GetInt() == Value;
+    }
+
     static void SetLowLatency(const TArray<FString>& Args)
     {
         if (Args.Num() != 1) return;
-        const int32 Mode = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 2);
-        if (Mode == 0)
+        const int32 Mode = FCString::Atoi(*Args[0]);
+        if (Mode < 0 || Mode > 2) return;
+
+        if (Mode == 2)
         {
-            SetCVarIntIfPresent(TEXT("r.OneFrameThreadLag"), 1);
+            // UE4.27 has no verified Android GLES zero-queued-present control.
+            // Never approximate it with glFinish, RHICmdBypass or Vulkan CVars.
+            UE_LOG(LogTemp, Error, TEXT("Ultra (Zero Queue) is unavailable: Android GLES/Swappy queue-depth control is not registered and measured."));
             return;
         }
-        if (Mode == 1)
+
+        // UE4.27's documented low-latency sync mode is r.GTSyncType=1:
+        // Game Thread synchronizes to the RHI Thread. Keep OneFrameThreadLag
+        // enabled as in Epic's documented low-latency example; forcing it to
+        // zero is a different, more aggressive trade-off and can cost FPS.
+        const int32 SyncType = Mode == 1 ? 1 : 0;
+        const bool bSyncApplied = SetCVarIntAndVerify(TEXT("r.GTSyncType"), SyncType);
+        const bool bLagApplied = SetCVarIntAndVerify(TEXT("r.OneFrameThreadLag"), 1);
+        if (!bSyncApplied || !bLagApplied)
         {
-            // UE4's supported low-latency thread-sync path. This trades some
-            // throughput for reduced game/render thread overlap.
-            SetCVarIntIfPresent(TEXT("r.OneFrameThreadLag"), 0);
+            UE_LOG(LogTemp, Error, TEXT("Low Latency mode %d was not applied: required UE4 thread-sync CVars are missing or rejected (r.GTSyncType=%d, r.OneFrameThreadLag=1)."),
+                Mode, SyncType);
             return;
         }
-        UE_LOG(LogTemp, Error, TEXT("Ultra (Zero Queue) is unavailable: no validated zero-pending-frame control exists in the active Android OpenGL ES presentation path."));
+
+        UE_LOG(LogTemp, Log, TEXT("Low Latency %s applied: r.GTSyncType=%d, r.OneFrameThreadLag=1."),
+            Mode == 1 ? TEXT("On") : TEXT("Off"), SyncType);
     }
 
     static bool IsFrameGenerationAvailable(int32 Method, int32 Multiplier)
