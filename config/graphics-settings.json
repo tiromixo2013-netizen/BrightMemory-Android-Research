@@ -39,7 +39,8 @@
       ],
       "default": "Native",
       "integration": "Use the game's existing GameUserSettings resolution-scale path; preserve panel resolution, aspect ratio, orientation and Android DPI.",
-      "status": "runtime path identified in libUE4.so; UI and runtime binding still require engine integration and device validation"
+      "status": "runtime path identified in libUE4.so; UI and runtime binding still require engine integration and device validation",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetResolutionController"
     },
     {
       "id": "graphics_quality",
@@ -56,7 +57,8 @@
       ],
       "default": "High",
       "integration": "Map each tier to actual supported UE4 scalability and mobile CVars for shadows, view distance, effects, textures, foliage, shading and post-processing. Extreme must only raise settings proven supported by this build.",
-      "status": "existing runtime profile source needs wiring into the game's actual settings UI and visual validation; do not expose inert labels"
+      "status": "existing runtime profile source needs wiring into the game's actual settings UI and visual validation; do not expose inert labels",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetGraphicsQuality"
     },
     {
       "id": "render_scale",
@@ -68,7 +70,8 @@
       "step": 1,
       "default": 100,
       "integration": "Manual render-resolution percentage through the game's existing UGameUserSettings::SetResolutionScaleValueEx path. Resolution Controller remains the separate output/mobile-content scale control. Selecting an Upscale Preset applies its recommended render percentage to this same Render Scale value; moving Render Scale afterward overrides the preset percentage without changing the selected preset label.",
-      "status": "existing Blueprint API and runtime command are present in source; unified preset/manual slider ownership is now specified; runtime compilation and on-device validation pending"
+      "status": "existing Blueprint API and runtime command are present in source; unified preset/manual slider ownership is now specified; runtime compilation and on-device validation pending",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetRenderScale"
     },
     {
       "id": "upscaler",
@@ -77,7 +80,8 @@
       "type": "fixed",
       "value": "SGSR1",
       "integration": "Qualcomm SGSR1 UE4.27 plugin and shader pass in the game's actual renderer.",
-      "status": "source vendored; registration and Android shader compilation in shipped renderer are not yet verified"
+      "status": "source vendored; registration and Android shader compilation in shipped renderer are not yet verified",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaler"
     },
     {
       "id": "upscale_sharpness",
@@ -86,7 +90,8 @@
       "min": 0,
       "max": 1,
       "default": 0.5,
-      "status": "must bind to the real SGSR1 shader parameter"
+      "status": "must bind to the real SGSR1 shader parameter",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaleSharpness"
     },
     {
       "id": "upscale_preset",
@@ -100,14 +105,16 @@
         "Ultra Quality"
       ],
       "default": "Balanced",
-      "status": "must map to SGSR1-supported render fractions and parameters; do not add a second independent render-scale control"
+      "status": "must map to SGSR1-supported render fractions and parameters; do not add a second independent render-scale control",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscalePreset"
     },
     {
       "id": "amd_cas",
       "label": "AMD CAS",
       "type": "toggle",
       "default": false,
-      "status": "unavailable until a real CAS RDG shader pass is registered after SGSR1"
+      "status": "unavailable until a real CAS RDG shader pass is registered after SGSR1",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetAMDCAS"
     },
     {
       "id": "cas_sharpness",
@@ -117,7 +124,8 @@
       "max": 1,
       "default": 0.5,
       "depends_on": "amd_cas",
-      "status": "bind only to the real CAS pass; disabled while CAS backend is unavailable"
+      "status": "bind only to the real CAS pass; disabled while CAS backend is unavailable",
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetCASSharpness"
     },
     {
       "id": "low_latency",
@@ -133,7 +141,8 @@
         "Off": "leave the game's default scheduling unchanged",
         "On": "use only the verified UE4 one-frame-thread-lag control",
         "Ultra": "unavailable until a safe queue-depth control is proven for the active Android RHI"
-      }
+      },
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetLowLatency"
     },
     {
       "id": "frame_generation_method",
@@ -155,7 +164,8 @@
       "backends": {
         "Qualcomm AFME": "separate vendor-specific backend; do not assume support on Adreno 610",
         "GLES Motion Reprojection": "engine-extension/renderer/BMIShaders/Private/BMIGLESFrameReprojection.frag"
-      }
+      },
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetFrameGenerationMethod"
     },
     {
       "id": "frame_generation_multiplier",
@@ -173,7 +183,8 @@
         "x2": "candidate for AFME or GLES; disabled until the selected backend is fully registered",
         "x3": "GLES backend only; requires two generated outputs and a validated presentation schedule",
         "x4": "GLES backend only; requires three generated outputs and a validated presentation schedule"
-      }
+      },
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetFrameGenerationMultiplier"
     }
   ],
   "removed_from_experimental_profile": [
@@ -189,5 +200,11 @@
     "keep the original game rendering path as fallback",
     "Resolution Controller changes mobile content/output scale only; Render Scale controls the internal render percentage; Upscale Preset sets a recommended Render Scale value, and manual Render Scale edits override that percentage."
   ],
-  "build_status": "GLES Motion Reprojection GLSL ES 3.0 prototype and integration contract added; both frame-generation backends remain fail-closed pending UE4.27 renderer integration, build and device validation."
+  "build_status": "GLES Motion Reprojection GLSL ES 3.0 prototype and integration contract added; both frame-generation backends remain fail-closed pending UE4.27 renderer integration, build and device validation.",
+  "ui_integration": {
+    "target_asset": "/Game/UISystem_BMI/Menu/Seting/Graphics/BMI_Graphics_UMG",
+    "target_widget_class": "BMI_Graphics_UMG_C",
+    "parent_menu_asset": "/Game/UISystem_BMI/Menu/MainMenu/Two/BMI_Menu_Seting_UMG",
+    "status": "The cooked v1.34 UMG assets were extracted and their widget references inspected. Runtime Blueprint-callable API exists for every setting below, but the cooked widget graph has not been edited or rebound. Do not claim the in-game controls are connected until the UMG graph is rebuilt with the project's matching UE4.27.2 editor and verified in-game."
+  }
 }
