@@ -87,3 +87,12 @@ bool UBMIGraphicsSettingsLibrary::SetFrameLimit(int32 FramesPerSecond)
         FramesPerSecond != 90 && FramesPerSecond != 120) return false;
     return RunBMICommand(TEXT("bmi.SetFrameLimit"), IntArg(FramesPerSecond));
 }
+
+ 
+bool UBMIGraphicsSettingsLibrary::SetFrameGeneration(int32 Mode)
+{
+    // Qualcomm AFME 1.0 supports x2 extrapolation only. The runtime command
+    // rejects x2 until a real renderer/presentation backend reports available.
+    if (Mode < 0 || Mode > 1) return false;
+    return RunBMICommand(TEXT("bmi.SetFrameGeneration"), IntArg(Mode));
+}
