@@ -48,6 +48,7 @@
       "label": "Graphics Quality",
       "type": "enum",
       "options": [
+        "Very Low",
         "Low",
         "Medium",
         "High",
@@ -56,8 +57,8 @@
         "Extreme"
       ],
       "default": "High",
-      "integration": "Each tier applies the UE4 overall scalability setting and explicitly calls the eight available UGameUserSettings category setters: view distance, shadows, anti-aliasing, textures, visual effects, foliage, shading and post-processing. Low..Ultra map to stock groups 0..4; Extreme uses group 4 plus bounded mobile overrides for view distance, mip bias and anisotropic filtering. This is a broader real settings path, but console-like visual quality is not claimed until the actual Android game is built and visually A/B tested.",
-      "status": "Runtime source now explicitly calls all eight native scalability category setters for each quality selection. Six menu profiles are mapped, with Extreme using the highest stock tier plus mobile overrides. Source change is committed; exact UE4.27.2 compilation, APK integration and in-game visual A/B tests remain pending. Do not describe Extreme as console-equivalent yet.",
+      "integration": "Seven ordered tiers apply all eight native UE4 scalability categories. Very Low..Ultra progress through stock groups 0..4; Extreme stays at the highest stock group and requests higher supported mobile values for view distance, shadow quality, mobile AO, effects, post-process and texture filtering than Ultra. Unsupported CVars are skipped. Console-level appearance is a visual target, not a verified result until the Android build is tested.",
+      "status": "Runtime source defines seven tiers (Very Low through Extreme). Extreme has a distinct highest-tier override set above Ultra. Source validation can confirm mapping and CVar requests only; exact UE4.27.2 compilation, cooked UMG rebinding, APK integration and visual A/B validation remain pending.",
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetGraphicsQuality"
     },
     {
