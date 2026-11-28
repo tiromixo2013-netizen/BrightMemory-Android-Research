@@ -114,13 +114,23 @@ namespace BMIGraphicsRuntime
 
     static void SetGraphicsQuality(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1 || !GEngine) return;
+        if (Args.Num() != 1 || !GEngine || !Args[0].IsNumeric())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Graphics Quality: expected one numeric tier from 0 to 6."));
+            return;
+        }
 
         // 0 Very Low, 1 Low, 2 Medium, 3 High, 4 Very High, 5 Ultra, 6 Extreme.
         // Native UE4 scalability tops out at group 4. Extreme therefore keeps
         // the maximum stock group and raises only supported mobile effect CVars
         // above Ultra; missing CVars are skipped, never represented as applied.
-        const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 6);
+        const int32 Quality = FCString::Atoi(*Args[0]);
+        if (Quality < 0 || Quality > 6)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Graphics Quality: invalid tier %d; valid range is 0..6."), Quality);
+            return;
+        }
+
         UGameUserSettings* Settings = GEngine->GetGameUserSettings();
         if (!Settings) return;
 
