@@ -56,8 +56,8 @@
         "Extreme"
       ],
       "default": "High",
-      "integration": "Each tier applies UE4 overall scalability (Low..Ultra map to 0..4; Extreme is Epic plus bounded mobile overrides), then attempts view distance, mip bias, effects, post-process, anisotropic filtering, shadows and mobile AO CVars. The runtime logs how many of the seven optional CVars actually exist. Extreme never sends unsupported scalability quality value 5 or effects quality 4.",
-      "status": "Runtime mapping corrected and source-checked: six distinct bounded profiles; optional CVar presence is reported. Actual visual impact and per-setting support still require target-engine build and in-game A/B validation; unavailable CVars are not claimed to work.",
+      "integration": "Each tier applies the UE4 overall scalability setting and explicitly calls the eight available UGameUserSettings category setters: view distance, shadows, anti-aliasing, textures, visual effects, foliage, shading and post-processing. Low..Ultra map to stock groups 0..4; Extreme uses group 4 plus bounded mobile overrides for view distance, mip bias and anisotropic filtering. This is a broader real settings path, but console-like visual quality is not claimed until the actual Android game is built and visually A/B tested.",
+      "status": "Runtime source now explicitly calls all eight native scalability category setters for each quality selection. Six menu profiles are mapped, with Extreme using the highest stock tier plus mobile overrides. Source change is committed; exact UE4.27.2 compilation, APK integration and in-game visual A/B tests remain pending. Do not describe Extreme as console-equivalent yet.",
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetGraphicsQuality"
     },
     {
