@@ -26,7 +26,7 @@ No Frame Pacing, Performance HUD, or alternate upscaler selector is part of this
 
 - Runtime settings bridge and Blueprint-callable API: source present.
 - Graphics Quality: bounded UE4 scalability and optional mobile CVar overrides are implemented in source; actual visual effect remains unverified on the shipped game.
-- SGSR1: the official Qualcomm UE4.27 plugin's primary spatial-upscaler path has been inspected. Patch `engine-extension/renderer/patches/0002-sgsr1-runtime-sharpness.patch` exposes the real mobile edge-sharpness shader parameter; patch applicability is checked by CI. The exact shipped plugin revision and target compilation remain unverified.
+- SGSR1: the official Qualcomm UE4.27 plugin's primary spatial-upscaler path is vendored. Its in-repository copy includes the real mobile sharpness shader parameter and CVar, and the runtime now maps the fixed SGSR1 control/presets to them. Patch `0002` reproduces the change on a clean upstream checkout; target engine compilation and device execution remain unverified.
 - AMD CAS: a registered renderer pass is not yet available, so the runtime rejects enabling it.
 - Low Latency Off/On: maps to UE4's Game Thread lead setting. Ultra/Zero Queue remains disabled until a safe, measurable control is integrated into the active Android GLES presentation path.
 - Frame Generation: selection and capability gates exist. The GLES reprojection shader is a prototype, not a complete frame-generation backend. No backend is registered; x2/x3/x4 must remain unavailable.
