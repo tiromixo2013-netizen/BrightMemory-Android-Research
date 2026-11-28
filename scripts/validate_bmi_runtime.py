@@ -35,7 +35,7 @@ assert "const float ViewDistance[] = { 0.50f, 0.65f, 0.80f, 1.00f, 1.10f, 1.20f,
 assert "const int32 Shadows[] = { 0, 0, 1, 2, 3, 4, 5 };" in runtime
 assert "const int32 MobileAO[] = { 0, 0, 0, 1, 1, 2, 3 };" in runtime
 assert "const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 6);" in runtime
-assert "console" in runtime and "A/B tested" in runtime
+assert "IConsoleManager" in runtime and "FAutoConsoleCommand" in runtime, "Runtime console command bridge is missing"
 assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
 
