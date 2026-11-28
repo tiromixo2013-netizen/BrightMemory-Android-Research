@@ -1,13 +1,17 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "profile": "Bright Memory: Infinite Android v1.34 - Minimal Experimental",
   "target": {
+    "device": "Samsung Galaxy M14 4G",
     "abi": "arm64-v8a",
     "android": "15",
     "gpu": "Adreno 610",
     "engine": "UE4.27.2"
   },
   "menu_order": [
+    "resolution_controller",
+    "graphics_quality",
+    "upscaler",
     "upscale_sharpness",
     "upscale_preset",
     "amd_cas",
@@ -17,12 +21,33 @@
   ],
   "settings": [
     {
+      "id": "resolution_controller",
+      "section": "Display",
+      "label": "Resolution Controller",
+      "type": "enum",
+      "options": ["Native", "540P", "640P", "720P", "900P", "980P", "1080P"],
+      "default": "Native",
+      "integration": "Use the game's existing GameUserSettings resolution-scale path; preserve panel resolution, aspect ratio, orientation and Android DPI.",
+      "status": "runtime path identified in libUE4.so; UI and runtime binding still require engine integration and device validation"
+    },
+    {
+      "id": "graphics_quality",
+      "section": "Graphics",
+      "label": "Graphics Quality",
+      "type": "enum",
+      "options": ["Low", "Medium", "High", "Very High", "Ultra", "Extreme"],
+      "default": "High",
+      "integration": "Map each tier to actual supported UE4 scalability and mobile CVars for shadows, view distance, effects, textures, foliage, shading and post-processing. Extreme must only raise settings proven supported by this build.",
+      "status": "existing runtime profile source needs wiring into the game's actual settings UI and visual validation; do not expose inert labels"
+    },
+    {
       "id": "upscaler",
+      "section": "Upscaling",
       "label": "Upscaling",
       "type": "fixed",
       "value": "SGSR1",
-      "visible": true,
-      "status": "requires_verified_SGSR1_registration_in_shipped_Renderer"
+      "integration": "Qualcomm SGSR1 UE4.27 plugin and shader pass in the game's actual renderer.",
+      "status": "source vendored; registration and Android shader compilation in shipped renderer are not yet verified"
     },
     {
       "id": "upscale_sharpness",
@@ -31,31 +56,22 @@
       "min": 0.0,
       "max": 1.0,
       "default": 0.5,
-      "visible": true,
-      "status": "must_bind_to_real_SGSR1_shader_parameter"
+      "status": "must bind to the real SGSR1 shader parameter"
     },
     {
       "id": "upscale_preset",
       "label": "Upscale Preset",
       "type": "enum",
-      "options": [
-        "Ultra Performance",
-        "Performance",
-        "Balanced",
-        "Quality",
-        "Ultra Quality"
-      ],
+      "options": ["Ultra Performance", "Performance", "Balanced", "Quality", "Ultra Quality"],
       "default": "Balanced",
-      "visible": true,
-      "status": "must_map_to_SGSR1_supported_render_scale_and_parameters"
+      "status": "must map to SGSR1-supported render fractions and parameters; do not add a second independent render-scale control"
     },
     {
       "id": "amd_cas",
       "label": "AMD CAS",
       "type": "toggle",
       "default": false,
-      "visible": true,
-      "status": "disabled_until_real_CAS_RDG_pass_is_registered"
+      "status": "unavailable until a real CAS RDG shader pass is registered after SGSR1"
     },
     {
       "id": "cas_sharpness",
@@ -65,60 +81,55 @@
       "max": 1.0,
       "default": 0.5,
       "depends_on": "amd_cas",
-      "visible": true,
-      "status": "must_bind_to_real_CAS_pass; unavailable_when_CAS_pass_missing"
+      "status": "bind only to the real CAS pass; disabled while CAS backend is unavailable"
     },
     {
       "id": "low_latency",
       "label": "Low Latency",
       "type": "enum",
-      "options": [
-        "Off",
-        "On",
-        "Ultra"
-      ],
+      "options": ["Off", "On", "Ultra"],
       "default": "Off",
-      "visible": true,
       "status": {
-        "Off": "verified_default_no_extra_queue_override",
-        "On": "only_enable_verified_UE4_one_frame_thread_lag_control",
-        "Ultra": "keep_unavailable_until_zero_queue_control_is_verified_for_active_Android_GLES_RHI"
+        "Off": "leave the game's default scheduling unchanged",
+        "On": "use only the verified UE4 one-frame-thread-lag control",
+        "Ultra": "unavailable until a safe queue-depth control is proven for the active Android RHI"
       }
     },
     {
       "id": "frame_generation",
       "label": "Frame Generation",
       "type": "enum",
-      "options": [
-        "Off",
-        "x2",
-        "x3",
-        "x4"
-      ],
+      "options": ["Off", "x2", "x3", "x4"],
       "default": "Off",
-      "visible": true,
-      "status": "do_not_expose_as_working_until_real_motion_interpolation_and_present_scheduler_are_implemented_and_device_validated",
+      "preferred_vendor": "Qualcomm",
+      "status": "no Qualcomm implementation is currently verified compatible with Adreno 610 plus UE4.27.2; keep x2/x3/x4 unavailable until a genuine interpolation backend and presentation scheduler are validated",
       "requirements": [
-        "real_interpolated_frames_not_duplicated_frames",
-        "motion_vectors_or_verified_motion_estimation",
-        "stable_timestamp_and_present_schedule",
-        "Adreno_610_performance_and_artifact_validation"
-      ]
+        "interpolated scene frames, never duplicated frames",
+        "real motion vectors or validated optical-flow estimation",
+        "correct depth/occlusion handling and UI compositing",
+        "stable display timestamps and present scheduling",
+        "low GPU cost measured on Adreno 610"
+      ],
+      "qualcomm_research": {
+        "Adreno_Neural_Fusion": "real Qualcomm FG, but current public SDK requires Snapdragon 8 Elite Gen 6 or newer, Vulkan, and its Unreal plugin targets UE5; not compatible with this Adreno 610 UE4.27 target",
+        "Adreno_Frame_Motion_Engine_AFME": "older Qualcomm extrapolation path, explicitly excluded by user request; do not use as a substitute",
+        "decision": "do not label any unsupported Qualcomm path as available; continue checking for a genuinely older public Qualcomm FG implementation that supports Adreno 6xx and UE4.27"
+      }
     }
   ],
   "removed_from_experimental_profile": [
-    "resolution_controller",
-    "graphics_quality",
-    "render_scale",
-    "multiple_upscaler_choices",
-    "frame_pacing",
-    "performance_hud"
+    "multiple upscaler choices",
+    "standalone render scale",
+    "frame pacing",
+    "performance HUD",
+    "unrelated graphics techniques"
   ],
   "safety_rules": [
-    "never_show_an_option_as_working_when_its_backend_is_not_registered",
-    "do_not_substitute_tonemapper_sharpen_for_AMD_CAS",
-    "do_not_fake_frame_generation_by_repeating_or_blending_identical_frames",
-    "keep_the_original_game_render_path_as_fallback"
+    "never show an option as working when its backend is not registered and validated",
+    "do not substitute tonemapper sharpening for AMD CAS",
+    "do not fake frame generation by repeating or blending identical frames",
+    "keep the original game rendering path as fallback",
+    "resolution and graphics quality changes must affect actual game rendering, not only menu text"
   ],
-  "build_status": "profile_spec_only_not_a_compiled_APK"
+  "build_status": "updated experimental configuration only; not a compiled APK or verified runtime build"
 }
