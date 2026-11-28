@@ -283,30 +283,28 @@ namespace BMIGraphicsRuntime
     {
         if (Args.Num() != 1) return;
         const int32 Mode = FCString::Atoi(*Args[0]);
+        if (Mode < 0 || Mode > 3) return;
         if (Mode == 0)
         {
             SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Mode"), 0);
             return;
         }
-        if (Mode != 1)
-        {
-            UE_LOG(LogTemp, Error, TEXT("Qualcomm AFME 1.0 supports x2 only; x3/x4 are unavailable."));
-            return;
-        }
-
-        // Fail closed: a renderer-owned AFME implementation must register this
-        // availability CVar only after extension detection, texture capture,
-        // interpolation, UI composition and presentation scheduling are wired.
-        IConsoleVariable* Available = FindCVar(TEXT("bmi.FrameGeneration.AFMEAvailable"));
+        const TCHAR* AvailabilityName = Mode == 1
+            ? TEXT("bmi.FrameGeneration.AFMEAvailable")
+            : Mode == 2
+                ? TEXT("bmi.FrameGeneration.X3Available")
+                : TEXT("bmi.FrameGeneration.X4Available");
+        IConsoleVariable* Available = FindCVar(AvailabilityName);
         if (!Available || Available->GetInt() == 0)
         {
-            UE_LOG(LogTemp, Warning, TEXT("Qualcomm AFME x2 is not enabled: GL_QCOM_frame_extrapolation or the game renderer integration is unavailable."));
+            const TCHAR* Multiplier = Mode == 1 ? TEXT("x2") : Mode == 2 ? TEXT("x3") : TEXT("x4");
+            UE_LOG(LogTemp, Warning, TEXT("Frame Generation %s is unavailable: complete renderer backend is not registered."), Multiplier);
             return;
         }
-        SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Mode"), 1);
+        SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Mode"), Mode);
     }
 
-    static FAutoConsoleCommand CmdFrameGeneration(TEXT("bmi.SetFrameGeneration"), TEXT("Set frame generation: 0 Off, 1 Qualcomm AFME x2 (requires registered backend)."),
+    static FAutoConsoleCommand CmdFrameGeneration(TEXT("bmi.SetFrameGeneration"), TEXT("Set frame generation: 0 Off, 1 x2 AFME, 2 x3 backend, 3 x4 backend; each requires a registered backend."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameGeneration));
     static FAutoConsoleCommand CmdResolutionController(TEXT("bmi.SetResolutionController"), TEXT("Set native/540P..1080P mobile content scale option 0..6."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetResolutionController));
