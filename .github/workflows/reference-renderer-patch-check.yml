@@ -6,6 +6,7 @@ on:
     paths:
       - 'engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch'
       - 'engine-extension/renderer/patches/0002-sgsr1-runtime-sharpness.patch'
+      - 'scripts/validate_bmi_runtime.py'
       - '.github/workflows/reference-renderer-patch-check.yml'
   workflow_dispatch:
 
