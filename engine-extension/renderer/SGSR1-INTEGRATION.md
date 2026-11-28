@@ -16,9 +16,9 @@ This means Bright Memory should use the official plugin's primary spatial-upscal
 
 ## Runtime sharpness finding and patch
 
-The official UE4.27 mobile shader hardcodes `SGSR_EDGE_SHARPNESS` to `2.0`. The upstream `FSGSRPassParameters` does not expose a runtime sharpness parameter. A CVar-only implementation in the game runtime would therefore do nothing.
+The pristine upstream UE4.27 mobile shader hardcodes `SGSR_EDGE_SHARPNESS` to `2.0`, and its upstream `FSGSRPassParameters` does not expose runtime sharpness. The repository's vendored copy has already been adapted: `FSGSRPassParameters` contains `Sharpness`, the scaler defines `r.Qualcomm.SGSR.Sharpness` and passes it into the RDG parameters, and the shader forwards it into the SGSR algorithm. The game runtime now drives that CVar.
 
-`patches/0002-sgsr1-runtime-sharpness.patch` changes the official plugin source in three places:
+`patches/0002-sgsr1-runtime-sharpness.patch` is the reproducible equivalent for a clean checkout of the official upstream plugin. It changes the upstream source in three places:
 
 1. Adds `EdgeSharpness` to the RDG shader parameter struct.
 2. Replaces the fixed mobile shader macro with a shader parameter.
@@ -35,7 +35,7 @@ git apply --check /path/to/0002-sgsr1-runtime-sharpness.patch
 git apply /path/to/0002-sgsr1-runtime-sharpness.patch
 ```
 
-The repository workflow `.github/workflows/reference-renderer-patch-check.yml` runs the patch applicability check against that upstream branch.
+The repository workflow `.github/workflows/reference-renderer-patch-check.yml` runs the patch applicability check against that upstream branch. The vendored source is independently checked by `scripts/validate_bmi_runtime.py` for the parameter, CVar and shader call chain.
 
 A clean `git apply --check` proves only that the patch matches the public upstream source. It does not prove that Bright Memory v1.34 ships the same plugin revision, that its UE4.27.2 source is ABI-compatible, that Android GLES shaders compile, or that the pass runs on the M14. Those require the exact target engine source, a UE Android build, and an in-game A/B test.
 
