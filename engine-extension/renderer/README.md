@@ -16,8 +16,8 @@ runtime control when starting from the pristine official Qualcomm branch.
 The shared five-level preset sets the render percentage and a recommended
 SGSR1 sharpness value; it does not add a second upscaler or render-scale control.
 
-`patches/0001-register-bmi-spatial-upscaler.patch` registers the optional BMI
-research dispatcher in the reference Renderer module. It is not required to
+The Renderer startup patch registers the optional BMI dispatcher in the
+reference Renderer module (`patches/0001-register-bmi-spatial-upscaler.patch`). It is not required to
 activate Qualcomm SGSR1 and remains disabled in the agreed minimal profile.
 The dispatcher retains safe built-in Nearest/Bilinear fallbacks and source
 adapters for research; MWSR, FSR Mobile and SGSR2 are not exposed as choices
