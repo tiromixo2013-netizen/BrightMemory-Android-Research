@@ -138,11 +138,17 @@
       ],
       "default": "Off",
       "status": {
-        "Off": "leave the game's default scheduling unchanged",
-        "On": "use only the verified UE4 one-frame-thread-lag control",
-        "Ultra": "unavailable until a safe queue-depth control is proven for the active Android RHI"
+        "Off": "available; sets r.OneFrameThreadLag=1",
+        "On": "available; sets r.OneFrameThreadLag=0; reduces Game Thread lead but can cost throughput",
+        "Ultra": "disabled; do not display as selectable until an active GLES queue-depth control is implemented and device-tested"
       },
-      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetLowLatency"
+      "blueprint_api": "UBMIGraphicsSettingsLibrary::SetLowLatency",
+      "option_availability": {
+        "Off": "available",
+        "On": "available_with_tradeoff",
+        "Ultra": "disabled_until_verified"
+      },
+      "integration": "Off restores UE4's one-frame-thread-lag default (r.OneFrameThreadLag=1). On disables the one-frame lead (r.OneFrameThreadLag=0) to reduce input-to-render latency, potentially lowering throughput or causing pacing variation. Ultra is disabled: no validated Android OpenGL ES queue-depth/no-queue control is available."
     },
     {
       "id": "frame_generation_method",
