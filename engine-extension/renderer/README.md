@@ -13,8 +13,11 @@ copy already carries a real `Sharpness` RDG parameter, the
 `r.Qualcomm.SGSR.Sharpness` CVar, and the 0..1 UI-to-1..2 shader mapping.
 Patch `patches/0002-sgsr1-runtime-sharpness.patch` reproduces the equivalent
 runtime control when starting from the pristine official Qualcomm branch.
-The shared five-level preset sets the render percentage and a recommended
-SGSR1 sharpness value; it does not add a second upscaler or render-scale control.
+The shared five-level preset applies render percentage through the same verified
+helper used by manual Render Scale, then applies and verifies the SGSR1 shader
+sharpness CVar. Manual Render Scale overrides only the percentage; it does not
+silently alter preset selection or sharpness. Manual sharpness updates the real
+SGSR1 shader parameter. Alternate method indices are rejected in this profile.
 
 The Renderer startup patch registers the optional BMI dispatcher in the
 reference Renderer module (`patches/0001-register-bmi-spatial-upscaler.patch`). It is not required to
