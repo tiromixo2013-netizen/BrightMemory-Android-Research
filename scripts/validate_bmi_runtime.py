@@ -70,6 +70,23 @@ for token in ["#version 300 es", "u_CurrentFrame", "u_PreviousFrame",
 gles_fg_doc = read(RENDERER / "GLES-FRAME-REPROJECTION.md")
 assert "x2" in gles_fg_doc and "x3" in gles_fg_doc and "x4" in gles_fg_doc
 assert "not a complete frame-generation backend" in gles_fg_doc
+framegen_cpp = read(RENDERER / "BMIFrameGeneration.cpp")
+framegen_header = read(RENDERER / "BMIFrameGeneration.h")
+for token in ["SetBackendCapabilities", "IsBackendAvailable", "MultiplierX2",
+              "MultiplierX3", "MultiplierX4", "QualcommAFME", "GLESReprojection"]:
+    assert token in framegen_cpp + framegen_header, f"Frame generation gate missing: {token}"
+assert "CVarAFMECapabilities" in framegen_cpp
+for token in ["GLESX2Available", "GLESX3Available", "GLESX4Available"]:
+    assert token in framegen_cpp
+runtime_fg = runtime[runtime.index("static bool IsFrameGenerationAvailable"):runtime.index("static FAutoConsoleCommand CmdFrameGeneration")]
+for token in ["SetFrameGenerationMethod", "SetFrameGenerationMultiplier",
+              "GLESX2Available", "GLESX3Available", "GLESX4Available"]:
+    assert token in runtime_fg, f"Runtime frame generation selector missing: {token}"
+bp_header = read(ENGINE / "Source/BMIGraphicsRuntime/Public/BMIGraphicsSettingsLibrary.h")
+bp_cpp = read(ENGINE / "Source/BMIGraphicsRuntime/Private/BMIGraphicsSettingsLibrary.cpp")
+assert "SetFrameGenerationMethod" in bp_header and "SetFrameGenerationMethod" in bp_cpp
+assert "SetFrameGenerationMultiplier" in bp_header and "SetFrameGenerationMultiplier" in bp_cpp
+
 
 config = json.loads(read(ROOT / "config/graphics-settings.json"))
 expected = [
