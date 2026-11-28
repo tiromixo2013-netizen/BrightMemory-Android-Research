@@ -24,21 +24,18 @@ empty and the BMI pipeline is enabled with a registered method.
 diff --git a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 --- a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 +++ b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
-@@ -34,4 +34,7 @@
- #include "ScreenSpaceDenoise.h"
+@@ -28,2 +28,5 @@
  #include "VT/VirtualTextureSystem.h"
  #include "PostProcess/TemporalAA.h"
 +#include "BMIUnifiedSpatialUpscaler.h"
 +#include "ShaderCore.h"
 +#include "Misc/Paths.h"
- DEFINE_LOG_CATEGORY(LogRenderer);
- 
- IMPLEMENT_MODULE(FRendererModule, Renderer);
-@@ -53,7 +56,9 @@ void FRendererModule::StartupModule()
+@@ -53,6 +56,8 @@ void FRendererModule::StartupModule()
+ {
+ 	GScreenSpaceDenoiser = IScreenSpaceDenoiser::GetDefaultDenoiser();
  	GTemporalUpscaler = ITemporalUpscaler::GetDefaultTemporalUpscaler();
  
  	FVirtualTextureSystem::Initialize();
 +	AddShaderSourceDirectoryMapping(TEXT("/Plugin/BMI"), FPaths::Combine(FPaths::EngineDir(), TEXT("Source/Runtime/Renderer/Private")));
 +	RegisterBMIUnifiedSpatialUpscaler();
  }
- 
