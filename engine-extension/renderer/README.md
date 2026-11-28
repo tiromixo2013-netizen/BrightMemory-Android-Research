@@ -10,7 +10,7 @@ chains optional post-reconstruction stages in this order:
 2. Optional AMD CAS pass, only when a real pass is registered.
 3. Optional performance HUD compositor, only when a real pass is registered.
 
-Frame Generation is deliberately separate; it is not a spatial upscaler pass.
+Frame Generation is deliberately separate; it is not a spatial upscaler pass. A dedicated `BMIFrameGeneration` capability gate and independent runtime selectors now distinguish Qualcomm AFME from portable GLES Motion Reprojection, and select x2/x3/x4 independently. AFME is restricted to x2; GLES multipliers are individually gated. The portable GLSL ES 3.0 fragment prototype and adapter contract are in `BMIShaders/Private/BMIGLESFrameReprojection.frag`, `GLES-FRAME-REPROJECTION.md`, and `FRAME-GENERATION-ADAPTER-CONTRACT.md`. The gate remains fail-closed: no backend is registered by the current source, and the shader prototype alone does not provide motion vectors, disocclusion handling, generated-frame scheduling, or presentation.
 The dispatcher currently contains only UE4's built-in Nearest and Bilinear
 fallbacks. SGSR1 is selected through Qualcomm's original spatial extension;
 SGSR2 uses Qualcomm's separate temporal extension. MWSR and FSR Mobile now have BMI RDG pixel-pass adapters and are registered as spatial methods 2 and 3. MWSR ports the upstream 96-byte constants law and maps coarse derivatives to standard fragment derivatives. FSR Mobile uses the fused EASU/RCAS mobile shader wrapper. Both are source-level integrations only; exact UE4.27 engine compilation, GLES shader compilation and Adreno 610 image/performance tests remain outstanding.
