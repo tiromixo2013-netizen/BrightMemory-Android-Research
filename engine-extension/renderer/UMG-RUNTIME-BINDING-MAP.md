@@ -40,6 +40,14 @@ request while AFME is selected is routed to GLES only if that exact GLES
 multiplier has been registered by a complete renderer adapter. Otherwise the
 request is rejected without pretending the feature is active.
 
+## Runtime interaction contract
+
+- Selecting SGSR1 enables and verifies the Qualcomm CVar, disables the optional BMI dispatcher and UE temporal upsampling.
+- Selecting a preset uses the shared render-percentage helper and applies/verifies the official SGSR1 sharpness CVar.
+- Manual Render Scale uses the same helper but does not change preset selection or sharpness.
+- Manual Upscale Sharpness maps the UI range 0..1 to the SGSR1 shader range 1..2 and verifies readback.
+- The Blueprint API rejects alternate upscaler indices; this profile is SGSR1-only.
+
 ## Integration boundary
 
 The extracted files are cooked `.uasset/.uexp` binaries, not editable UMG
