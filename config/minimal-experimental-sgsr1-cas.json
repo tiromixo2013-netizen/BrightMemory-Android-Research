@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "profile": "Bright Memory: Infinite Android v1.34 - Minimal Experimental",
+  "target": {
+    "abi": "arm64-v8a",
+    "android": "15",
+    "gpu": "Adreno 610",
+    "engine": "UE4.27.2"
+  },
+  "menu_order": [
+    "upscale_sharpness",
+    "upscale_preset",
+    "amd_cas",
+    "cas_sharpness",
+    "low_latency",
+    "frame_generation"
+  ],
+  "settings": [
+    {
+      "id": "upscaler",
+      "label": "Upscaling",
+      "type": "fixed",
+      "value": "SGSR1",
+      "visible": true,
+      "status": "requires_verified_SGSR1_registration_in_shipped_Renderer"
+    },
+    {
+      "id": "upscale_sharpness",
+      "label": "Upscale Sharpness",
+      "type": "slider",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "visible": true,
+      "status": "must_bind_to_real_SGSR1_shader_parameter"
+    },
+    {
+      "id": "upscale_preset",
+      "label": "Upscale Preset",
+      "type": "enum",
+      "options": [
+        "Ultra Performance",
+        "Performance",
+        "Balanced",
+        "Quality",
+        "Ultra Quality"
+      ],
+      "default": "Balanced",
+      "visible": true,
+      "status": "must_map_to_SGSR1_supported_render_scale_and_parameters"
+    },
+    {
+      "id": "amd_cas",
+      "label": "AMD CAS",
+      "type": "toggle",
+      "default": false,
+      "visible": true,
+      "status": "disabled_until_real_CAS_RDG_pass_is_registered"
+    },
+    {
+      "id": "cas_sharpness",
+      "label": "CAS Sharpness",
+      "type": "slider",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.5,
+      "depends_on": "amd_cas",
+      "visible": true,
+      "status": "must_bind_to_real_CAS_pass; unavailable_when_CAS_pass_missing"
+    },
+    {
+      "id": "low_latency",
+      "label": "Low Latency",
+      "type": "enum",
+      "options": [
+        "Off",
+        "On",
+        "Ultra"
+      ],
+      "default": "Off",
+      "visible": true,
+      "status": {
+        "Off": "verified_default_no_extra_queue_override",
+        "On": "only_enable_verified_UE4_one_frame_thread_lag_control",
+        "Ultra": "keep_unavailable_until_zero_queue_control_is_verified_for_active_Android_GLES_RHI"
+      }
+    },
+    {
+      "id": "frame_generation",
+      "label": "Frame Generation",
+      "type": "enum",
+      "options": [
+        "Off",
+        "x2",
+        "x3",
+        "x4"
+      ],
+      "default": "Off",
+      "visible": true,
+      "status": "do_not_expose_as_working_until_real_motion_interpolation_and_present_scheduler_are_implemented_and_device_validated",
+      "requirements": [
+        "real_interpolated_frames_not_duplicated_frames",
+        "motion_vectors_or_verified_motion_estimation",
+        "stable_timestamp_and_present_schedule",
+        "Adreno_610_performance_and_artifact_validation"
+      ]
+    }
+  ],
+  "removed_from_experimental_profile": [
+    "resolution_controller",
+    "graphics_quality",
+    "render_scale",
+    "multiple_upscaler_choices",
+    "frame_pacing",
+    "performance_hud"
+  ],
+  "safety_rules": [
+    "never_show_an_option_as_working_when_its_backend_is_not_registered",
+    "do_not_substitute_tonemapper_sharpen_for_AMD_CAS",
+    "do_not_fake_frame_generation_by_repeating_or_blending_identical_frames",
+    "keep_the_original_game_render_path_as_fallback"
+  ],
+  "build_status": "profile_spec_only_not_a_compiled_APK"
+}
