@@ -93,6 +93,11 @@ assert "GLES backend only when that exact multiplier is registered" in runtime
 config = json.loads(read(ROOT / "config/graphics-settings.json"))
 assert config["menu_order"] == minimal["menu_order"], "Runtime settings schema differs from the agreed minimal menu"
 assert config["settings"] == minimal["settings"], "Runtime settings schema differs from the minimal experimental profile"
+assert config.get("ui_integration", {}).get("target_widget_class") == "BMI_Graphics_UMG_C"
+for item, api in zip(minimal["settings"], ["SetResolutionController","SetGraphicsQuality","SetRenderScale","SetUpscaler","SetUpscaleSharpness","SetUpscalePreset","SetAMDCAS","SetCASSharpness","SetLowLatency","SetFrameGenerationMethod","SetFrameGenerationMultiplier"]):
+    assert item.get("blueprint_api", "").endswith("::" + api), f"Missing Blueprint binding for {item['id']}"
+assert "cooked widget graph has not been edited or rebound" in minimal["ui_integration"]["status"]
+
 
 unified_h = read(RENDERER / "BMIUnifiedSpatialUpscaler.h")
 unified_cpp = read(RENDERER / "BMIUnifiedSpatialUpscaler.cpp")
