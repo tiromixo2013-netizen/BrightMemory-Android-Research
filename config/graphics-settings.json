@@ -138,17 +138,17 @@
       ],
       "default": "Off",
       "status": {
-        "Off": "available; sets r.OneFrameThreadLag=1",
-        "On": "available; sets r.OneFrameThreadLag=0; reduces Game Thread lead but can cost throughput",
+        "Off": "available; sets r.GTSyncType=0 and r.OneFrameThreadLag=1",
+        "On": "available; sets r.GTSyncType=1 (Game Thread synchronizes to RHI Thread) and keeps r.OneFrameThreadLag=1; UE4.27 documented low-latency thread-sync mode; target-device latency/throughput A/B validation pending",
         "Ultra": "disabled; the requested zero-queued-frame mode is not honestly implementable through a generic UE4 OpenGL ES CVar. Do not expose it as working until the Android GLES swap/presentation path can prove zero pending frames without glFinish or a fake RHI bypass."
       },
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetLowLatency",
       "option_availability": {
         "Off": "available",
-        "On": "available_with_tradeoff",
+        "On": "available_pending_device_validation",
         "Ultra": "disabled_until_verified"
       },
-      "integration": "Off restores r.OneFrameThreadLag=1. On sets r.OneFrameThreadLag=0. Ultra means true zero pending frames in the Android GLES presentation path (not merely disabling UE thread lead); it stays disabled until the active EGL swap/driver queue is controlled and measured."
+      "integration": "Off sets r.GTSyncType=0 and r.OneFrameThreadLag=1. On sets r.GTSyncType=1 and r.OneFrameThreadLag=1, with runtime existence/value verification. Ultra means true zero pending frames in the Android GLES presentation path; remains disabled until Swappy integration and queue-depth measurements are verified."
     },
     {
       "id": "frame_generation_method",
