@@ -5,6 +5,7 @@ on:
     branches: [experimental/minimal-sgsr1-cas]
     paths:
       - 'engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch'
+      - 'engine-extension/renderer/patches/0002-sgsr1-runtime-sharpness.patch'
       - '.github/workflows/reference-renderer-patch-check.yml'
   workflow_dispatch:
 
@@ -29,3 +30,21 @@ jobs:
           set -euo pipefail
           git -C /tmp/ue427-reference apply --check "$GITHUB_WORKSPACE/engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch"
           git -C /tmp/ue427-reference apply --numstat "$GITHUB_WORKSPACE/engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch"
+
+  sgsr1-sharpness-patch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout research repository
+        uses: actions/checkout@v4
+
+      - name: Fetch official Qualcomm UE4.27 SGSR1 plugin
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch engine/4.27 https://github.com/SnapdragonGameStudios/snapdragon-game-plugins-for-unreal-engine.git /tmp/qualcomm-sgsr
+
+      - name: Verify SGSR1 runtime sharpness patch applies cleanly
+        run: |
+          set -euo pipefail
+          git -C /tmp/qualcomm-sgsr apply --check "$GITHUB_WORKSPACE/engine-extension/renderer/patches/0002-sgsr1-runtime-sharpness.patch"
+          git -C /tmp/qualcomm-sgsr apply --numstat "$GITHUB_WORKSPACE/engine-extension/renderer/patches/0002-sgsr1-runtime-sharpness.patch"
