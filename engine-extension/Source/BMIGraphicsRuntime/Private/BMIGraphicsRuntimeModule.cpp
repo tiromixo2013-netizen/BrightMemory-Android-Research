@@ -60,10 +60,56 @@ namespace BMIGraphicsRuntime
     static void SetResolutionController(const TArray<FString>& Args)
     {
         if (Args.Num() != 1) return;
-        const int32 Choice = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 6);
-        const float Scale[] = { 0.0f, 0.75f, 0.85f, 1.0f, 1.2f, 1.35f, 1.5f };
-        if (!SetCVarFloatIfPresent(TEXT("r.MobileContentScaleFactor"), Scale[Choice]))
-            UE_LOG(LogTemp, Error, TEXT("Game mobile content scale CVar is unavailable."));
+
+        // 0 = Native; the remaining entries are target short-side pixel heights.
+        // Derive the scale from the actual display dimensions so the aspect
+        // ratio and Android panel/DPI resolution are never changed.
+        const int32 Choice = FCString::Atoi(*Args[0]);
+        if (Choice < 0 || Choice > 6)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Resolution Controller: invalid choice %d."), Choice);
+            return;
+        }
+
+        IConsoleVariable* ContentScale = FindCVar(TEXT("r.MobileContentScaleFactor"));
+        if (!ContentScale)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Resolution Controller: r.MobileContentScaleFactor is unavailable."));
+            return;
+        }
+
+        const FIntPoint Display = GEngine && GEngine->GetGameUserSettings()
+            ? GEngine->GetGameUserSettings()->GetDesktopResolution()
+            : FIntPoint::ZeroValue;
+        const int32 ShortSide = FMath::Min(Display.X, Display.Y);
+        const int32 LongSide = FMath::Max(Display.X, Display.Y);
+        if (ShortSide <= 0 || LongSide <= 0)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Resolution Controller: could not read valid display pixel dimensions."));
+            return;
+        }
+
+        const int32 TargetHeight[] = { ShortSide, 540, 640, 720, 900, 980, 1080 };
+        // Never upscale beyond Native. Native always restores the panel's full
+        // content scale, while lower presets preserve the device aspect ratio.
+        const float Scale = Choice == 0
+            ? 1.0f
+            : FMath::Clamp(static_cast<float>(TargetHeight[Choice]) / static_cast<float>(ShortSide), 0.25f, 1.0f);
+
+        ContentScale->Set(Scale, ECVF_SetByGameSetting);
+        const float AppliedScale = ContentScale->GetFloat();
+        if (!FMath::IsNearlyEqual(AppliedScale, Scale, 0.001f))
+        {
+            UE_LOG(LogTemp, Error, TEXT("Resolution Controller: requested scale %.3f but CVar readback is %.3f."),
+                Scale, AppliedScale);
+            return;
+        }
+
+        const int32 AppliedShort = FMath::RoundToInt(ShortSide * AppliedScale);
+        const int32 AppliedLong = FMath::RoundToInt(LongSide * AppliedScale);
+        UE_LOG(LogTemp, Log, TEXT("Resolution Controller: %s -> approximately %dx%d content (%0.1f%%); display/DPI unchanged."),
+            Choice == 0 ? TEXT("Native") : *FString::Printf(TEXT("%dP"), TargetHeight[Choice]),
+            AppliedLong, AppliedShort, AppliedScale * 100.0f);
     }
 
     static void SetGraphicsQuality(const TArray<FString>& Args)
