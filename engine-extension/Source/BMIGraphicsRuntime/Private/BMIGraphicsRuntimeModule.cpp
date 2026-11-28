@@ -279,7 +279,34 @@ namespace BMIGraphicsRuntime
         UE_LOG(LogTemp, Error, TEXT("Ultra (No Queue) is unavailable: no validated active-RHI queue-depth control exists for this build."));
     }
 
-    static FAutoConsoleCommand CmdResolutionController(TEXT("bmi.SetResolutionController"), TEXT("Set native/540P..1080P mobile content scale option 0..6."),
+    static void SetFrameGeneration(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1) return;
+        const int32 Mode = FCString::Atoi(*Args[0]);
+        if (Mode == 0)
+        {
+            SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Mode"), 0);
+            return;
+        }
+        if (Mode != 1)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Qualcomm AFME 1.0 supports x2 only; x3/x4 are unavailable."));
+            return;
+        }
+
+        // Fail closed: a renderer-owned AFME implementation must register this
+        // availability CVar only after extension detection, texture capture,
+        // interpolation, UI composition and presentation scheduling are wired.
+        IConsoleVariable* Available = FindCVar(TEXT("bmi.FrameGeneration.AFMEAvailable"));
+        if (!Available || Available->GetInt() == 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Qualcomm AFME x2 is not enabled: GL_QCOM_frame_extrapolation or the game renderer integration is unavailable."));
+            return;
+        }
+        SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Mode"), 1);
+    }
+
+    static FAutoConsoleCommand CmdFrameGeneration(TEXT("bmi.SetFrameGeneration"), TEXT("Set frame generation: 0 Off, 1 Qualcomm AFME x2 (requires registered backend)."),\n        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameGeneration));\n    static FAutoConsoleCommand CmdResolutionController(TEXT("bmi.SetResolutionController"), TEXT("Set native/540P..1080P mobile content scale option 0..6."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetResolutionController));
     static FAutoConsoleCommand CmdFrameLimit(TEXT("bmi.SetFrameLimit"), TEXT("Set UE4 frame limit 30,45,60,90,120."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameLimit));
