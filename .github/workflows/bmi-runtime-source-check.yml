@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - work/ue427-graphics-runtime-integration
+      - experimental/minimal-sgsr1-cas
   pull_request:
     branches:
       - main
