@@ -38,8 +38,8 @@
         "1080P"
       ],
       "default": "Native",
-      "integration": "Use the game's existing GameUserSettings resolution-scale path; preserve panel resolution, aspect ratio, orientation and Android DPI.",
-      "status": "runtime path identified in libUE4.so; UI and runtime binding still require engine integration and device validation",
+      "integration": "Native restores r.MobileContentScaleFactor=1.0. 540P/640P/720P/900P/980P/1080P calculate scale as target short-side pixels divided by the current desktop display short side, clamped to at most 1.0. This preserves aspect ratio and never changes Android panel resolution or DPI; targets above the device's native short side resolve to Native.",
+      "status": "Runtime now reads UGameUserSettings::GetDesktopResolution(), computes the scale from the display short side, sets r.MobileContentScaleFactor, and verifies CVar readback. Source/schema validation can verify the mapping; exact Android display-metric semantics, UE4.27.2 compile, cooked UMG rebinding and device pixel-output validation remain pending.",
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetResolutionController"
     },
     {
