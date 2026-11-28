@@ -80,7 +80,7 @@
       "type": "fixed",
       "value": "SGSR1",
       "integration": "Qualcomm SGSR1 UE4.27 plugin and shader pass in the game's actual renderer.",
-      "status": "Qualcomm's official UE4.27 SGSR1 plugin was inspected. Its FSceneViewExtension installs FSGSRSpatialUpscaler as the primary spatial upscaler when r.Qualcomm.SGSR.Enabled is enabled. A target integration patch is prepared; exact Bright Memory plugin presence, engine compatibility, shader compilation and device execution remain unverified.",
+      "status": "Official Qualcomm UE4.27 SGSR1 plugin source is vendored. Its FSGSRViewExtension installs FSGSRSpatialUpscaler as the primary spatial upscaler when r.Qualcomm.SGSR.Enabled is enabled. The target game plugin revision and Android GLES execution remain unverified.",
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaler"
     },
     {
@@ -90,7 +90,7 @@
       "min": 0,
       "max": 1,
       "default": 0.5,
-      "status": "Official UE4.27 SGSR1 hardcodes mobile edge sharpness at 2.0 in PostProcessSGSR.usf. Patch 0002 exposes this as a real shader parameter and CVar r.Qualcomm.SGSR.Sharpness; the user slider maps 0..1 to 1..2. Patch application and shader compilation on the target are pending.",
+      "status": "The vendored SGSR1 scaler defines r.Qualcomm.SGSR.Sharpness and passes it through the RDG parameter struct into the mobile SGSR shader. Runtime slider mapping 0..1 to 1..2 is implemented. The equivalent upstream patch is included; target shader compilation and visual validation remain pending.",
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscaleSharpness"
     },
     {
@@ -105,7 +105,7 @@
         "Ultra Quality"
       ],
       "default": "Balanced",
-      "status": "Single SGSR1 preset maps to Render Scale and the actual SGSR1 edge-sharpness shader parameter. Runtime mapping updated; target renderer build and visual validation pending.",
+      "status": "One SGSR1 preset selector maps to Render Scale and the actual SGSR1 edge-sharpness shader parameter. Runtime mapping is implemented; target renderer build and visual validation pending.",
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetUpscalePreset"
     },
     {
@@ -208,7 +208,7 @@
     "Graphics Quality tiers must only claim effects from CVars present in the target build; report missing CVars and validate visual changes on-device.",
     "Low Latency Ultra means zero pending presentation frames; never simulate it with glFinish, r.RHICmdBypass, or a Vulkan-only CVar."
   ],
-  "build_status": "Official Qualcomm UE4.27 SGSR1 integration was inspected. Patch 0002 exposes the real mobile edge-sharpness shader input; patch application, UE4.27.2 target build, Android GLES shader compilation, UMG rebinding and on-device A/B validation remain pending. Frame-generation backends remain fail-closed.",
+  "build_status": "Official Qualcomm UE4.27 SGSR1 source is vendored; the active runtime selects that plugin and maps sharpness/presets to its real shader parameter. A reproducible upstream sharpness patch and CI applicability check are included. Exact Bright Memory UE4.27.2 compilation, Android GLES shader compilation, UMG rebinding and on-device A/B validation remain pending. Frame-generation backends remain fail-closed.",
   "ui_integration": {
     "target_asset": "/Game/UISystem_BMI/Menu/Seting/Graphics/BMI_Graphics_UMG",
     "target_widget_class": "BMI_Graphics_UMG_C",
