@@ -57,7 +57,7 @@ the exact Bright Memory UE4.27.2 Android GLES target before enabling controls.
  
  		// VS-PS
  		FSGSRPS::FParameters* PassParameters = GraphBuilder.AllocParameters<FSGSRPS::FParameters>();
-+PassParameters->SGSR.EdgeSharpness = FMath::Clamp(SGSR_EdgeSharpnessCVar.GetValueOnAnyThread(), 1.0f, 2.0f);
++		PassParameters->SGSR.EdgeSharpness = FMath::Clamp(SGSR_EdgeSharpnessCVar.GetValueOnAnyThread(), 1.0f, 2.0f);
  		for (int i = 0; i < 4; i++)
  		{
  			PassParameters->SGSR.Const0[i] = const0[i];
