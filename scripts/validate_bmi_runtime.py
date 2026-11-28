@@ -86,27 +86,13 @@ bp_header = read(ENGINE / "Source/BMIGraphicsRuntime/Public/BMIGraphicsSettingsL
 bp_cpp = read(ENGINE / "Source/BMIGraphicsRuntime/Private/BMIGraphicsSettingsLibrary.cpp")
 assert "SetFrameGenerationMethod" in bp_header and "SetFrameGenerationMethod" in bp_cpp
 assert "SetFrameGenerationMultiplier" in bp_header and "SetFrameGenerationMultiplier" in bp_cpp
+assert "AFME is x2-only" in runtime
+assert "GLES backend only when that exact multiplier is registered" in runtime
 
 
 config = json.loads(read(ROOT / "config/graphics-settings.json"))
-expected = [
-    "resolution_controller", "graphics_quality", "render_scale", "upscaler",
-    "upscale_sharpness", "upscale_preset", "amd_cas", "cas_sharpness",
-    "frame_generation", "frame_pacing", "low_latency", "performance_hud",
-]
-assert config["menu_order"] == expected, "Menu order changed"
-items = config["settings"]
-ids = [item["id"] for item in items]
-assert ids[:len(expected)] == expected
-upscaler = next(item for item in items if item["id"] == "upscaler")
-assert upscaler["options"] == ["SGSR1", "SGSR2", "MWSR", "FSR Mobile", "Nearest", "Bilinear"]
-assert "FSR Mobile" in upscaler["methods"] and "FSR1" not in upscaler["options"]
-for item in items:
-    if item["id"] in {"upscaler", "amd_cas", "frame_generation", "frame_pacing",
-                      "low_latency", "performance_hud"}:
-        assert item.get("expose_control", False) is False, (
-            f"Unverified feature must remain hidden: {item['id']}"
-        )
+assert config["menu_order"] == minimal["menu_order"], "Runtime settings schema differs from the agreed minimal menu"
+assert config["settings"] == minimal["settings"], "Runtime settings schema differs from the minimal experimental profile"
 
 unified_h = read(RENDERER / "BMIUnifiedSpatialUpscaler.h")
 unified_cpp = read(RENDERER / "BMIUnifiedSpatialUpscaler.cpp")
