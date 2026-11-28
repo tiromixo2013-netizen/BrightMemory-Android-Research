@@ -100,6 +100,7 @@ namespace BMIGraphicsRuntime
             UE_LOG(LogTemp, Warning, TEXT("Render Scale: expected a finite percentage from 50 to 150."));
             return;
         }
+        if (!EnsureSGSR1Enabled()) return;
         ApplyRenderPercentage(Percent, TEXT("Render Scale"));
     }
 
@@ -284,8 +285,10 @@ namespace BMIGraphicsRuntime
 
     static void SetCAS(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
-        const bool bEnable = FCString::Atoi(*Args[0]) != 0;
+        int32 Requested = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Requested) ||
+            (Requested != 0 && Requested != 1)) return;
+        const bool bEnable = Requested == 1;
         IConsoleVariable* Available = FindCVar(TEXT("bmi.Pipeline.CASAvailable"));
         if (!Available || Available->GetInt() == 0)
         {
@@ -297,11 +300,16 @@ namespace BMIGraphicsRuntime
 
     static void SetCASSharpness(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
-        const float Sharpness = FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
+        float Sharpness = 0.0f;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseFloat(Args[0], Sharpness) ||
+            !FMath::IsFinite(Sharpness) || Sharpness < 0.0f || Sharpness > 1.0f) return;
         IConsoleVariable* Available = FindCVar(TEXT("bmi.Pipeline.CASAvailable"));
-        if (!Available || Available->GetInt() == 0) return;
-        SetCVarFloatIfPresent(TEXT("bmi.Pipeline.CASSharpness"), Sharpness);
+        if (!Available || Available->GetInt() == 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("CAS Sharpness is unavailable until a real CAS pass is registered."));
+            return;
+        }
+        SetCVarFloatAndVerify(TEXT("bmi.Pipeline.CASSharpness"), Sharpness);
     }
 
     static void SetFramePacing(const TArray<FString>& Args)
@@ -334,8 +342,8 @@ namespace BMIGraphicsRuntime
 
     static void SetLowLatency(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
-        const int32 Mode = FCString::Atoi(*Args[0]);
+        int32 Mode = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Mode)) return;
         if (Mode < 0 || Mode > 2) return;
 
         if (Mode == 2)
@@ -384,8 +392,8 @@ namespace BMIGraphicsRuntime
 
     static void SetFrameGenerationMethod(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
-        const int32 Method = FCString::Atoi(*Args[0]);
+        int32 Method = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Method)) return;
         if (Method < 0 || Method > 2) return;
         if (Method == 0)
         {
@@ -412,8 +420,8 @@ namespace BMIGraphicsRuntime
 
     static void SetFrameGenerationMultiplier(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
-        const int32 Multiplier = FCString::Atoi(*Args[0]);
+        int32 Multiplier = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Multiplier)) return;
         if (Multiplier < 2 || Multiplier > 4) return;
         IConsoleVariable* MethodVar = FindCVar(TEXT("bmi.FrameGeneration.Method"));
         const int32 Method = MethodVar ? MethodVar->GetInt() : 0;
