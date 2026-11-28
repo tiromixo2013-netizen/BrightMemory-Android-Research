@@ -140,15 +140,15 @@
         "x4": "unsupported by Qualcomm AFME 1.0; disabled"
       },
       "requirements": [
-        "interpolated scene frames, never duplicated frames",
-        "real motion vectors or validated optical-flow estimation",
-        "correct depth/occlusion handling and UI compositing",
-        "stable display timestamps and present scheduling",
-        "low GPU cost measured on Adreno 610"
+        "two real rendered source frames",
+        "two GPU color textures and one extrapolated output texture",
+        "OpenGL ES context exposing GL_QCOM_frame_extrapolation and glExtrapolateTex2DQCOM",
+        "renderer-owned presentation scheduling",
+        "UI composition and motion/occlusion artifact validation"
       ],
       "qualcomm_research": {
         "Adreno_Neural_Fusion": "real Qualcomm FG, but current public SDK requires Snapdragon 8 Elite Gen 6 or newer, Vulkan, and its Unreal plugin targets UE5; not compatible with this Adreno 610 UE4.27 target",
-        "Adreno_Frame_Motion_Engine_AFME": "older Qualcomm extrapolation path, explicitly excluded by user request; do not use as a substitute",
+        "Adreno_Frame_Motion_Engine_AFME": "older Qualcomm OpenGL ES frame extrapolation extension; now selected as the experimental x2 candidate, but Adreno 610 driver support and UE4.27 renderer integration remain unverified",
         "decision": "do not label any unsupported Qualcomm path as available; continue checking for a genuinely older public Qualcomm FG implementation that supports Adreno 6xx and UE4.27"
       },
       "qualcomm_afme": {
