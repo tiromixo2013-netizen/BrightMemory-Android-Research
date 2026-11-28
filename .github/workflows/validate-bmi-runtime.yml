@@ -1,0 +1,30 @@
+name: Validate BMI graphics runtime
+
+on:
+  push:
+    branches:
+      - experimental/minimal-sgsr1-cas
+  pull_request:
+    branches:
+      - experimental/minimal-sgsr1-cas
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate graphics runtime, renderer sources and menu schema
+        run: python scripts/validate_bmi_runtime.py
+      - name: Validate JSON configuration
+        run: |
+          python -m json.tool config/minimal-experimental-sgsr1-cas.json > /dev/null
+          python -m json.tool config/graphics-settings.json > /dev/null
