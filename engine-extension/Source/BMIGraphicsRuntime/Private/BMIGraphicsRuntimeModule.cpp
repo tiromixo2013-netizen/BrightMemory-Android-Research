@@ -101,124 +101,47 @@ namespace BMIGraphicsRuntime
         }
     }
 
-    // Unified preset maps to render percentage; it does not silently rewrite
-    // the independent Graphics Quality setting.
+    // SGSR1 is the only upscaler in this profile. Preset values map to
+    // render percentage and the official Qualcomm SGSR1 edge-sharpness input.
     static void SetUpscalePreset(const TArray<FString>& Args)
     {
         if (Args.Num() != 1 || !GEngine) return;
         const int32 Preset = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 4);
-        int32 Method = 5;
-        if (IConsoleVariable* Selected = FindCVar(TEXT("bmi.Pipeline.Upscaler")))
-            Method = FMath::Clamp(Selected->GetInt(), 0, 5);
+        const float RenderScale[] = { 50.0f, 60.0f, 72.0f, 86.0f, 100.0f };
+        const float EdgeSharpness[] = { 1.90f, 1.72f, 1.52f, 1.30f, 1.12f };
 
-        // Method-specific render fractions, one shared preset selector.
-        // Rows: SGSR1, SGSR2, MWSR, FSR Mobile, Nearest, Bilinear.
-        const float Scale[6][5] = {
-            { 50.0f, 60.0f, 72.0f, 86.0f, 100.0f },
-            { 50.0f, 62.5f, 75.0f, 87.5f, 100.0f },
-            { 50.0f, 60.0f, 75.0f, 90.0f, 100.0f },
-            { 50.0f, 62.5f, 75.0f, 87.5f, 100.0f },
-            { 50.0f, 65.0f, 80.0f, 90.0f, 100.0f },
-            { 50.0f, 65.0f, 80.0f, 90.0f, 100.0f }
-        };
-        const float Sharpness[5] = { 0.90f, 0.72f, 0.52f, 0.30f, 0.12f };
-        if (Method == 1)
+        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
         {
-            // Qualcomm SGSR2 owns its temporal quality fraction. Its UE4.27
-            // plugin maps 0..3 to Ultra Quality..Performance.
-            const int32 GSR2Quality[] = { 3, 3, 2, 1, 0 };
-            SetCVarIntIfPresent(TEXT("r.SGSR2.Quality"), GSR2Quality[Preset]);
-        }
-        else if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
-        {
-            Settings->SetResolutionScaleValueEx(Scale[Method][Preset]);
+            Settings->SetResolutionScaleValueEx(RenderScale[Preset]);
             Settings->ApplySettings(false);
         }
-        if (Method == 0)
-            SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), 1.0f + Sharpness[Preset]);
-        else if (Method != 1)
-            SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness[Preset]);
+        SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), EdgeSharpness[Preset]);
     }
 
-    // Method IDs: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile,
-    // 4 Nearest, 5 Bilinear. SGSR1 is spatial; SGSR2 is temporal and must
-    // use Qualcomm's ITemporalUpscaler path, never BMI's spatial callback.
+    // The menu exposes one fixed upscaler: Qualcomm SGSR1.
     static void SetUpscaler(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
-        const int32 Method = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
-        IConsoleVariable* PipelineEnabled = FindCVar(TEXT("bmi.Pipeline.Enabled"));
-        if (IConsoleVariable* SelectedMethod = FindCVar(TEXT("bmi.Pipeline.Upscaler")))
-            SelectedMethod->Set(Method, ECVF_SetByGameSetting);
+        if (Args.Num() != 1 || FCString::Atoi(*Args[0]) != 0) return;
 
-        if (Method == 0)
+        IConsoleVariable* SGSR1 = FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"));
+        if (!SGSR1)
         {
-            IConsoleVariable* SGSR1 = FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"));
-            if (!SGSR1)
-            {
-                UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR1 plugin is not loaded; selection rejected."));
-                return;
-            }
-            if (PipelineEnabled) PipelineEnabled->Set(0, ECVF_SetByGameSetting);
-            SetCVarIntIfPresent(TEXT("r.SGSR2.Enabled"), 0);
-            SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 0);
-            SGSR1->Set(1, ECVF_SetByGameSetting);
+            UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR1 plugin is not loaded; selection rejected."));
             return;
         }
 
-        if (Method == 1)
-        {
-            IConsoleVariable* SGSR2 = FindCVar(TEXT("r.SGSR2.Enabled"));
-            IConsoleVariable* TemporalUpsampling = FindCVar(TEXT("r.TemporalAA.Upsampling"));
-            if (!SGSR2 || !TemporalUpsampling)
-            {
-                UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR2 UE4.27 temporal plugin or UE temporal-upscale path is not loaded; selection rejected."));
-                return;
-            }
-            // SGSR2 consumes velocity, depth and per-view history through
-            // ITemporalUpscaler. It is not a spatial BMI backend.
-            if (PipelineEnabled) PipelineEnabled->Set(0, ECVF_SetByGameSetting);
-            SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
-            TemporalUpsampling->Set(1, ECVF_SetByGameSetting);
-            SetCVarIntIfPresent(TEXT("r.UsePreExposure"), 1);
-            SetCVarIntIfPresent(TEXT("r.SGSR2.Exposure"), 1);
-            SGSR2->Set(1, ECVF_SetByGameSetting);
-            return;
-        }
-
-        // Methods 2..5 belong to the BMI spatial renderer. Do not enable them
-        // unless their actual pass is present in the registered mask.
-        IConsoleVariable* Mask = FindCVar(TEXT("bmi.Pipeline.RegisteredUpscalerMask"));
-        if (!Mask || (Mask->GetInt() & (1 << Method)) == 0)
-        {
-            UE_LOG(LogTemp, Error, TEXT("Requested spatial upscaler has no registered renderer pass; selection rejected."));
-            return;
-        }
-        IConsoleVariable* SelectedMethod = FindCVar(TEXT("bmi.Pipeline.Upscaler"));
-        if (!SelectedMethod || !PipelineEnabled)
-        {
-            UE_LOG(LogTemp, Error, TEXT("BMI unified renderer pipeline is not installed; keeping the game's original upscaler."));
-            return;
-        }
-        SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0);
-        SetCVarIntIfPresent(TEXT("r.SGSR2.Enabled"), 0);
+        SetCVarIntIfPresent(TEXT("bmi.Pipeline.Enabled"), 0);
         SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 0);
-        SelectedMethod->Set(Method, ECVF_SetByGameSetting);
-        PipelineEnabled->Set(1, ECVF_SetByGameSetting);
+        SGSR1->Set(1, ECVF_SetByGameSetting);
     }
 
     static void SetUpscaleSharpness(const TArray<FString>& Args)
     {
         if (Args.Num() != 1) return;
-        const float Sharpness = FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
-        int32 Method = 5;
-        if (IConsoleVariable* Selected = FindCVar(TEXT("bmi.Pipeline.Upscaler")))
-            Method = FMath::Clamp(Selected->GetInt(), 0, 5);
-        if (Method == 0)
-            SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), 1.0f + Sharpness);
-        else if (Method != 1)
-            SetCVarFloatIfPresent(TEXT("bmi.Pipeline.UpscaleSharpness"), Sharpness);
-        // SGSR2's upstream UE4.27 path has no independent sharpness control.
+        // Qualcomm's UE4.27 SGSR1 shader accepts edge sharpness [1.0, 2.0].
+        // The user-facing 0..1 slider maps linearly to that real shader value.
+        const float Sharpness = 1.0f + FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
+        SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), Sharpness);
     }
 
     static void SetCAS(const TArray<FString>& Args)
