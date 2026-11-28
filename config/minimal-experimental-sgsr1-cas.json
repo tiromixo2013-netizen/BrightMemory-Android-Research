@@ -193,5 +193,5 @@
     "keep the original game rendering path as fallback",
     "Resolution Controller changes mobile content/output scale only; Render Scale controls the internal render percentage; Upscale Preset sets a recommended Render Scale value, and manual Render Scale edits override that percentage."
   ],
-  "build_status": "settings schema updated; not a compiled APK; AFME runtime integration and UMG menu wiring remain unverified"
+  "build_status": "source API exposes Off/x2/x3/x4 with independent fail-closed backend gates; UI wiring, renderer backends, UE4.27/Android compile, APK build and device validation remain pending"
 }
