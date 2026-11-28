@@ -91,8 +91,7 @@ bool UBMIGraphicsSettingsLibrary::SetFrameLimit(int32 FramesPerSecond)
  
 bool UBMIGraphicsSettingsLibrary::SetFrameGeneration(int32 Mode)
 {
-    // Qualcomm AFME 1.0 supports x2 extrapolation only. The runtime command
-    // rejects x2 until a real renderer/presentation backend reports available.
-    if (Mode < 0 || Mode > 1) return false;
+    // 0=Off, 1=x2 Qualcomm AFME, 2=x3, 3=x4. Each mode is runtime-gated.
+    if (Mode < 0 || Mode > 3) return false;
     return RunBMICommand(TEXT("bmi.SetFrameGeneration"), IntArg(Mode));
 }
