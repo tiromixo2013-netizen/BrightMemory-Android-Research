@@ -20,23 +20,14 @@ runtime = read(ENGINE / "Source/BMIGraphicsRuntime/Private/BMIGraphicsRuntimeMod
 for token in [
     "SetResolutionController", "r.MobileContentScaleFactor",
     "SetOverallScalabilityLevel", "SetUpscalePreset", "SetUpscaler",
-    "bmi.Pipeline.RegisteredUpscalerMask", "bmi.Pipeline.Enabled", "SetUpscaleSharpness",
+    "bmi.Pipeline.Enabled", "SetUpscaleSharpness",
     "bmi.Pipeline.CASAvailable", "SetCAS", "SetCASSharpness",
     "SetFramePacing", "r.OneFrameThreadLag", "SetPerformanceHUD",
     "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit", "SetFrameGeneration", "bmi.FrameGeneration.AFMEAvailable", "bmi.FrameGeneration.GLESX2Available", "bmi.FrameGeneration.GLESX3Available", "bmi.FrameGeneration.GLESX4Available",
 ]:
     assert token in runtime, f"Missing runtime bridge symbol: {token}"
-assert "Requested spatial upscaler has no registered renderer pass" in runtime
-assert "BMI unified renderer pipeline is not installed" in runtime
-assert "PipelineEnabled->Set(1, ECVF_SetByGameSetting)" in runtime
 assert "Ultra (Zero Queue) is unavailable" in runtime or "Ultra (No Queue) is unavailable" in runtime
-assert 'FindCVar(TEXT("r.SGSR2.Enabled"))' in runtime
 assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
-assert "TemporalUpsampling->Set(1, ECVF_SetByGameSetting)" in runtime
-assert 'SetCVarIntIfPresent(TEXT("r.UsePreExposure"), 1)' in runtime
-assert 'SetCVarIntIfPresent(TEXT("r.SGSR2.Exposure"), 1)' in runtime
-assert "SGSR2 is temporal and must" in runtime
-assert 'SetCVarIntIfPresent(TEXT("r.SGSR2.Quality"), GSR2Quality[Preset])' in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
 
 blueprint_header = read(ENGINE / "Source/BMIGraphicsRuntime/Public/BMIGraphicsSettingsLibrary.h")
@@ -174,18 +165,29 @@ assert status["android_vulkan_validation"] is False
 assert status["modified_apk"] is False
 assert status["mobile_methods_exposed"] == ["Nearest", "Bilinear"]
 
-# Primary-slot arbitration: the vendored SGSR extension and BMI must never
-# attempt a second assignment. BMI registration comes from the Renderer
-# startup patch; the runtime disables SGSR before enabling BMI.
+# Primary-slot arbitration: the official Qualcomm SGSR extension owns the
+# primary spatial slot when selected. BMI's optional dispatcher remains off
+# for this profile, preventing competing primary-upscaler assignments.
 sgsr_extension = read(sgsr / "Source/SGSRSpatialUpscaling/SGSRViewExtension.cpp")
 assert "if (InViewFamily.GetPrimarySpatialUpscalerInterface() == nullptr)" in sgsr_extension
 assert "InViewFamily.SetPrimarySpatialUpscalerInterface(new FSGSRSpatialUpscaler" in sgsr_extension
-assert 'SetCVarIntIfPresent(TEXT("r.Qualcomm.SGSR.Enabled"), 0)' in runtime
+assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
+assert 'SGSR1->Set(1, ECVF_SetByGameSetting)' in runtime
+assert 'SetCVarIntIfPresent(TEXT("bmi.Pipeline.Enabled"), 0)' in runtime
+assert 'SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), Sharpness)' in runtime
+assert "EdgeSharpness[Preset]" in runtime
 assert "RegisterBMIUnifiedSpatialUpscaler();" in patch
-assert "Renderer startup patch replaces the old BMI registration call" in read(RENDERER / "README.md")
+assert "Renderer startup patch registers the optional BMI dispatcher" in read(RENDERER / "README.md")
 assert "claims the primary slot first" in read(RENDERER / "README.md")
 assert audit["verified_contract"]["bmi_extension_behavior"].startswith("BMI's view extension is registered from the Renderer module startup hook")
 assert audit["implementation_status"]["renderer_extension_registration_applied_to_target"] is False
+
+sharpness_patch = read(RENDERER / "patches/0002-sgsr1-runtime-sharpness.patch")
+assert "SHADER_PARAMETER(float, EdgeSharpness)" in sharpness_patch
+assert "SGSR_EdgeSharpnessCVar" in sharpness_patch
+assert "PassParameters->SGSR.EdgeSharpness" in sharpness_patch
+assert "#define SGSR_EDGE_SHARPNESS EdgeSharpness" in sharpness_patch
+assert "r.Qualcomm.SGSR.Sharpness" in sharpness_patch
 
 
 # Official Qualcomm SGSR2 UE4.27 two-pass fragment implementation is vendored.
@@ -230,7 +232,7 @@ for field in ["texel", "scale", "dims", "across", "kc", "ft", "kg", "kwc", "kl"]
 assert "ddx_coarse" in mwsr_usf and "ddy_coarse" in mwsr_usf
 assert "#define ddx_coarse ddx" in mwsr_usf
 
-print("PASS: SGSR1/SGSR2 routes, MWSR and FSR Mobile RDG adapters, unified dispatch, source provenance, safe fallback, and feature gates")
+print("PASS: official SGSR1 route, runtime shader sharpness mapping, MWSR/FSR source checks, unified dispatch, source provenance, safe fallback, and feature gates")
 
 
 # Target-RHI and adapter safety documentation must stay explicit.
