@@ -55,18 +55,31 @@ namespace BMIGraphicsRuntime
         if (Args.Num() != 1 || !GEngine) return;
 
         // 0 Low, 1 Medium, 2 High, 3 Very High, 4 Ultra, 5 Extreme.
-        // UE4's stock scalability groups top out at 4 (Epic). Extreme is
-        // deliberately a bounded mobile override profile, not a fake tier 5.
+        // The shipped UE4.27 binary exposes individual UGameUserSettings setters
+        // for all eight scalability groups. Extreme uses the highest stock
+        // group plus bounded mobile overrides; it is not claimed to be console
+        // quality until the actual game is visually A/B tested.
         const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
         UGameUserSettings* Settings = GEngine->GetGameUserSettings();
         if (!Settings) return;
 
-        Settings->SetOverallScalabilityLevel(FMath::Min(Quality, 4));
+        const int32 GroupQuality[] = { 0, 1, 2, 3, 4, 4 };
+        const int32 Group = GroupQuality[Quality];
+        Settings->SetOverallScalabilityLevel(Group);
+        Settings->SetViewDistanceQuality(Group);
+        Settings->SetShadowQuality(Group);
+        Settings->SetAntiAliasingQuality(Group);
+        Settings->SetTextureQuality(Group);
+        Settings->SetVisualEffectQuality(Group);
+        Settings->SetFoliageQuality(Group);
+        Settings->SetShadingQuality(Group);
+        Settings->SetPostProcessingQuality(Group);
         Settings->ApplySettings(false);
 
         const float ViewDistance[] = { 0.60f, 0.80f, 1.00f, 1.10f, 1.20f, 1.30f };
         const float MipBias[] = { 1.0f, 0.5f, 0.0f, 0.0f, -0.25f, -0.5f };
-        // UE4 scalability quality CVars are 0..3. Never send the invalid 4.
+        // Keep the stock scalability CVar range bounded; Extreme is expressed
+        // through the explicit per-category setters and supported mobile CVars.
         const int32 Effects[] = { 0, 1, 2, 3, 3, 3 };
         const int32 Aniso[] = { 2, 4, 8, 8, 16, 16 };
 
@@ -76,14 +89,10 @@ namespace BMIGraphicsRuntime
         Applied += SetCVarIntIfPresent(TEXT("r.EffectsQuality"), Effects[Quality]) ? 1 : 0;
         Applied += SetCVarIntIfPresent(TEXT("r.PostProcessQuality"), Effects[Quality]) ? 1 : 0;
         Applied += SetCVarIntIfPresent(TEXT("r.MaxAnisotropy"), Aniso[Quality]) ? 1 : 0;
-
-        // Mobile shadow/AO paths differ by renderer and cooked project settings.
-        // Apply only when those CVars exist; absence is reported, not assumed.
-        Applied += SetCVarIntIfPresent(TEXT("r.ShadowQuality"), Quality >= 2 ? 1 : 0) ? 1 : 0;
         Applied += SetCVarIntIfPresent(TEXT("r.Mobile.AmbientOcclusionQuality"), Quality >= 2 ? 1 : 0) ? 1 : 0;
 
-        UE_LOG(LogTemp, Log, TEXT("BMI Graphics Quality %d: UE scalability tier %d, %d/7 optional mobile CVars applied."),
-            Quality, FMath::Min(Quality, 4), Applied);
+        UE_LOG(LogTemp, Log, TEXT("BMI Graphics Quality %d: all 8 scalability groups requested at tier %d; %d/6 optional mobile CVars applied."),
+            Quality, Group, Applied);
     }
 
     static void SetFrameLimit(const TArray<FString>& Args)
