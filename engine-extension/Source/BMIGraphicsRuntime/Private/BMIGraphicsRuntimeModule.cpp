@@ -287,7 +287,7 @@ namespace BMIGraphicsRuntime
             SetCVarIntIfPresent(TEXT("r.OneFrameThreadLag"), 0);
             return;
         }
-        UE_LOG(LogTemp, Error, TEXT("Ultra (No Queue) is unavailable: no validated active-RHI queue-depth control exists for this build."));
+        UE_LOG(LogTemp, Error, TEXT("Ultra (Zero Queue) is unavailable: no validated zero-pending-frame control exists in the active Android OpenGL ES presentation path."));
     }
 
     static bool IsFrameGenerationAvailable(int32 Method, int32 Multiplier)
