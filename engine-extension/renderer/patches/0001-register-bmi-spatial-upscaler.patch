@@ -24,7 +24,7 @@ empty and the BMI pipeline is enabled with a registered method.
 diff --git a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 --- a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 +++ b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
-@@ -35,6 +35,9 @@
+@@ -34,3 +34,6 @@
  #include "ScreenSpaceDenoise.h"
  #include "VT/VirtualTextureSystem.h"
  #include "PostProcess/TemporalAA.h"
@@ -34,7 +34,7 @@ diff --git a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp b/Engine/Source
  DEFINE_LOG_CATEGORY(LogRenderer);
  
  IMPLEMENT_MODULE(FRendererModule, Renderer);
-@@ -61,6 +64,8 @@ void FRendererModule::StartupModule()
+@@ -53,7 +56,9 @@ void FRendererModule::StartupModule()
  	GTemporalUpscaler = ITemporalUpscaler::GetDefaultTemporalUpscaler();
  
  	FVirtualTextureSystem::Initialize();
