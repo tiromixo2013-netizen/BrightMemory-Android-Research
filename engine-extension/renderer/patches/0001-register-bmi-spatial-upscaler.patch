@@ -24,7 +24,7 @@ empty and the BMI pipeline is enabled with a registered method.
 diff --git a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 --- a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 +++ b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
-@@ -34,3 +34,6 @@
+@@ -34,4 +34,7 @@
  #include "ScreenSpaceDenoise.h"
  #include "VT/VirtualTextureSystem.h"
  #include "PostProcess/TemporalAA.h"
