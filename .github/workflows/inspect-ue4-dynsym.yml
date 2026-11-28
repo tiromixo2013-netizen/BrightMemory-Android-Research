@@ -1,0 +1,50 @@
+name: Inspect Bright Memory UE4 dynamic symbols
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/inspect-ue4-dynsym.yml"
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Download verified restored APK artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run download 45908333558 --repo "${GITHUB_REPOSITORY}" --name brightmemory-v1.34-restored-full-apk --dir recovered
+          apk="$(find recovered -type f -name 'bright-memory-infinite-v1.34.apk' -print -quit)"
+          test -n "$apk"
+          test "$(stat -c%s "$apk")" = 2431306902
+          echo "APK=$apk" >> "$GITHUB_ENV"
+          echo "c35b05ac7b19fd087844de2b6261d33fbe103a6a5714c5e42d6101fab07881e4  $apk" | sha256sum -c -
+      - name: Extract and inspect libUE4.so
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p report
+          unzip -Z1 "$APK" | grep -E '(^|/)lib/arm64-v8a/libUE4\.so$' | tee report/library-path.txt
+          entry="$(head -n1 report/library-path.txt)"
+          test -n "$entry"
+          unzip -p "$APK" "$entry" > report/libUE4.so
+          file report/libUE4.so | tee report/file.txt
+          llvm-readelf -h report/libUE4.so > report/elf-header.txt
+          llvm-readelf --dyn-syms -W report/libUE4.so > report/dynsym-full.txt
+          grep -E 'IConsoleManager|FindConsoleVariable|Swappy' report/dynsym-full.txt > report/dynsym-filtered.txt || true
+          grep -E 'Machine:|Class:|Data:' report/elf-header.txt
+          cat report/dynsym-filtered.txt
+          echo "Total dynsym entries: $(grep -cE '^[[:space:]]*[0-9]+:' report/dynsym-full.txt || true)" > report/summary.txt
+      - name: Upload focused symbol report
+        uses: actions/upload-artifact@v4
+        with:
+          name: brightmemory-ue427-dynsym-report
+          path: report/
+          retention-days: 7
+          compression-level: 6
