@@ -26,6 +26,13 @@ for token in [
     "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit", "SetFrameGeneration", "bmi.FrameGeneration.AFMEAvailable", "bmi.FrameGeneration.GLESX2Available", "bmi.FrameGeneration.GLESX3Available", "bmi.FrameGeneration.GLESX4Available",
 ]:
     assert token in runtime, f"Missing runtime bridge symbol: {token}"
+assert "static bool ApplyRenderPercentage(float Percent, const TCHAR* Source)" in runtime
+assert "static bool EnsureSGSR1Enabled()" in runtime
+assert "ApplyRenderPercentage(RenderScale[Preset], TEXT(\"Upscale Preset\"))" in runtime
+assert "SetCVarFloatAndVerify(TEXT(\"r.Qualcomm.SGSR.Sharpness\"), EdgeSharpness[Preset])" in runtime
+assert "this profile supports Qualcomm SGSR1 only (index 0)" in runtime
+assert "if (Method != 0) return false;" in blueprint_source
+assert "Method < 0 || Method > 5" not in blueprint_source
 assert "FDefaultValueHelper::ParseFloat(Args[0], Percent)" in runtime
 assert "Percent < 50.0f || Percent > 150.0f" in runtime
 assert "SetResolutionScaleValueEx(Percent)" in runtime
