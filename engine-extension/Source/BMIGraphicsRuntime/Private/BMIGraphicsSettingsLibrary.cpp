@@ -91,7 +91,20 @@ bool UBMIGraphicsSettingsLibrary::SetFrameLimit(int32 FramesPerSecond)
  
 bool UBMIGraphicsSettingsLibrary::SetFrameGeneration(int32 Mode)
 {
-    // 0=Off, 1=x2 Qualcomm AFME, 2=x3, 3=x4. Each mode is runtime-gated.
+    // Legacy combined selector: 0=Off, 1=x2, 2=x3, 3=x4.
     if (Mode < 0 || Mode > 3) return false;
     return RunBMICommand(TEXT("bmi.SetFrameGeneration"), IntArg(Mode));
+}
+
+bool UBMIGraphicsSettingsLibrary::SetFrameGenerationMethod(int32 Method)
+{
+    // 0=Off, 1=Qualcomm AFME, 2=portable GLES reprojection.
+    if (Method < 0 || Method > 2) return false;
+    return RunBMICommand(TEXT("bmi.SetFrameGenerationMethod"), IntArg(Method));
+}
+
+bool UBMIGraphicsSettingsLibrary::SetFrameGenerationMultiplier(int32 Multiplier)
+{
+    if (Multiplier < 2 || Multiplier > 4) return false;
+    return RunBMICommand(TEXT("bmi.SetFrameGenerationMultiplier"), IntArg(Multiplier));
 }
