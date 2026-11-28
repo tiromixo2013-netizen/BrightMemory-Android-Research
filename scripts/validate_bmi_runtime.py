@@ -23,7 +23,7 @@ for token in [
     "bmi.Pipeline.RegisteredUpscalerMask", "bmi.Pipeline.Enabled", "SetUpscaleSharpness",
     "bmi.Pipeline.CASAvailable", "SetCAS", "SetCASSharpness",
     "SetFramePacing", "r.OneFrameThreadLag", "SetPerformanceHUD",
-    "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit", "SetFrameGeneration", "bmi.FrameGeneration.AFMEAvailable",
+    "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit", "SetFrameGeneration", "bmi.FrameGeneration.AFMEAvailable", "bmi.FrameGeneration.X3Available", "bmi.FrameGeneration.X4Available",
 ]:
     assert token in runtime, f"Missing runtime bridge symbol: {token}"
 assert "Requested spatial upscaler has no registered renderer pass" in runtime
@@ -49,6 +49,19 @@ for method in [
 ]:
     assert f"static bool {method}(" in blueprint_header, f"Missing Blueprint API: {method}"
     assert f"UBMIGraphicsSettingsLibrary::{method}(" in blueprint_source, f"Missing implementation: {method}"
+
+minimal = json.loads(read(ROOT / "config/minimal-experimental-sgsr1-cas.json"))
+assert minimal["menu_order"] == [
+    "resolution_controller", "graphics_quality", "render_scale", "upscaler",
+    "upscale_sharpness", "upscale_preset", "amd_cas", "cas_sharpness",
+    "low_latency", "frame_generation",
+]
+fg = next(item for item in minimal["settings"] if item["id"] == "frame_generation")
+assert fg["options"] == ["Off", "x2", "x3", "x4"]
+assert "x3" in runtime and "x4" in runtime
+assert "Mode > 3" in runtime
+assert "Mode > 3" in blueprint_source
+assert fg["qualcomm_afme"]["mode"] == "x2 only"
 
 config = json.loads(read(ROOT / "config/graphics-settings.json"))
 expected = [
