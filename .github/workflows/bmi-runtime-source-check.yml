@@ -20,3 +20,8 @@ jobs:
           python-version: "3.12"
       - name: Validate plugin and agreed settings
         run: python3 scripts/validate_bmi_runtime.py
+      - name: Verify renderer patch applies to the pinned UE4.27 reference
+        run: |
+          mkdir -p Engine/Source/Runtime/Renderer/Private
+          curl -fsSL https://raw.githubusercontent.com/jsuk10/UE4.27plus_Custom/main/Engine/Source/Runtime/Renderer/Private/Renderer.cpp -o Engine/Source/Runtime/Renderer/Private/Renderer.cpp
+          git apply --check engine-extension/renderer/patches/0001-register-bmi-spatial-upscaler.patch
