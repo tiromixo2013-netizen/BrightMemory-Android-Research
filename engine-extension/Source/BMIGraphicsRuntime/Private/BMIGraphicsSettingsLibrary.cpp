@@ -38,7 +38,7 @@ bool UBMIGraphicsSettingsLibrary::SetRenderScale(float Percent)
 
 bool UBMIGraphicsSettingsLibrary::SetUpscaler(int32 Method)
 {
-    if (Method < 0 || Method > 5) return false;
+    if (Method != 0) return false;
     return RunBMICommand(TEXT("bmi.SetUpscaler"), IntArg(Method));
 }
 
