@@ -152,6 +152,21 @@ for rel in [
 assert (VENDOR / "AMD-CAS/ffx_a.h").exists()
 assert (VENDOR / "AMD-CAS/ffx_cas.h").exists()
 
+# The active menu is fixed to the vendored Qualcomm SGSR1 plugin.
+upscaler_setting = next(item for item in minimal["settings"] if item["id"] == "upscaler")
+assert upscaler_setting["type"] == "fixed" and upscaler_setting["value"] == "SGSR1"
+assert "FCString::Atoi(*Args[0]) != 0" in runtime
+sgsr_scaler = read(sgsr / "Source/SGSRSpatialUpscaling/Subpasses/SGSRSubpassScaler.cpp")
+sgsr_shared = read(sgsr / "Source/SGSRSpatialUpscaling/Subpasses/SGSRSubpassSharedTypes.h")
+sgsr_usf = read(sgsr / "Shaders/Private/PostProcessSGSR.usf")
+sgsr_ush = read(sgsr / "Shaders/Private/sgsr.ush")
+assert 'TEXT("r.Qualcomm.SGSR.Sharpness")' in sgsr_scaler
+assert "PassParameters->SGSR.Sharpness" in sgsr_scaler
+assert "SHADER_PARAMETER(float, Sharpness)" in sgsr_shared
+assert "float Sharpness;" in sgsr_usf
+assert "SgsrYuvH(OutColor,uv,Const1,Sharpness)" in sgsr_usf
+assert "SGSR_F1 sharpness" in sgsr_ush and "SGSR_H1 edgeSharpness = sharpness" in sgsr_ush
+
 patch = read(RENDERER / "patches/0001-register-bmi-spatial-upscaler.patch")
 assert "BMIUnifiedSpatialUpscaler.h" in patch
 assert "RegisterBMIUnifiedSpatialUpscaler()" in patch
