@@ -106,12 +106,12 @@ namespace BMIGraphicsRuntime
 
     static void SetResolutionController(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
+        int32 Choice = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Choice)) return;
 
         // 0 = Native; the remaining entries are target short-side pixel heights.
         // Derive the scale from the actual display dimensions so the aspect
         // ratio and Android panel/DPI resolution are never changed.
-        const int32 Choice = FCString::Atoi(*Args[0]);
         if (Choice < 0 || Choice > 6)
         {
             UE_LOG(LogTemp, Warning, TEXT("Resolution Controller: invalid choice %d."), Choice);
@@ -161,9 +161,10 @@ namespace BMIGraphicsRuntime
 
     static void SetGraphicsQuality(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1 || !GEngine || !Args[0].IsNumeric())
+        int32 Quality = INDEX_NONE;
+        if (Args.Num() != 1 || !GEngine || !FDefaultValueHelper::ParseInt(Args[0], Quality))
         {
-            UE_LOG(LogTemp, Warning, TEXT("Graphics Quality: expected one numeric tier from 0 to 6."));
+            UE_LOG(LogTemp, Warning, TEXT("Graphics Quality: expected one integer tier from 0 to 6."));
             return;
         }
 
@@ -171,7 +172,6 @@ namespace BMIGraphicsRuntime
         // Native UE4 scalability tops out at group 4. Extreme therefore keeps
         // the maximum stock group and raises only supported mobile effect CVars
         // above Ultra; missing CVars are skipped, never represented as applied.
-        const int32 Quality = FCString::Atoi(*Args[0]);
         if (Quality < 0 || Quality > 6)
         {
             UE_LOG(LogTemp, Warning, TEXT("Graphics Quality: invalid tier %d; valid range is 0..6."), Quality);
@@ -216,8 +216,8 @@ namespace BMIGraphicsRuntime
 
     static void SetFrameLimit(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1 || !GEngine) return;
-        const int32 Requested = FCString::Atoi(*Args[0]);
+        int32 Requested = INDEX_NONE;
+        if (Args.Num() != 1 || !GEngine || !FDefaultValueHelper::ParseInt(Args[0], Requested)) return;
         const int32 Allowed[] = { 30, 45, 60, 90, 120 };
         bool bAllowed = false;
         for (int32 Rate : Allowed) bAllowed |= Requested == Rate;
@@ -314,8 +314,9 @@ namespace BMIGraphicsRuntime
 
     static void SetFramePacing(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
-        const int32 Enabled = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 1);
+        int32 Enabled = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Enabled) ||
+            (Enabled != 0 && Enabled != 1)) return;
         // The inspected target profile disables Vulkan. Vulkan-only fallback
         // pacers must not be presented as working on this OpenGL ES build.
         if (Enabled == 0)
@@ -329,8 +330,10 @@ namespace BMIGraphicsRuntime
 
     static void SetPerformanceHUD(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
-        const bool bEnabled = FCString::Atoi(*Args[0]) != 0;
+        int32 Requested = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Requested) ||
+            (Requested != 0 && Requested != 1)) return;
+        const bool bEnabled = Requested == 1;
         IConsoleVariable* Available = FindCVar(TEXT("bmi.Pipeline.HUDAvailable"));
         if (bEnabled && (!Available || Available->GetInt() == 0))
         {
@@ -455,8 +458,8 @@ namespace BMIGraphicsRuntime
     static void SetFrameGeneration(const TArray<FString>& Args)
     {
         // Backward-compatible API: 0=Off, 1=x2, 2=x3, 3=x4.
-        if (Args.Num() != 1) return;
-        const int32 Mode = FCString::Atoi(*Args[0]);
+        int32 Mode = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Mode)) return;
         if (Mode < 0 || Mode > 3) return;
         if (Mode == 0)
         {
@@ -484,7 +487,7 @@ namespace BMIGraphicsRuntime
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetGraphicsQuality));
     static FAutoConsoleCommand CmdUpscalePreset(TEXT("bmi.SetUpscalePreset"), TEXT("Set unified upscaler preset 0..4."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscalePreset));
-    static FAutoConsoleCommand CmdUpscaler(TEXT("bmi.SetUpscaler"), TEXT("Select upscaler: 0 SGSR1, 1 SGSR2, 2 MWSR, 3 FSR Mobile, 4 Nearest, 5 Bilinear."),
+    static FAutoConsoleCommand CmdUpscaler(TEXT("bmi.SetUpscaler"), TEXT("Select the only enabled upscaler in this profile: 0 Qualcomm SGSR1."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscaler));
     static FAutoConsoleCommand CmdUpscaleSharpness(TEXT("bmi.SetUpscaleSharpness"), TEXT("Set algorithm sharpness 0..1 when supported."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetUpscaleSharpness));
