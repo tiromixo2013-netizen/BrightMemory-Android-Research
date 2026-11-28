@@ -18,7 +18,7 @@ assert any(m["Name"] == "BMIGraphicsRuntime" and m["Type"] == "Runtime"
 
 runtime = read(ENGINE / "Source/BMIGraphicsRuntime/Private/BMIGraphicsRuntimeModule.cpp")
 for token in [
-    "SetResolutionController", "r.MobileContentScaleFactor", "GetDesktopResolution()", "TargetHeight[] = { ShortSide, 540, 640, 720, 900, 980, 1080 }", "AppliedScale = ContentScale->GetFloat()", "Display/DPI unchanged.",
+    "SetResolutionController", "r.MobileContentScaleFactor", "GetDesktopResolution()", "TargetHeight[] = { ShortSide, 540, 640, 720, 900, 980, 1080 }", "AppliedScale = ContentScale->GetFloat()", "display/DPI unchanged.",
     "SetOverallScalabilityLevel", "SetViewDistanceQuality", "SetShadowQuality", "SetAntiAliasingQuality", "SetTextureQuality", "SetVisualEffectQuality", "SetFoliageQuality", "SetShadingQuality", "SetPostProcessingQuality", "SetUpscalePreset",
     "bmi.Pipeline.Enabled", "SetUpscaleSharpness",
     "bmi.Pipeline.CASAvailable", "SetCAS", "SetCASSharpness",
