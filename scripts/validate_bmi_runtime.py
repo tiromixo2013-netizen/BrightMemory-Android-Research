@@ -101,7 +101,7 @@ low_latency_runtime = runtime[runtime.index("static void SetLowLatency"):runtime
 for token in ["r.GTSyncType", "r.OneFrameThreadLag", "SetCVarIntAndVerify", "CVar->GetInt() == Value"]:
     assert token in runtime, f"Low-latency runtime verification missing: {token}"
 assert "Ultra (Zero Queue) is unavailable" in low_latency_runtime
-assert "r.OneFrameThreadLag"), 0" not in low_latency_runtime
+assert 'SetCVarIntIfPresent(TEXT("r.OneFrameThreadLag"), 0)' not in low_latency_runtime
 assert "Swappy" in low_latency_doc and "non-pipelined" in low_latency_doc
 assert "Ultra (Zero Queue)" in low_latency_doc
 
