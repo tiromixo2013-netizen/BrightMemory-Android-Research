@@ -12,6 +12,7 @@
   "menu_order": [
     "resolution_controller",
     "graphics_quality",
+    "render_scale",
     "upscaler",
     "upscale_sharpness",
     "upscale_preset",
@@ -55,6 +56,18 @@
       "default": "High",
       "integration": "Map each tier to actual supported UE4 scalability and mobile CVars for shadows, view distance, effects, textures, foliage, shading and post-processing. Extreme must only raise settings proven supported by this build.",
       "status": "existing runtime profile source needs wiring into the game's actual settings UI and visual validation; do not expose inert labels"
+    },
+    {
+      "id": "render_scale",
+      "section": "Display",
+      "label": "Render Scale",
+      "type": "slider",
+      "min": 50,
+      "max": 150,
+      "step": 1,
+      "default": 100,
+      "integration": "Manual render-resolution percentage through the game's existing UGameUserSettings::SetResolutionScaleValueEx path. Resolution Controller remains the separate output/mobile-content scale control. Selecting an Upscale Preset applies its recommended render percentage to this same Render Scale value; moving Render Scale afterward overrides the preset percentage without changing the selected preset label.",
+      "status": "existing Blueprint API and runtime command are present in source; unified preset/manual slider ownership is now specified; runtime compilation and on-device validation pending"
     },
     {
       "id": "upscaler",
@@ -169,7 +182,6 @@
   ],
   "removed_from_experimental_profile": [
     "multiple upscaler choices",
-    "standalone render scale",
     "frame pacing",
     "performance HUD",
     "unrelated graphics techniques"
@@ -179,7 +191,7 @@
     "do not substitute tonemapper sharpening for AMD CAS",
     "do not fake frame generation by repeating or blending identical frames",
     "keep the original game rendering path as fallback",
-    "resolution and graphics quality changes must affect actual game rendering, not only menu text"
+    "Resolution Controller changes mobile content/output scale only; Render Scale controls the internal render percentage; Upscale Preset sets a recommended Render Scale value, and manual Render Scale edits override that percentage."
   ],
   "build_status": "settings schema updated; not a compiled APK; AFME runtime integration and UMG menu wiring remain unverified"
 }
