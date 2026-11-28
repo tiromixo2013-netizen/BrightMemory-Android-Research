@@ -56,12 +56,20 @@ assert minimal["menu_order"] == [
     "upscale_sharpness", "upscale_preset", "amd_cas", "cas_sharpness",
     "low_latency", "frame_generation",
 ]
-fg = next(item for item in minimal["settings"] if item["id"] == "frame_generation")
-assert fg["options"] == ["Off", "x2", "x3", "x4"]
+fg_method = next(item for item in minimal["settings"] if item["id"] == "frame_generation_method")
+fg_multiplier = next(item for item in minimal["settings"] if item["id"] == "frame_generation_multiplier")
+assert fg_method["options"] == ["Off", "Qualcomm AFME", "GLES Motion Reprojection"]
+assert fg_multiplier["options"] == ["x2", "x3", "x4"]
 assert "x3" in runtime and "x4" in runtime
 assert "Mode > 3" in runtime
 assert "Mode > 3" in blueprint_source
-assert fg["qualcomm_afme"]["mode"] == "x2 only"
+gles_fg_shader = read(RENDERER / "BMIShaders/Private/BMIGLESFrameReprojection.frag")
+for token in ["#version 300 es", "u_CurrentFrame", "u_PreviousFrame",
+              "u_MotionVectors", "u_Phase", "u_ValidationThreshold"]:
+    assert token in gles_fg_shader, f"GLES reprojection shader missing: {token}"
+gles_fg_doc = read(RENDERER / "GLES-FRAME-REPROJECTION.md")
+assert "x2" in gles_fg_doc and "x3" in gles_fg_doc and "x4" in gles_fg_doc
+assert "not a complete frame-generation backend" in gles_fg_doc
 
 config = json.loads(read(ROOT / "config/graphics-settings.json"))
 expected = [
