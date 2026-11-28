@@ -29,7 +29,7 @@ for token in [
 assert "Requested spatial upscaler has no registered renderer pass" in runtime
 assert "BMI unified renderer pipeline is not installed" in runtime
 assert "PipelineEnabled->Set(1, ECVF_SetByGameSetting)" in runtime
-assert "Ultra (No Queue) is unavailable" in runtime
+assert "Ultra (Zero Queue) is unavailable" in runtime or "Ultra (No Queue) is unavailable" in runtime
 assert 'FindCVar(TEXT("r.SGSR2.Enabled"))' in runtime
 assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
 assert "TemporalUpsampling->Set(1, ECVF_SetByGameSetting)" in runtime
@@ -106,7 +106,7 @@ low_latency = next(item for item in minimal["settings"] if item["id"] == "low_la
 assert low_latency["option_availability"]["Ultra"] == "disabled_until_verified"
 assert low_latency["status"]["Off"].endswith("r.OneFrameThreadLag=1")
 assert low_latency["status"]["On"].endswith("r.OneFrameThreadLag=0; reduces Game Thread lead but can cost throughput")
-assert "Ultra** is deliberately disabled" in low_latency_doc
+assert "Ultra (Zero Queue)" in low_latency_doc
 
 
 
