@@ -8,13 +8,13 @@ its `FSGSRViewExtension` and `FSGSRSpatialUpscaler`; the runtime enables
 `r.Qualcomm.SGSR.Enabled` and keeps `bmi.Pipeline.Enabled` off. This avoids
 two extensions competing for UE4.27's assign-once primary-upscaler slot.
 
-The Qualcomm source is vendored under `vendor/SGSR1/`. Its stock UE4.27
-mobile shader hardcodes edge sharpness to 2.0. Patch
-`patches/0002-sgsr1-runtime-sharpness.patch` adds a real RDG shader parameter
-and `r.Qualcomm.SGSR.Sharpness` CVar. The user-facing 0..1 slider maps to the
-shader's supported 1..2 range. The shared five-level preset sets the render
-percentage and a recommended SGSR1 sharpness value; it does not add a second
-upscaler or a second render-scale control.
+The Qualcomm source is vendored under `vendor/SGSR1/`. The vendored UE4.27
+copy already carries a real `Sharpness` RDG parameter, the
+`r.Qualcomm.SGSR.Sharpness` CVar, and the 0..1 UI-to-1..2 shader mapping.
+Patch `patches/0002-sgsr1-runtime-sharpness.patch` reproduces the equivalent
+runtime control when starting from the pristine official Qualcomm branch.
+The shared five-level preset sets the render percentage and a recommended
+SGSR1 sharpness value; it does not add a second upscaler or render-scale control.
 
 `patches/0001-register-bmi-spatial-upscaler.patch` registers the optional BMI
 research dispatcher in the reference Renderer module. It is not required to
