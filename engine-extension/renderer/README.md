@@ -68,9 +68,10 @@ Consequently Vulkan-only frame-pacing CVars are not presented as a working
 solution. The active GLES/Swappy pacing path still needs integration. FSR
 Mobile remains source-only: its gather callbacks, half-precision path, shader-
 directory mapping, and UE shader compiler output must be checked against the
-game's exact GLES target before an adapter can be registered. Low Latency On
-currently maps to UE4's `r.OneFrameThreadLag=0`; Ultra/No Queue is rejected
-because no supported active-RHI queue-depth control is verified.
+game's exact GLES target before an adapter can be registered. Low Latency Off uses `r.GTSyncType=0`; On uses the UE4.27 documented
+`r.GTSyncType=1` Game-Thread-to-RHI synchronization mode while retaining
+`r.OneFrameThreadLag=1`. Ultra/No Queue is rejected until the active Android
+OpenGL ES/Swappy path and queue-depth behavior are verified.
 
 Run `python scripts/validate_bmi_runtime.py` for source/schema consistency.
 That is a static source check only. It does not compile UE shaders, prove
