@@ -38,11 +38,10 @@ the exact Bright Memory UE4.27.2 Android GLES target before enabling controls.
  
 --- a/Plugins/SGSR/Source/SGSRSpatialUpscaling/Private/Subpasses/SGSRSubpassScaler.cpp
 +++ b/Plugins/SGSR/Source/SGSRSpatialUpscaling/Private/Subpasses/SGSRSubpassScaler.cpp
-@@ -6,6 +6,14 @@
+@@ -6,6 +6,13 @@
  //
  //============================================================================================================
  #include "SGSRSubpassScaler.h"
-+
 +#include "HAL/IConsoleManager.h"
 +
 +static TAutoConsoleVariable<float> SGSR_EdgeSharpnessCVar(
@@ -53,11 +52,11 @@ the exact Bright Memory UE4.27.2 Android GLES target before enabling controls.
  #include "SGSRSettings.h"
  
  //#SGSR_TARGET_Definitions
-@@ -131,6 +131,7 @@
- 			: PassInputs.OverrideOutput;
+@@ -132,6 +132,7 @@
  
  		// VS-PS
-+PassParameters->SGSR.EdgeSharpness = FMath::Clamp(SGSR_EdgeSharpnessCVar.GetValueOnAnyThread(), 1.0f, 2.0f);
  		FSGSRPS::FParameters* PassParameters = GraphBuilder.AllocParameters<FSGSRPS::FParameters>();
++PassParameters->SGSR.EdgeSharpness = FMath::Clamp(SGSR_EdgeSharpnessCVar.GetValueOnAnyThread(), 1.0f, 2.0f);
  		for (int i = 0; i < 4; i++)
  		{
+ 			PassParameters->SGSR.Const0[i] = const0[i];
