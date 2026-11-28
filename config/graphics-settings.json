@@ -70,8 +70,8 @@
       "max": 150,
       "step": 1,
       "default": 100,
-      "integration": "Manual render-resolution percentage through the game's existing UGameUserSettings::SetResolutionScaleValueEx path. Resolution Controller remains the separate output/mobile-content scale control. Selecting an Upscale Preset applies its recommended render percentage to this same Render Scale value; moving Render Scale afterward overrides the preset percentage without changing the selected preset label.",
-      "status": "existing Blueprint API and runtime command are present in source; unified preset/manual slider ownership is now specified; runtime compilation and on-device validation pending",
+      "integration": "Manual internal render-resolution percentage through the game's UGameUserSettings::SetResolutionScaleValueEx path. Runtime reads back the actual applied scale and engine-supported range after ApplySettings. Resolution Controller remains the separate mobile-content/output scale control. Selecting an Upscale Preset applies its recommended render percentage to this same Render Scale value; moving Render Scale afterward overrides the preset percentage without changing the selected preset label.",
+      "status": "Runtime validates finite numeric input from 50..150%, applies through UGameUserSettings::SetResolutionScaleValueEx, then reads back the engine's actual scale and supported range. If UE clamps the requested value, the runtime reports the applied value rather than claiming the request succeeded. Resolution Controller remains separate; UE4.27.2 compile, target UMG binding and device visual validation remain pending.",
       "blueprint_api": "UBMIGraphicsSettingsLibrary::SetRenderScale"
     },
     {
