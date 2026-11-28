@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] SGSR1: expose mobile edge sharpness as runtime shader parameter
+
+Applies to the official Qualcomm Snapdragon Game Plugins for Unreal Engine
+branch engine/4.27 (SGSR1). Slider range 0..1 maps to shader edge sharpness
+1..2. This changes the actual SGSR1 shader parameter; it is not a generic
+post-process sharpen pass. Validate shader compilation and visual quality on
+the exact Bright Memory UE4.27.2 Android GLES target before enabling controls.
+
+--- a/Plugins/SGSR/Source/SGSRSpatialUpscaling/Private/Subpasses/SGSRSubpassSharedTypes.h
++++ b/Plugins/SGSR/Source/SGSRSpatialUpscaling/Private/Subpasses/SGSRSubpassSharedTypes.h
+@@ -37,6 +37,7 @@
+ //
+ BEGIN_SHADER_PARAMETER_STRUCT(FSGSRPassParameters, )
+ SHADER_PARAMETER(FVector4, Const0)
++SHADER_PARAMETER(float, EdgeSharpness)
+ SHADER_PARAMETER(FVector4, Const1)
+ SHADER_PARAMETER_SAMPLER(SamplerState, samLinearClamp)
+ SHADER_PARAMETER_RDG_TEXTURE(Texture2D, InputTexture)
+--- a/Plugins/SGSR/Shaders/Private/PostProcessSGSR.usf
++++ b/Plugins/SGSR/Shaders/Private/PostProcessSGSR.usf
+@@ -27,7 +27,6 @@
+ #define SGSR_EDGE_THRESHOLD (8.0/255.0)
+ 
+ // Suggested range [1.0, 2.0]
+-#define SGSR_EDGE_SHARPNESS (2.0)
+ 
+ // =====================================================================================
+ //
+@@ -35,6 +35,8 @@
+ //
+ // =====================================================================================
+ float4 Const0;
++float EdgeSharpness;
++#define SGSR_EDGE_SHARPNESS EdgeSharpness
+ float4 Const1;
+ SamplerState samLinearClamp;
+ 
+--- a/Plugins/SGSR/Source/SGSRSpatialUpscaling/Private/Subpasses/SGSRSubpassScaler.cpp
++++ b/Plugins/SGSR/Source/SGSRSpatialUpscaling/Private/Subpasses/SGSRSubpassScaler.cpp
+@@ -6,6 +6,14 @@
+ //
+ //============================================================================================================
+ #include "SGSRSubpassScaler.h"
++
++#include "HAL/IConsoleManager.h"
++
++static TAutoConsoleVariable<float> SGSR_EdgeSharpnessCVar(
++    TEXT("r.Qualcomm.SGSR.Sharpness"),
++    2.0f,
++    TEXT("SGSR1 mobile edge sharpness. Valid range [1.0, 2.0]."),
++    ECVF_RenderThreadSafe);
+ #include "SGSRSettings.h"
+ 
+ //#SGSR_TARGET_Definitions
+@@ -131,6 +131,7 @@
+ 			: PassInputs.OverrideOutput;
+ 
+ 		// VS-PS
++PassParameters->SGSR.EdgeSharpness = FMath::Clamp(SGSR_EdgeSharpnessCVar.GetValueOnAnyThread(), 1.0f, 2.0f);
+ 		FSGSRPS::FParameters* PassParameters = GraphBuilder.AllocParameters<FSGSRPS::FParameters>();
+ 		for (int i = 0; i < 4; i++)
+ 		{
