@@ -36,7 +36,6 @@ assert "const int32 Shadows[] = { 0, 0, 1, 2, 3, 4, 5 };" in runtime
 assert "const int32 MobileAO[] = { 0, 0, 0, 1, 1, 2, 3 };" in runtime
 assert "const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 6);" in runtime
 assert "console" in runtime and "A/B tested" in runtime
-assert next(item for item in minimal["settings"] if item["id"] == "graphics_quality")["options"] == ["Very Low", "Low", "Medium", "High", "Very High", "Ultra", "Extreme"]
 assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
 
@@ -52,6 +51,7 @@ for method in [
     assert f"UBMIGraphicsSettingsLibrary::{method}(" in blueprint_source, f"Missing implementation: {method}"
 
 minimal = json.loads(read(ROOT / "config/minimal-experimental-sgsr1-cas.json"))
+assert next(item for item in minimal["settings"] if item["id"] == "graphics_quality")["options"] == ["Very Low", "Low", "Medium", "High", "Very High", "Ultra", "Extreme"]
 assert minimal["menu_order"] == [
     "resolution_controller", "graphics_quality", "render_scale", "upscaler",
     "upscale_sharpness", "upscale_preset", "amd_cas", "cas_sharpness",
