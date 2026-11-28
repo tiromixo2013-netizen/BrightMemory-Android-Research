@@ -47,47 +47,60 @@ namespace BMIGraphicsRuntime
         return FMath::IsNearlyEqual(CVar->GetFloat(), Value, 0.001f);
     }
 
-    static void SetRenderScale(const TArray<FString>& Args)
+    static bool ApplyRenderPercentage(float Percent, const TCHAR* Source)
     {
-        if (Args.Num() != 1 || !GEngine)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Render Scale: expected one percentage value from 50 to 150."));
-            return;
-        }
-
-        float Percent = 0.0f;
-        if (!FDefaultValueHelper::ParseFloat(Args[0], Percent) ||
-            !FMath::IsFinite(Percent) || Percent < 50.0f || Percent > 150.0f)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Render Scale: invalid value '%s'; valid range is 50..150."), *Args[0]);
-            return;
-        }
-
+        if (!GEngine || !FMath::IsFinite(Percent) || Percent < 50.0f || Percent > 150.0f)
+            return false;
         UGameUserSettings* Settings = GEngine->GetGameUserSettings();
         if (!Settings)
         {
-            UE_LOG(LogTemp, Error, TEXT("Render Scale: GameUserSettings is unavailable."));
-            return;
+            UE_LOG(LogTemp, Error, TEXT("%s: GameUserSettings is unavailable."), Source);
+            return false;
         }
-
         Settings->SetResolutionScaleValueEx(Percent);
         Settings->ApplySettings(false);
-
-        float Normalized = 0.0f;
-        float Applied = 0.0f;
-        float Minimum = 0.0f;
-        float Maximum = 0.0f;
+        float Normalized = 0.0f, Applied = 0.0f, Minimum = 0.0f, Maximum = 0.0f;
         Settings->GetResolutionScaleInformationEx(Normalized, Applied, Minimum, Maximum);
-
         if (!FMath::IsNearlyEqual(Applied, Percent, 0.1f))
         {
-            UE_LOG(LogTemp, Warning, TEXT("Render Scale: requested %.1f%%, engine applied %.1f%% (supported range %.1f..%.1f%%)."),
-                Percent, Applied, Minimum, Maximum);
+            UE_LOG(LogTemp, Warning, TEXT("%s: requested %.1f%%, engine applied %.1f%% (supported range %.1f..%.1f%%)."),
+                Source, Percent, Applied, Minimum, Maximum);
+            return false;
+        }
+        UE_LOG(LogTemp, Log, TEXT("%s: %.1f%% applied and verified (engine range %.1f..%.1f%%). Resolution Controller and Android display/DPI remain unchanged."),
+            Source, Applied, Minimum, Maximum);
+        return true;
+    }
+
+    static bool EnsureSGSR1Enabled()
+    {
+        IConsoleVariable* SGSR1 = FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"));
+        if (!SGSR1)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR1 plugin is not loaded; SGSR1 control rejected."));
+            return false;
+        }
+        SetCVarIntIfPresent(TEXT("bmi.Pipeline.Enabled"), 0);
+        SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 0);
+        SGSR1->Set(1, ECVF_SetByGameSetting);
+        if (SGSR1->GetInt() != 1)
+        {
+            UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR1 enable request failed CVar readback."));
+            return false;
+        }
+        return true;
+    }
+
+    static void SetRenderScale(const TArray<FString>& Args)
+    {
+        float Percent = 0.0f;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseFloat(Args[0], Percent) ||
+            !FMath::IsFinite(Percent) || Percent < 50.0f || Percent > 150.0f)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Render Scale: expected a finite percentage from 50 to 150."));
             return;
         }
-
-        UE_LOG(LogTemp, Log, TEXT("Render Scale: %.1f%% applied and verified (engine range %.1f..%.1f%%). Resolution Controller and Android display/DPI remain unchanged."),
-            Applied, Minimum, Maximum);
+        ApplyRenderPercentage(Percent, TEXT("Render Scale"));
     }
 
     static void SetResolutionController(const TArray<FString>& Args)
@@ -215,47 +228,58 @@ namespace BMIGraphicsRuntime
         }
     }
 
-    // SGSR1 is the only upscaler in this profile. Preset values map to
-    // render percentage and the official Qualcomm SGSR1 edge-sharpness input.
+    // One shared preset applies internal render percentage and the real SGSR1 shader sharpness.
     static void SetUpscalePreset(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1 || !GEngine) return;
-        const int32 Preset = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 4);
-        const float RenderScale[] = { 50.0f, 60.0f, 72.0f, 86.0f, 100.0f };
-        const float EdgeSharpness[] = { 1.90f, 1.72f, 1.52f, 1.30f, 1.12f };
-
-        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
+        int32 Preset = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Preset) ||
+            Preset < 0 || Preset > 4)
         {
-            Settings->SetResolutionScaleValueEx(RenderScale[Preset]);
-            Settings->ApplySettings(false);
-        }
-        SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), EdgeSharpness[Preset]);
-    }
-
-    // The menu exposes one fixed upscaler: Qualcomm SGSR1.
-    static void SetUpscaler(const TArray<FString>& Args)
-    {
-        if (Args.Num() != 1 || FCString::Atoi(*Args[0]) != 0) return;
-
-        IConsoleVariable* SGSR1 = FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"));
-        if (!SGSR1)
-        {
-            UE_LOG(LogTemp, Error, TEXT("Qualcomm SGSR1 plugin is not loaded; selection rejected."));
+            UE_LOG(LogTemp, Warning, TEXT("Upscale Preset: valid indices are 0..4."));
             return;
         }
+        if (!EnsureSGSR1Enabled()) return;
+        const float RenderScale[] = { 50.0f, 60.0f, 72.0f, 86.0f, 100.0f };
+        const float EdgeSharpness[] = { 1.90f, 1.72f, 1.52f, 1.30f, 1.12f };
+        if (!ApplyRenderPercentage(RenderScale[Preset], TEXT("Upscale Preset"))) return;
+        if (!SetCVarFloatAndVerify(TEXT("r.Qualcomm.SGSR.Sharpness"), EdgeSharpness[Preset]))
+        {
+            UE_LOG(LogTemp, Error, TEXT("Upscale Preset: SGSR1 sharpness CVar is missing or rejected."));
+            return;
+        }
+        UE_LOG(LogTemp, Log, TEXT("Upscale Preset %d applied: Render Scale %.1f%% and SGSR1 sharpness %.2f."),
+            Preset, RenderScale[Preset], EdgeSharpness[Preset]);
+    }
 
-        SetCVarIntIfPresent(TEXT("bmi.Pipeline.Enabled"), 0);
-        SetCVarIntIfPresent(TEXT("r.TemporalAA.Upsampling"), 0);
-        SGSR1->Set(1, ECVF_SetByGameSetting);
+    // This profile exposes Qualcomm SGSR1 only (index 0).
+    static void SetUpscaler(const TArray<FString>& Args)
+    {
+        int32 Method = INDEX_NONE;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseInt(Args[0], Method) || Method != 0)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Upscaler: this profile supports Qualcomm SGSR1 only (index 0)."));
+            return;
+        }
+        EnsureSGSR1Enabled();
     }
 
     static void SetUpscaleSharpness(const TArray<FString>& Args)
     {
-        if (Args.Num() != 1) return;
-        // Qualcomm's UE4.27 SGSR1 shader accepts edge sharpness [1.0, 2.0].
-        // The user-facing 0..1 slider maps linearly to that real shader value.
-        const float Sharpness = 1.0f + FMath::Clamp(FCString::Atof(*Args[0]), 0.0f, 1.0f);
-        SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), Sharpness);
+        float UserSharpness = 0.0f;
+        if (Args.Num() != 1 || !FDefaultValueHelper::ParseFloat(Args[0], UserSharpness) ||
+            !FMath::IsFinite(UserSharpness) || UserSharpness < 0.0f || UserSharpness > 1.0f)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Upscale Sharpness: valid range is 0..1."));
+            return;
+        }
+        if (!EnsureSGSR1Enabled()) return;
+        const float ShaderSharpness = 1.0f + UserSharpness;
+        if (!SetCVarFloatAndVerify(TEXT("r.Qualcomm.SGSR.Sharpness"), ShaderSharpness))
+        {
+            UE_LOG(LogTemp, Error, TEXT("Upscale Sharpness: SGSR1 shader CVar is missing or rejected."));
+            return;
+        }
+        UE_LOG(LogTemp, Log, TEXT("SGSR1 Upscale Sharpness %.2f applied and verified."), ShaderSharpness);
     }
 
     static void SetCAS(const TArray<FString>& Args)
