@@ -1,12 +1,13 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "profile": "Bright Memory: Infinite Android v1.34 - Minimal Experimental",
   "target": {
     "device": "Samsung Galaxy M14 4G",
     "abi": "arm64-v8a",
     "android": "15",
     "gpu": "Adreno 610",
-    "engine": "UE4.27.2"
+    "engine": "UE4.27.2",
+    "frame_generation_candidate": "Qualcomm AFME 1.0 (OpenGL ES extension)"
   },
   "menu_order": [
     "resolution_controller",
@@ -25,7 +26,15 @@
       "section": "Display",
       "label": "Resolution Controller",
       "type": "enum",
-      "options": ["Native", "540P", "640P", "720P", "900P", "980P", "1080P"],
+      "options": [
+        "Native",
+        "540P",
+        "640P",
+        "720P",
+        "900P",
+        "980P",
+        "1080P"
+      ],
       "default": "Native",
       "integration": "Use the game's existing GameUserSettings resolution-scale path; preserve panel resolution, aspect ratio, orientation and Android DPI.",
       "status": "runtime path identified in libUE4.so; UI and runtime binding still require engine integration and device validation"
@@ -35,7 +44,14 @@
       "section": "Graphics",
       "label": "Graphics Quality",
       "type": "enum",
-      "options": ["Low", "Medium", "High", "Very High", "Ultra", "Extreme"],
+      "options": [
+        "Low",
+        "Medium",
+        "High",
+        "Very High",
+        "Ultra",
+        "Extreme"
+      ],
       "default": "High",
       "integration": "Map each tier to actual supported UE4 scalability and mobile CVars for shadows, view distance, effects, textures, foliage, shading and post-processing. Extreme must only raise settings proven supported by this build.",
       "status": "existing runtime profile source needs wiring into the game's actual settings UI and visual validation; do not expose inert labels"
@@ -53,8 +69,8 @@
       "id": "upscale_sharpness",
       "label": "Upscale Sharpness",
       "type": "slider",
-      "min": 0.0,
-      "max": 1.0,
+      "min": 0,
+      "max": 1,
       "default": 0.5,
       "status": "must bind to the real SGSR1 shader parameter"
     },
@@ -62,7 +78,13 @@
       "id": "upscale_preset",
       "label": "Upscale Preset",
       "type": "enum",
-      "options": ["Ultra Performance", "Performance", "Balanced", "Quality", "Ultra Quality"],
+      "options": [
+        "Ultra Performance",
+        "Performance",
+        "Balanced",
+        "Quality",
+        "Ultra Quality"
+      ],
       "default": "Balanced",
       "status": "must map to SGSR1-supported render fractions and parameters; do not add a second independent render-scale control"
     },
@@ -77,8 +99,8 @@
       "id": "cas_sharpness",
       "label": "CAS Sharpness",
       "type": "slider",
-      "min": 0.0,
-      "max": 1.0,
+      "min": 0,
+      "max": 1,
       "default": 0.5,
       "depends_on": "amd_cas",
       "status": "bind only to the real CAS pass; disabled while CAS backend is unavailable"
@@ -87,7 +109,11 @@
       "id": "low_latency",
       "label": "Low Latency",
       "type": "enum",
-      "options": ["Off", "On", "Ultra"],
+      "options": [
+        "Off",
+        "On",
+        "Ultra"
+      ],
       "default": "Off",
       "status": {
         "Off": "leave the game's default scheduling unchanged",
@@ -99,10 +125,20 @@
       "id": "frame_generation",
       "label": "Frame Generation",
       "type": "enum",
-      "options": ["Off", "x2", "x3", "x4"],
+      "options": [
+        "Off",
+        "x2",
+        "x3",
+        "x4"
+      ],
       "default": "Off",
       "preferred_vendor": "Qualcomm",
-      "status": "no Qualcomm implementation is currently verified compatible with Adreno 610 plus UE4.27.2; keep x2/x3/x4 unavailable until a genuine interpolation backend and presentation scheduler are validated",
+      "status": {
+        "Off": "available; original game presentation path remains active",
+        "x2": "Qualcomm AFME 1.0 path; only enable after runtime confirms GL_QCOM_frame_extrapolation and the game renderer integration is registered",
+        "x3": "unsupported by Qualcomm AFME 1.0; disabled",
+        "x4": "unsupported by Qualcomm AFME 1.0; disabled"
+      },
       "requirements": [
         "interpolated scene frames, never duplicated frames",
         "real motion vectors or validated optical-flow estimation",
@@ -114,6 +150,20 @@
         "Adreno_Neural_Fusion": "real Qualcomm FG, but current public SDK requires Snapdragon 8 Elite Gen 6 or newer, Vulkan, and its Unreal plugin targets UE5; not compatible with this Adreno 610 UE4.27 target",
         "Adreno_Frame_Motion_Engine_AFME": "older Qualcomm extrapolation path, explicitly excluded by user request; do not use as a substitute",
         "decision": "do not label any unsupported Qualcomm path as available; continue checking for a genuinely older public Qualcomm FG implementation that supports Adreno 6xx and UE4.27"
+      },
+      "qualcomm_afme": {
+        "api": "GL_QCOM_frame_extrapolation",
+        "entry_point": "glExtrapolateTex2DQCOM",
+        "mode": "x2 only",
+        "source": "SnapdragonGameStudios/adreno-gpu-opengl-es-code-sample-framework/samples/amfe_power_saving",
+        "requirements": [
+          "two real rendered source frames",
+          "two GPU color textures and one extrapolated output texture",
+          "OpenGL ES context with Qualcomm extension",
+          "renderer-owned presentation scheduling",
+          "UI composition and motion/occlusion validation"
+        ],
+        "runtime_status": "sample source verified; Adreno 610 support and integration into Bright Memory UE4.27 renderer not yet verified"
       }
     }
   ],
@@ -131,5 +181,5 @@
     "keep the original game rendering path as fallback",
     "resolution and graphics quality changes must affect actual game rendering, not only menu text"
   ],
-  "build_status": "updated experimental configuration only; not a compiled APK or verified runtime build"
+  "build_status": "settings schema updated; not a compiled APK; AFME runtime integration and UMG menu wiring remain unverified"
 }
