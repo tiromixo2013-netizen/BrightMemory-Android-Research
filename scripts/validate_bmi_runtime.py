@@ -101,6 +101,14 @@ umg_map = read(RENDERER / "UMG-RUNTIME-BINDING-MAP.md")
 assert "BMI_Graphics_UMG_C" in umg_map and "BMI_Menu_Seting_UMG_C" in umg_map
 assert "has not yet been rebound" in umg_map
 
+low_latency_doc = read(RENDERER / "LOW-LATENCY-BEHAVIOR.md")
+low_latency = next(item for item in minimal["settings"] if item["id"] == "low_latency")
+assert low_latency["option_availability"]["Ultra"] == "disabled_until_verified"
+assert low_latency["status"]["Off"].endswith("r.OneFrameThreadLag=1")
+assert low_latency["status"]["On"].endswith("r.OneFrameThreadLag=0; reduces Game Thread lead but can cost throughput")
+assert "Ultra** is deliberately disabled" in low_latency_doc
+
+
 
 
 unified_h = read(RENDERER / "BMIUnifiedSpatialUpscaler.h")
