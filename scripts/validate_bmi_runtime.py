@@ -95,8 +95,14 @@ assert "event graph has not yet" in umg_map
 low_latency_doc = read(RENDERER / "LOW-LATENCY-BEHAVIOR.md")
 low_latency = next(item for item in minimal["settings"] if item["id"] == "low_latency")
 assert low_latency["option_availability"]["Ultra"] == "disabled_until_verified"
-assert low_latency["status"]["Off"].endswith("r.OneFrameThreadLag=1")
-assert low_latency["status"]["On"].endswith("r.OneFrameThreadLag=0; reduces Game Thread lead but can cost throughput")
+assert "r.GTSyncType=0" in low_latency["status"]["Off"] and "r.OneFrameThreadLag=1" in low_latency["status"]["Off"]
+assert "r.GTSyncType=1" in low_latency["status"]["On"] and "r.OneFrameThreadLag=1" in low_latency["status"]["On"]
+low_latency_runtime = runtime[runtime.index("static void SetLowLatency"):runtime.index("static bool IsFrameGenerationAvailable")]
+for token in ["r.GTSyncType", "r.OneFrameThreadLag", "SetCVarIntAndVerify", "CVar->GetInt() == Value"]:
+    assert token in runtime, f"Low-latency runtime verification missing: {token}"
+assert "Ultra (Zero Queue) is unavailable" in low_latency_runtime
+assert "r.OneFrameThreadLag"), 0" not in low_latency_runtime
+assert "Swappy" in low_latency_doc and "non-pipelined" in low_latency_doc
 assert "Ultra (Zero Queue)" in low_latency_doc
 
 
