@@ -17,6 +17,8 @@ assert any(m["Name"] == "BMIGraphicsRuntime" and m["Type"] == "Runtime"
            for m in plugin["Modules"])
 
 runtime = read(ENGINE / "Source/BMIGraphicsRuntime/Private/BMIGraphicsRuntimeModule.cpp")
+blueprint_header = read(ENGINE / "Source/BMIGraphicsRuntime/Public/BMIGraphicsSettingsLibrary.h")
+blueprint_source = read(ENGINE / "Source/BMIGraphicsRuntime/Private/BMIGraphicsSettingsLibrary.cpp")
 for token in [
     "SetResolutionController", "r.MobileContentScaleFactor", "GetDesktopResolution()", "TargetHeight[] = { ShortSide, 540, 640, 720, 900, 980, 1080 }", "AppliedScale = ContentScale->GetFloat()", "display/DPI unchanged.",
     "SetOverallScalabilityLevel", "SetViewDistanceQuality", "SetShadowQuality", "SetAntiAliasingQuality", "SetTextureQuality", "SetVisualEffectQuality", "SetFoliageQuality", "SetShadingQuality", "SetPostProcessingQuality", "SetUpscalePreset",
@@ -46,9 +48,10 @@ assert "0 Very Low, 1 Low, 2 Medium, 3 High, 4 Very High, 5 Ultra, 6 Extreme" in
 assert "const float ViewDistance[] = { 0.50f, 0.65f, 0.80f, 1.00f, 1.10f, 1.20f, 1.35f };" in runtime
 assert "const int32 Shadows[] = { 0, 0, 1, 2, 3, 4, 5 };" in runtime
 assert "const int32 MobileAO[] = { 0, 0, 0, 1, 1, 2, 3 };" in runtime
-assert 'Args[0].IsNumeric()' in runtime
-assert "const int32 Quality = FCString::Atoi(*Args[0]);" in runtime
+assert "FDefaultValueHelper::ParseInt(Args[0], Quality)" in runtime
 assert "if (Quality < 0 || Quality > 6)" in runtime
+assert "FDefaultValueHelper::ParseInt(Args[0], Choice)" in runtime
+assert "FDefaultValueHelper::ParseInt(Args[0], Requested)" in runtime
 assert "IConsoleManager" in runtime and "FAutoConsoleCommand" in runtime, "Runtime console command bridge is missing"
 assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
@@ -186,7 +189,8 @@ assert (VENDOR / "AMD-CAS/ffx_cas.h").exists()
 # The active menu is fixed to the vendored Qualcomm SGSR1 plugin.
 upscaler_setting = next(item for item in minimal["settings"] if item["id"] == "upscaler")
 assert upscaler_setting["type"] == "fixed" and upscaler_setting["value"] == "SGSR1"
-assert "FCString::Atoi(*Args[0]) != 0" in runtime
+assert "Method != 0" in runtime
+assert "FDefaultValueHelper::ParseInt(Args[0], Method)" in runtime
 sgsr_scaler = read(sgsr / "Source/SGSRSpatialUpscaling/Subpasses/SGSRSubpassScaler.cpp")
 sgsr_shared = read(sgsr / "Source/SGSRSpatialUpscaling/Subpasses/SGSRSubpassSharedTypes.h")
 sgsr_usf = read(sgsr / "Shaders/Private/PostProcessSGSR.usf")
@@ -219,7 +223,8 @@ assert "InViewFamily.SetPrimarySpatialUpscalerInterface(new FSGSRSpatialUpscaler
 assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
 assert 'SGSR1->Set(1, ECVF_SetByGameSetting)' in runtime
 assert 'SetCVarIntIfPresent(TEXT("bmi.Pipeline.Enabled"), 0)' in runtime
-assert 'SetCVarFloatIfPresent(TEXT("r.Qualcomm.SGSR.Sharpness"), Sharpness)' in runtime
+assert 'SetCVarFloatAndVerify(TEXT("r.Qualcomm.SGSR.Sharpness"), ShaderSharpness)' in runtime
+assert 'SetCVarFloatAndVerify(TEXT("r.Qualcomm.SGSR.Sharpness"), EdgeSharpness[Preset])' in runtime
 assert "EdgeSharpness[Preset]" in runtime
 assert "RegisterBMIUnifiedSpatialUpscaler();" in patch
 assert "Renderer startup patch registers the optional BMI dispatcher" in read(RENDERER / "README.md")
