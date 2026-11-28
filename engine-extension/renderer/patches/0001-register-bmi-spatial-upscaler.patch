@@ -5,33 +5,40 @@ Target reference:
   jsuk10/UE4.27plus_Custom
   Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 
-This installs the BMI spatial dispatcher and maps its private shader directory.
-The dispatcher registers the FSR Mobile RDG pixel pass, then optionally chains
-CAS and HUD composition.
-Frame Generation remains a separate temporal interpolation/presentation path.
+Reference source was fetched and the hunks below are anchored to its actual
+include block and FRendererModule::StartupModule implementation. This patch
+only adds the BMI registration call and private shader-directory mapping.
+It does not add/copy the BMI source files into the Renderer module, implement
+the SGSR1 or CAS adapters, or prove compatibility with Bright Memory's exact
+shipped engine snapshot.
 
-Apply only after confirming the Bright Memory engine snapshot matches the
-referenced UE4.27 renderer API and after adding BMIUnifiedSpatialUpscaler.cpp/.h and BMIFSRMobilePass.cpp/BMIMWSRPass.cpp to the
-Renderer module source, and copying BMIShaders/ plus vendor/ under that module's
-Private directory. This patch is not proof of a target build.
+Before applying, copy the required BMI renderer sources and dependencies into
+the target Renderer module and verify the target source matches the reference.
+The view extension claims the primary spatial-upscaler slot only when it is
+empty and the BMI pipeline is enabled with a registered method.
 
+---
+ Engine/Source/Runtime/Renderer/Private/Renderer.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 --- a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 +++ b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
-@@
+@@ -35,6 +35,9 @@
+ #include "ScreenSpaceDenoise.h"
+ #include "VT/VirtualTextureSystem.h"
  #include "PostProcess/TemporalAA.h"
--#include "BMISpatialUpscaler.h"
 +#include "BMIUnifiedSpatialUpscaler.h"
 +#include "ShaderCore.h"
 +#include "Misc/Paths.h"
  DEFINE_LOG_CATEGORY(LogRenderer);
-@@
- void FRendererModule::StartupModule()
- {
-  GScreenSpaceDenoiser = IScreenSpaceDenoiser::GetDefaultDenoiser();
-  GTemporalUpscaler = ITemporalUpscaler::GetDefaultTemporalUpscaler();
  
-  FVirtualTextureSystem::Initialize();
-+ AddShaderSourceDirectoryMapping(TEXT("/Plugin/BMI"), FPaths::Combine(FPaths::EngineDir(), TEXT("Source/Runtime/Renderer/Private")));
-- RegisterBMISpatialUpscaler();
-+ RegisterBMIUnifiedSpatialUpscaler();
+ IMPLEMENT_MODULE(FRendererModule, Renderer);
+@@ -61,6 +64,8 @@ void FRendererModule::StartupModule()
+ 	GTemporalUpscaler = ITemporalUpscaler::GetDefaultTemporalUpscaler();
+ 
+ 	FVirtualTextureSystem::Initialize();
++	AddShaderSourceDirectoryMapping(TEXT("/Plugin/BMI"), FPaths::Combine(FPaths::EngineDir(), TEXT("Source/Runtime/Renderer/Private")));
++	RegisterBMIUnifiedSpatialUpscaler();
  }
+ 
