@@ -20,6 +20,11 @@ jobs:
       - name: Checkout research repository
         uses: actions/checkout@v4
 
+      - name: Run repository runtime and shader-contract validator
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_bmi_runtime.py
+
       - name: Fetch reference UE4.27 source
         run: |
           set -euo pipefail
