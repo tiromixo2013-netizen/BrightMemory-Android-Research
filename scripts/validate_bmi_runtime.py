@@ -23,7 +23,7 @@ for token in [
     "bmi.Pipeline.RegisteredUpscalerMask", "bmi.Pipeline.Enabled", "SetUpscaleSharpness",
     "bmi.Pipeline.CASAvailable", "SetCAS", "SetCASSharpness",
     "SetFramePacing", "r.OneFrameThreadLag", "SetPerformanceHUD",
-    "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit",
+    "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit", "SetFrameGeneration", "bmi.FrameGeneration.AFMEAvailable",
 ]:
     assert token in runtime, f"Missing runtime bridge symbol: {token}"
 assert "Requested spatial upscaler has no registered renderer pass" in runtime
@@ -45,7 +45,7 @@ for method in [
     "SetResolutionController", "SetGraphicsQuality", "SetRenderScale",
     "SetUpscaler", "SetUpscaleSharpness", "SetUpscalePreset", "SetAMDCAS",
     "SetCASSharpness", "SetFramePacing", "SetLowLatency",
-    "SetPerformanceHUD", "SetFrameLimit",
+    "SetPerformanceHUD", "SetFrameLimit", "SetFrameGeneration",
 ]:
     assert f"static bool {method}(" in blueprint_header, f"Missing Blueprint API: {method}"
     assert f"UBMIGraphicsSettingsLibrary::{method}(" in blueprint_source, f"Missing implementation: {method}"
