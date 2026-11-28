@@ -24,9 +24,8 @@ empty and the BMI pipeline is enabled with a registered method.
 diff --git a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 --- a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 +++ b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
-@@ -35,2 +35,5 @@
- #include "VT/VirtualTextureSystem.h"
- #include "PostProcess/TemporalAA.h"
+@@ -6,1 +6,4 @@
+ #include "CoreMinimal.h"
 +#include "BMIUnifiedSpatialUpscaler.h"
 +#include "ShaderCore.h"
 +#include "Misc/Paths.h"
