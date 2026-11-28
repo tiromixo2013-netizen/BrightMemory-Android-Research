@@ -80,9 +80,7 @@ CAS Sharpness, Low Latency, Frame Generation Method, and Frame Generation
 Multiplier. Frame Pacing, Performance HUD, and alternate upscalers are excluded
 from this profile.
 
-The Blueprint library is an API seam, not a completed in-game menu. The
-Bright Memory v1.34 UMG assets/source are not integrated here, and the plugin
-has not been compiled against the shipped engine snapshot.
+The Blueprint library is an API seam, not a completed in-game menu. The v1.34 extraction identifies `BMI_Graphics_UMG_C` inside `BMI_Menu_Seting_UMG_C`, and every agreed setting now has an explicit Blueprint API mapping. See `UMG-RUNTIME-BINDING-MAP.md`. The cooked widget graph itself has not yet been rebound to those APIs; this still requires the matching UE4.27.2 project/editor and an in-game verification. The plugin has not been compiled against the shipped engine snapshot.
 
 ## Target constraints and verification
 
