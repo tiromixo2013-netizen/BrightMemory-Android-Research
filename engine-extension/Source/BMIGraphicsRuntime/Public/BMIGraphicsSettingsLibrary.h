@@ -48,4 +48,8 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
     static bool SetFrameLimit(int32 FramesPerSecond);
+
+    // 0=Off, 1=Qualcomm AFME x2. x3/x4 are intentionally unsupported.
+    UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
+    static bool SetFrameGeneration(int32 Mode);
 };
