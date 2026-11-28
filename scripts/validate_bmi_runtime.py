@@ -29,8 +29,14 @@ for token in [
 assert "Ultra (Zero Queue) is unavailable" in runtime or "Ultra (No Queue) is unavailable" in runtime
 for method in ["SetViewDistanceQuality", "SetShadowQuality", "SetAntiAliasingQuality", "SetTextureQuality", "SetVisualEffectQuality", "SetFoliageQuality", "SetShadingQuality", "SetPostProcessingQuality"]:
     assert f"Settings->{method}(Group)" in runtime, f"Graphics quality category not applied: {method}"
-assert "const int32 GroupQuality[] = { 0, 1, 2, 3, 4, 4 };" in runtime
+assert "const int32 GroupQuality[] = { 0, 0, 1, 2, 3, 4, 4 };" in runtime
+assert "0 Very Low, 1 Low, 2 Medium, 3 High, 4 Very High, 5 Ultra, 6 Extreme" in runtime
+assert "const float ViewDistance[] = { 0.50f, 0.65f, 0.80f, 1.00f, 1.10f, 1.20f, 1.35f };" in runtime
+assert "const int32 Shadows[] = { 0, 0, 1, 2, 3, 4, 5 };" in runtime
+assert "const int32 MobileAO[] = { 0, 0, 0, 1, 1, 2, 3 };" in runtime
+assert "const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 6);" in runtime
 assert "console" in runtime and "A/B tested" in runtime
+assert next(item for item in minimal["settings"] if item["id"] == "graphics_quality")["options"] == ["Very Low", "Low", "Medium", "High", "Very High", "Ultra", "Extreme"]
 assert 'FindCVar(TEXT("r.Qualcomm.SGSR.Enabled"))' in runtime
 assert "active Android OpenGL ES pacer/Swappy path has not yet been integrated" in runtime
 
