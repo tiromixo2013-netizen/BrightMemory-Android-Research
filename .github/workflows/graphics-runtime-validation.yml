@@ -4,14 +4,17 @@ on:
   push:
     branches:
       - work/ue427-graphics-runtime-integration
+      - experimental/minimal-sgsr1-cas
     paths:
       - "config/graphics-settings.json"
+      - "config/minimal-experimental-sgsr1-cas.json"
       - "engine-extension/**"
       - "scripts/validate_bmi_runtime.py"
       - ".github/workflows/graphics-runtime-validation.yml"
   pull_request:
     paths:
       - "config/graphics-settings.json"
+      - "config/minimal-experimental-sgsr1-cas.json"
       - "engine-extension/**"
       - "scripts/validate_bmi_runtime.py"
       - ".github/workflows/graphics-runtime-validation.yml"
