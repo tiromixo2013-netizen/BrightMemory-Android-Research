@@ -23,6 +23,7 @@ public:
     static bool SetRenderScale(float Percent);
 
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
+    // This experimental profile intentionally exposes SGSR1 only (Method=0).
     static bool SetUpscaler(int32 Method);
 
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
