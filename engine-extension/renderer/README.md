@@ -72,11 +72,13 @@ telemetry compositor registered. Its availability remains false.
 ## Runtime and Blueprint settings
 
 `Source/BMIGraphicsRuntime` contains the settings command bridge and
-Blueprint-callable API. The menu schema is in
-`../../config/graphics-settings.json`. The agreed order is Resolution
-Controller, Graphics Quality, Render Scale, Upscaling Method, Upscale
-Sharpness, shared Upscale Preset, AMD CAS, CAS Sharpness, Frame Generation,
-Frame Pacing, Low Latency, and Performance HUD.
+Blueprint-callable API. The active menu schema is in
+`../../config/minimal-experimental-sgsr1-cas.json` (also mirrored to
+`../../config/graphics-settings.json` for the runtime integration entry point). The agreed minimal menu order is Resolution Controller, Graphics Quality,
+Render Scale, SGSR1, Upscale Sharpness, shared Upscale Preset, AMD CAS,
+CAS Sharpness, Low Latency, Frame Generation Method, and Frame Generation
+Multiplier. Frame Pacing, Performance HUD, and alternate upscalers are excluded
+from this profile.
 
 The Blueprint library is an API seam, not a completed in-game menu. The
 Bright Memory v1.34 UMG assets/source are not integrated here, and the plugin
