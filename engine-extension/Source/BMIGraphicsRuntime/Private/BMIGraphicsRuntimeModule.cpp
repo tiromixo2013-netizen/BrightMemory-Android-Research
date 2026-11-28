@@ -306,7 +306,9 @@ namespace BMIGraphicsRuntime
         SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Mode"), 1);
     }
 
-    static FAutoConsoleCommand CmdFrameGeneration(TEXT("bmi.SetFrameGeneration"), TEXT("Set frame generation: 0 Off, 1 Qualcomm AFME x2 (requires registered backend)."),\n        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameGeneration));\n    static FAutoConsoleCommand CmdResolutionController(TEXT("bmi.SetResolutionController"), TEXT("Set native/540P..1080P mobile content scale option 0..6."),
+    static FAutoConsoleCommand CmdFrameGeneration(TEXT("bmi.SetFrameGeneration"), TEXT("Set frame generation: 0 Off, 1 Qualcomm AFME x2 (requires registered backend)."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameGeneration));
+    static FAutoConsoleCommand CmdResolutionController(TEXT("bmi.SetResolutionController"), TEXT("Set native/540P..1080P mobile content scale option 0..6."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetResolutionController));
     static FAutoConsoleCommand CmdFrameLimit(TEXT("bmi.SetFrameLimit"), TEXT("Set UE4 frame limit 30,45,60,90,120."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameLimit));
