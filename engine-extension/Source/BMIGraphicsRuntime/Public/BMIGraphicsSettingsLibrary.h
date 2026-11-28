@@ -49,7 +49,15 @@ public:
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
     static bool SetFrameLimit(int32 FramesPerSecond);
 
-    // 0=Off, 1=x2 Qualcomm AFME, 2=x3, 3=x4; each requires a registered backend.
+    // 0=Off, 1=x2, 2=x3, 3=x4 (legacy combined selector).
     UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
     static bool SetFrameGeneration(int32 Mode);
+
+    // Backend: 0=Off, 1=Qualcomm AFME, 2=GLES Motion Reprojection.
+    UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
+    static bool SetFrameGenerationMethod(int32 Method);
+
+    // Selects x2, x3 or x4; runtime rejects unsupported backend/multiplier pairs.
+    UFUNCTION(BlueprintCallable, Category="Bright Memory|Graphics")
+    static bool SetFrameGenerationMultiplier(int32 Multiplier);
 };
