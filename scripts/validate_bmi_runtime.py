@@ -26,6 +26,11 @@ for token in [
     "bmi.Pipeline.HUDAvailable", "SetFrameRateLimit", "SetFrameGeneration", "bmi.FrameGeneration.AFMEAvailable", "bmi.FrameGeneration.GLESX2Available", "bmi.FrameGeneration.GLESX3Available", "bmi.FrameGeneration.GLESX4Available",
 ]:
     assert token in runtime, f"Missing runtime bridge symbol: {token}"
+assert "FDefaultValueHelper::ParseFloat(Args[0], Percent)" in runtime
+assert "Percent < 50.0f || Percent > 150.0f" in runtime
+assert "SetResolutionScaleValueEx(Percent)" in runtime
+assert "GetResolutionScaleInformationEx(Normalized, Applied, Minimum, Maximum)" in runtime
+assert "Resolution Controller and Android display/DPI remain unchanged." in runtime
 assert "Ultra (Zero Queue) is unavailable" in runtime or "Ultra (No Queue) is unavailable" in runtime
 for method in ["SetViewDistanceQuality", "SetShadowQuality", "SetAntiAliasingQuality", "SetTextureQuality", "SetVisualEffectQuality", "SetFoliageQuality", "SetShadingQuality", "SetPostProcessingQuality"]:
     assert f"Settings->{method}(Group)" in runtime, f"Graphics quality category not applied: {method}"
