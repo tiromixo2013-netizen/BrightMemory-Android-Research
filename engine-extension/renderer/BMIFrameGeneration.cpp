@@ -22,10 +22,15 @@ namespace BMIFrameGeneration
             TEXT("Renderer-owned AFME capability flag; set only by a verified adapter."),
             ECVF_ReadOnly);
 
-        TAutoConsoleVariable<int32> CVarGLESCapabilities(
-            TEXT("bmi.FrameGeneration.GLESAvailable"), 0,
-            TEXT("Renderer-owned GLES reprojection capability flag; set only by a verified adapter."),
-            ECVF_ReadOnly);
+        TAutoConsoleVariable<int32> CVarGLESX2(
+            TEXT("bmi.FrameGeneration.GLESX2Available"), 0,
+            TEXT("Renderer-owned GLES x2 capability flag."), ECVF_ReadOnly);
+        TAutoConsoleVariable<int32> CVarGLESX3(
+            TEXT("bmi.FrameGeneration.GLESX3Available"), 0,
+            TEXT("Renderer-owned GLES x3 capability flag."), ECVF_ReadOnly);
+        TAutoConsoleVariable<int32> CVarGLESX4(
+            TEXT("bmi.FrameGeneration.GLESX4Available"), 0,
+            TEXT("Renderer-owned GLES x4 capability flag."), ECVF_ReadOnly);
 
         uint32 MaskForMultiplier(int32 Multiplier)
         {
@@ -56,7 +61,9 @@ namespace BMIFrameGeneration
         {
             GGLESMask = SupportedMultipliers &
                 (MultiplierX2 | MultiplierX3 | MultiplierX4);
-            CVarGLESCapabilities->Set(GGLESMask != 0 ? 1 : 0, ECVF_SetByCode);
+            CVarGLESX2->Set((GGLESMask & MultiplierX2) != 0 ? 1 : 0, ECVF_SetByCode);
+            CVarGLESX3->Set((GGLESMask & MultiplierX3) != 0 ? 1 : 0, ECVF_SetByCode);
+            CVarGLESX4->Set((GGLESMask & MultiplierX4) != 0 ? 1 : 0, ECVF_SetByCode);
         }
     }
 
