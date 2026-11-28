@@ -54,7 +54,7 @@ minimal = json.loads(read(ROOT / "config/minimal-experimental-sgsr1-cas.json"))
 assert minimal["menu_order"] == [
     "resolution_controller", "graphics_quality", "render_scale", "upscaler",
     "upscale_sharpness", "upscale_preset", "amd_cas", "cas_sharpness",
-    "low_latency", "frame_generation",
+    "low_latency", "frame_generation_method", "frame_generation_multiplier",
 ]
 fg_method = next(item for item in minimal["settings"] if item["id"] == "frame_generation_method")
 fg_multiplier = next(item for item in minimal["settings"] if item["id"] == "frame_generation_multiplier")
