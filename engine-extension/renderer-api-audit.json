@@ -40,7 +40,9 @@
     "view_family_ownership": "FSceneViewFamily::~FSceneViewFamily deletes the primary ISpatialUpscaler through ISceneViewFamilyExtention",
     "fork_behavior": "FSceneRenderer forks the primary upscaler with Fork_GameThread when copying a view family",
     "sgsr_extension_behavior": "The vendored Qualcomm FSGSRViewExtension checks r.Qualcomm.SGSR.Enabled and assigns the primary slot only when GetPrimarySpatialUpscalerInterface() is null.",
-    "bmi_extension_behavior": "BMI's view extension is registered from the Renderer module startup hook and assigns the primary slot in BeginRenderViewFamily only when enabled, its selected method bit is registered, and the slot is empty."
+    "bmi_extension_behavior": "BMI's view extension is registered from the Renderer module startup hook and assigns the primary slot in BeginRenderViewFamily only when enabled, its selected method bit is registered, and the slot is empty.",
+    "sgsr1_runtime_path": "Official Qualcomm UE4.27 FSGSRViewExtension installs FSGSRSpatialUpscaler as primary spatial upscaler when r.Qualcomm.SGSR.Enabled is true; BMI dispatcher remains disabled in the minimal profile.",
+    "sgsr1_sharpness_path": "Patch 0002 adds an EdgeSharpness RDG shader parameter and r.Qualcomm.SGSR.Sharpness CVar to the official SGSR1 mobile pixel pass; target shader compilation remains pending."
   },
   "integration_constraints": [
     "ISpatialUpscaler is declared in a Renderer private header, not a public plugin API.",
@@ -68,7 +70,7 @@
     "fsr_mobile_shader_compiled": false,
     "renderer_extension_registration_applied_to_target": false,
     "sgsr2_source_vendored": true,
-    "sgsr2_runtime_route_authored": true,
+    "sgsr2_runtime_route_authored": false,
     "sgsr2_plugin_compiled": false,
     "sgsr2_android_opengles_shader_compiled": false,
     "sgsr2_temporal_history_device_validated": false,
@@ -91,7 +93,12 @@
       "Nearest",
       "Bilinear"
     ],
-    "spatial_methods_compiled": []
+    "spatial_methods_compiled": [],
+    "sgsr1_runtime_sharpness_patch_written": true,
+    "sgsr1_runtime_sharpness_patch_applied_to_upstream": false,
+    "sgsr1_android_gles_shader_compiled": false,
+    "sgsr1_device_validated": false,
+    "bmi_dispatcher_enabled_in_minimal_profile": false
   },
   "target_rhi": {
     "platform": "Android",
