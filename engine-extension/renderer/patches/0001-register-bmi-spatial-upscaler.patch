@@ -24,11 +24,12 @@ empty and the BMI pipeline is enabled with a registered method.
 diff --git a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 --- a/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
 +++ b/Engine/Source/Runtime/Renderer/Private/Renderer.cpp
-@@ -6,1 +6,4 @@
+@@ -7,2 +7,5 @@
  #include "CoreMinimal.h"
 +#include "BMIUnifiedSpatialUpscaler.h"
 +#include "ShaderCore.h"
 +#include "Misc/Paths.h"
+ #include "Misc/CoreMisc.h"
 @@ -53,6 +56,8 @@ void FRendererModule::StartupModule()
  {
  	GScreenSpaceDenoiser = IScreenSpaceDenoiser::GetDefaultDenoiser();
