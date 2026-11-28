@@ -99,7 +99,7 @@ for item, api in zip(minimal["settings"], ["SetResolutionController","SetGraphic
 assert "cooked widget graph has not been edited or rebound" in minimal["ui_integration"]["status"]
 umg_map = read(RENDERER / "UMG-RUNTIME-BINDING-MAP.md")
 assert "BMI_Graphics_UMG_C" in umg_map and "BMI_Menu_Seting_UMG_C" in umg_map
-assert "has not yet been rebound" in umg_map
+assert "event graph has not yet" in umg_map
 
 low_latency_doc = read(RENDERER / "LOW-LATENCY-BEHAVIOR.md")
 low_latency = next(item for item in minimal["settings"] if item["id"] == "low_latency")
