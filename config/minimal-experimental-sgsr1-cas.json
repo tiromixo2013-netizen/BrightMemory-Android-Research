@@ -19,7 +19,8 @@
     "amd_cas",
     "cas_sharpness",
     "low_latency",
-    "frame_generation"
+    "frame_generation_method",
+    "frame_generation_multiplier"
   ],
   "settings": [
     {
@@ -135,48 +136,43 @@
       }
     },
     {
-      "id": "frame_generation",
-      "label": "Frame Generation",
+      "id": "frame_generation_method",
+      "section": "Graphics",
+      "label": "Frame Generation Method",
       "type": "enum",
       "options": [
         "Off",
+        "Qualcomm AFME",
+        "GLES Motion Reprojection"
+      ],
+      "default": "Off",
+      "integration": "Select one independent backend. Qualcomm AFME is a vendor-specific GLES extension; GLES Motion Reprojection is a portable GLSL ES 3.0 shader prototype. Both remain unavailable until their complete renderer/presentation backend registers capability flags.",
+      "status": {
+        "Off": "available; preserve original game presentation",
+        "Qualcomm AFME": "x2-only candidate; requires GL_QCOM_frame_extrapolation, verified driver support and UE4.27 renderer integration",
+        "GLES Motion Reprojection": "experimental portable shader source added; renderer velocity input, disocclusion handling, RDG/RHI integration and presentation scheduler are not implemented or validated; see engine-extension/renderer/GLES-FRAME-REPROJECTION.md"
+      },
+      "backends": {
+        "Qualcomm AFME": "separate vendor-specific backend; do not assume support on Adreno 610",
+        "GLES Motion Reprojection": "engine-extension/renderer/BMIShaders/Private/BMIGLESFrameReprojection.frag"
+      }
+    },
+    {
+      "id": "frame_generation_multiplier",
+      "section": "Graphics",
+      "label": "Frame Generation Multiplier",
+      "type": "enum",
+      "options": [
         "x2",
         "x3",
         "x4"
       ],
-      "default": "Off",
-      "preferred_vendor": "Qualcomm",
+      "default": "x2",
+      "integration": "Select generated-frame count relative to each genuine source frame. GLES reprojection phases: x2=0.5; x3=1/3 and 2/3; x4=1/4, 1/2 and 3/4. AFME 1.0 supports x2 only.",
       "status": {
-        "Off": "available; original game presentation path remains active",
-        "x2": "Qualcomm AFME 1.0 path; only enable after runtime confirms GL_QCOM_frame_extrapolation and the game renderer integration is registered",
-        "x3": "unsupported by Qualcomm AFME 1.0; disabled",
-        "x4": "unsupported by Qualcomm AFME 1.0; disabled"
-      },
-      "requirements": [
-        "two real rendered source frames",
-        "two GPU color textures and one extrapolated output texture",
-        "OpenGL ES context exposing GL_QCOM_frame_extrapolation and glExtrapolateTex2DQCOM",
-        "renderer-owned presentation scheduling",
-        "UI composition and motion/occlusion artifact validation"
-      ],
-      "qualcomm_research": {
-        "Adreno_Neural_Fusion": "real Qualcomm FG, but current public SDK requires Snapdragon 8 Elite Gen 6 or newer, Vulkan, and its Unreal plugin targets UE5; not compatible with this Adreno 610 UE4.27 target",
-        "Adreno_Frame_Motion_Engine_AFME": "older Qualcomm OpenGL ES frame extrapolation extension; now selected as the experimental x2 candidate, but Adreno 610 driver support and UE4.27 renderer integration remain unverified",
-        "decision": "do not label any unsupported Qualcomm path as available; continue checking for a genuinely older public Qualcomm FG implementation that supports Adreno 6xx and UE4.27"
-      },
-      "qualcomm_afme": {
-        "api": "GL_QCOM_frame_extrapolation",
-        "entry_point": "glExtrapolateTex2DQCOM",
-        "mode": "x2 only",
-        "source": "SnapdragonGameStudios/adreno-gpu-opengl-es-code-sample-framework/samples/amfe_power_saving",
-        "requirements": [
-          "two real rendered source frames",
-          "two GPU color textures and one extrapolated output texture",
-          "OpenGL ES context with Qualcomm extension",
-          "renderer-owned presentation scheduling",
-          "UI composition and motion/occlusion validation"
-        ],
-        "runtime_status": "sample source verified; Adreno 610 support and integration into Bright Memory UE4.27 renderer not yet verified"
+        "x2": "candidate for AFME or GLES; disabled until the selected backend is fully registered",
+        "x3": "GLES backend only; requires two generated outputs and a validated presentation schedule",
+        "x4": "GLES backend only; requires three generated outputs and a validated presentation schedule"
       }
     }
   ],
@@ -193,5 +189,5 @@
     "keep the original game rendering path as fallback",
     "Resolution Controller changes mobile content/output scale only; Render Scale controls the internal render percentage; Upscale Preset sets a recommended Render Scale value, and manual Render Scale edits override that percentage."
   ],
-  "build_status": "source API exposes Off/x2/x3/x4 with independent fail-closed backend gates; UI wiring, renderer backends, UE4.27/Android compile, APK build and device validation remain pending"
+  "build_status": "GLES Motion Reprojection GLSL ES 3.0 prototype and integration contract added; both frame-generation backends remain fail-closed pending UE4.27 renderer integration, build and device validation."
 }
