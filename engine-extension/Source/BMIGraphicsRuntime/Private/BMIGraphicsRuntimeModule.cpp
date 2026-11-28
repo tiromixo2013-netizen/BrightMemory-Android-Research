@@ -279,32 +279,86 @@ namespace BMIGraphicsRuntime
         UE_LOG(LogTemp, Error, TEXT("Ultra (No Queue) is unavailable: no validated active-RHI queue-depth control exists for this build."));
     }
 
+    static bool IsFrameGenerationAvailable(int32 Method, int32 Multiplier)
+    {
+        if (Method == 1)
+        {
+            IConsoleVariable* Available = FindCVar(TEXT("bmi.FrameGeneration.AFMEAvailable"));
+            return Multiplier == 2 && Available && Available->GetInt() != 0;
+        }
+        if (Method == 2)
+        {
+            const TCHAR* Name = Multiplier == 2 ? TEXT("bmi.FrameGeneration.GLESX2Available")
+                : Multiplier == 3 ? TEXT("bmi.FrameGeneration.GLESX3Available")
+                : Multiplier == 4 ? TEXT("bmi.FrameGeneration.GLESX4Available") : nullptr;
+            IConsoleVariable* Available = Name ? FindCVar(Name) : nullptr;
+            return Available && Available->GetInt() != 0;
+        }
+        return false;
+    }
+
+    static void SetFrameGenerationMethod(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1) return;
+        const int32 Method = FCString::Atoi(*Args[0]);
+        if (Method < 0 || Method > 2) return;
+        if (Method == 0)
+        {
+            SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Method"), 0);
+            return;
+        }
+        IConsoleVariable* MultiplierVar = FindCVar(TEXT("bmi.FrameGeneration.Multiplier"));
+        const int32 Multiplier = MultiplierVar ? MultiplierVar->GetInt() : 2;
+        if (!IsFrameGenerationAvailable(Method, Multiplier))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Frame Generation backend %d is unavailable for x%d."), Method, Multiplier);
+            return;
+        }
+        SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Method"), Method);
+    }
+
+    static void SetFrameGenerationMultiplier(const TArray<FString>& Args)
+    {
+        if (Args.Num() != 1) return;
+        const int32 Multiplier = FCString::Atoi(*Args[0]);
+        if (Multiplier < 2 || Multiplier > 4) return;
+        IConsoleVariable* MethodVar = FindCVar(TEXT("bmi.FrameGeneration.Method"));
+        const int32 Method = MethodVar ? MethodVar->GetInt() : 0;
+        if (Method == 0)
+        {
+            // Store the selection for when a backend is chosen, without enabling FG.
+            SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Multiplier"), Multiplier);
+            return;
+        }
+        if (!IsFrameGenerationAvailable(Method, Multiplier))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Frame Generation x%d is unavailable for selected backend %d."), Multiplier, Method);
+            return;
+        }
+        SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Multiplier"), Multiplier);
+    }
+
     static void SetFrameGeneration(const TArray<FString>& Args)
     {
+        // Backward-compatible API: 0=Off, 1=x2, 2=x3, 3=x4.
         if (Args.Num() != 1) return;
         const int32 Mode = FCString::Atoi(*Args[0]);
         if (Mode < 0 || Mode > 3) return;
         if (Mode == 0)
         {
-            SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Mode"), 0);
+            SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Method"), 0);
             return;
         }
-        const TCHAR* AvailabilityName = Mode == 1
-            ? TEXT("bmi.FrameGeneration.AFMEAvailable")
-            : Mode == 2
-                ? TEXT("bmi.FrameGeneration.X3Available")
-                : TEXT("bmi.FrameGeneration.X4Available");
-        IConsoleVariable* Available = FindCVar(AvailabilityName);
-        if (!Available || Available->GetInt() == 0)
-        {
-            const TCHAR* Multiplier = Mode == 1 ? TEXT("x2") : Mode == 2 ? TEXT("x3") : TEXT("x4");
-            UE_LOG(LogTemp, Warning, TEXT("Frame Generation %s is unavailable: complete renderer backend is not registered."), Multiplier);
-            return;
-        }
-        SetCVarIntIfPresent(TEXT("bmi.FrameGeneration.Mode"), Mode);
+        TArray<FString> MultiplierArgs;
+        MultiplierArgs.Add(FString::FromInt(Mode + 1));
+        SetFrameGenerationMultiplier(MultiplierArgs);
     }
 
-    static FAutoConsoleCommand CmdFrameGeneration(TEXT("bmi.SetFrameGeneration"), TEXT("Set frame generation: 0 Off, 1 x2 AFME, 2 x3 backend, 3 x4 backend; each requires a registered backend."),
+    static FAutoConsoleCommand CmdFrameGenerationMethod(TEXT("bmi.SetFrameGenerationMethod"), TEXT("Select 0 Off, 1 Qualcomm AFME, 2 GLES reprojection; requires a registered backend."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameGenerationMethod));
+    static FAutoConsoleCommand CmdFrameGenerationMultiplier(TEXT("bmi.SetFrameGenerationMultiplier"), TEXT("Select generated output multiplier 2, 3 or 4; requires selected backend support."),
+        FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameGenerationMultiplier));
+    static FAutoConsoleCommand CmdFrameGeneration(TEXT("bmi.SetFrameGeneration"), TEXT("Legacy frame generation selection: 0 Off, 1 x2, 2 x3, 3 x4; backend and multiplier are validated separately."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetFrameGeneration));
     static FAutoConsoleCommand CmdResolutionController(TEXT("bmi.SetResolutionController"), TEXT("Set native/540P..1080P mobile content scale option 0..6."),
         FConsoleCommandWithArgsDelegate::CreateStatic(&SetResolutionController));
