@@ -38,10 +38,10 @@ the exact Bright Memory UE4.27.2 Android GLES target before enabling controls.
  
 --- a/Plugins/SGSR/Source/SGSRSpatialUpscaling/Private/Subpasses/SGSRSubpassScaler.cpp
 +++ b/Plugins/SGSR/Source/SGSRSpatialUpscaling/Private/Subpasses/SGSRSubpassScaler.cpp
-@@ -6,6 +6,13 @@
- //
- //============================================================================================================
+@@ -8,6 +8,14 @@
  #include "SGSRSubpassScaler.h"
+ #include "SGSRSettings.h"
+ 
 +#include "HAL/IConsoleManager.h"
 +
 +static TAutoConsoleVariable<float> SGSR_EdgeSharpnessCVar(
@@ -49,9 +49,10 @@ the exact Bright Memory UE4.27.2 Android GLES target before enabling controls.
 +    2.0f,
 +    TEXT("SGSR1 mobile edge sharpness. Valid range [1.0, 2.0]."),
 +    ECVF_RenderThreadSafe);
- #include "SGSRSettings.h"
- 
++
  //#SGSR_TARGET_Definitions
+ static TAutoConsoleVariable<int32> SGSR_TargetCVar(
+     TEXT(SGSR_CVAR_NAME_TARGET),
 @@ -132,6 +132,7 @@
  
  		// VS-PS
