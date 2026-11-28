@@ -53,26 +53,37 @@ namespace BMIGraphicsRuntime
     static void SetGraphicsQuality(const TArray<FString>& Args)
     {
         if (Args.Num() != 1 || !GEngine) return;
+
         // 0 Low, 1 Medium, 2 High, 3 Very High, 4 Ultra, 5 Extreme.
+        // UE4's stock scalability groups top out at 4 (Epic). Extreme is
+        // deliberately a bounded mobile override profile, not a fake tier 5.
         const int32 Quality = FMath::Clamp(FCString::Atoi(*Args[0]), 0, 5);
-        if (UGameUserSettings* Settings = GEngine->GetGameUserSettings())
-        {
-            // UE4 exposes five standard scalability tiers (0..4). Extreme uses
-            // Epic scalability plus explicit mobile CVar overrides below.
-            Settings->SetOverallScalabilityLevel(FMath::Min(Quality, 4));
-            Settings->ApplySettings(false);
-        }
-        const float ViewDistance[] = { 0.60f, 0.80f, 1.00f, 1.10f, 1.20f, 1.35f };
+        UGameUserSettings* Settings = GEngine->GetGameUserSettings();
+        if (!Settings) return;
+
+        Settings->SetOverallScalabilityLevel(FMath::Min(Quality, 4));
+        Settings->ApplySettings(false);
+
+        const float ViewDistance[] = { 0.60f, 0.80f, 1.00f, 1.10f, 1.20f, 1.30f };
         const float MipBias[] = { 1.0f, 0.5f, 0.0f, 0.0f, -0.25f, -0.5f };
-        const int32 Effects[] = { 0, 1, 2, 3, 3, 4 };
-        const int32 Aniso[] = { 2, 4, 8, 8, 8, 16 };
-        SetCVarFloatIfPresent(TEXT("r.ViewDistanceScale"), ViewDistance[Quality]);
-        SetCVarFloatIfPresent(TEXT("r.MipMapLODBias"), MipBias[Quality]);
-        SetCVarIntIfPresent(TEXT("r.EffectsQuality"), Effects[Quality]);
-        SetCVarIntIfPresent(TEXT("r.PostProcessQuality"), Effects[Quality]);
-        SetCVarIntIfPresent(TEXT("r.MaxAnisotropy"), Aniso[Quality]);
-        SetCVarIntIfPresent(TEXT("r.ShadowQuality"), Quality >= 2 ? 1 : 0);
-        SetCVarIntIfPresent(TEXT("r.Mobile.AmbientOcclusionQuality"), Quality >= 2 ? 1 : 0);
+        // UE4 scalability quality CVars are 0..3. Never send the invalid 4.
+        const int32 Effects[] = { 0, 1, 2, 3, 3, 3 };
+        const int32 Aniso[] = { 2, 4, 8, 8, 16, 16 };
+
+        int32 Applied = 0;
+        Applied += SetCVarFloatIfPresent(TEXT("r.ViewDistanceScale"), ViewDistance[Quality]) ? 1 : 0;
+        Applied += SetCVarFloatIfPresent(TEXT("r.MipMapLODBias"), MipBias[Quality]) ? 1 : 0;
+        Applied += SetCVarIntIfPresent(TEXT("r.EffectsQuality"), Effects[Quality]) ? 1 : 0;
+        Applied += SetCVarIntIfPresent(TEXT("r.PostProcessQuality"), Effects[Quality]) ? 1 : 0;
+        Applied += SetCVarIntIfPresent(TEXT("r.MaxAnisotropy"), Aniso[Quality]) ? 1 : 0;
+
+        // Mobile shadow/AO paths differ by renderer and cooked project settings.
+        // Apply only when those CVars exist; absence is reported, not assumed.
+        Applied += SetCVarIntIfPresent(TEXT("r.ShadowQuality"), Quality >= 2 ? 1 : 0) ? 1 : 0;
+        Applied += SetCVarIntIfPresent(TEXT("r.Mobile.AmbientOcclusionQuality"), Quality >= 2 ? 1 : 0) ? 1 : 0;
+
+        UE_LOG(LogTemp, Log, TEXT("BMI Graphics Quality %d: UE scalability tier %d, %d/7 optional mobile CVars applied."),
+            Quality, FMath::Min(Quality, 4), Applied);
     }
 
     static void SetFrameLimit(const TArray<FString>& Args)
