@@ -30,6 +30,22 @@ namespace BMIGraphicsRuntime
         return false;
     }
 
+    static bool SetCVarIntAndVerify(const TCHAR* Name, int32 Value)
+    {
+        IConsoleVariable* CVar = FindCVar(Name);
+        if (!CVar) return false;
+        CVar->Set(Value, ECVF_SetByGameSetting);
+        return CVar->GetInt() == Value;
+    }
+
+    static bool SetCVarFloatAndVerify(const TCHAR* Name, float Value)
+    {
+        IConsoleVariable* CVar = FindCVar(Name);
+        if (!CVar) return false;
+        CVar->Set(Value, ECVF_SetByGameSetting);
+        return FMath::IsNearlyEqual(CVar->GetFloat(), Value, 0.001f);
+    }
+
     static void SetRenderScale(const TArray<FString>& Args)
     {
         if (Args.Num() != 1 || !GEngine) return;
@@ -83,15 +99,15 @@ namespace BMIGraphicsRuntime
         const int32 MobileAO[] = { 0, 0, 0, 1, 1, 2, 3 };
 
         int32 Applied = 0;
-        Applied += SetCVarFloatIfPresent(TEXT("r.ViewDistanceScale"), ViewDistance[Quality]) ? 1 : 0;
-        Applied += SetCVarFloatIfPresent(TEXT("r.MipMapLODBias"), MipBias[Quality]) ? 1 : 0;
-        Applied += SetCVarIntIfPresent(TEXT("r.EffectsQuality"), Effects[Quality]) ? 1 : 0;
-        Applied += SetCVarIntIfPresent(TEXT("r.PostProcessQuality"), Effects[Quality]) ? 1 : 0;
-        Applied += SetCVarIntIfPresent(TEXT("r.MaxAnisotropy"), Aniso[Quality]) ? 1 : 0;
-        Applied += SetCVarIntIfPresent(TEXT("r.ShadowQuality"), Shadows[Quality]) ? 1 : 0;
-        Applied += SetCVarIntIfPresent(TEXT("r.Mobile.AmbientOcclusionQuality"), MobileAO[Quality]) ? 1 : 0;
+        Applied += SetCVarFloatAndVerify(TEXT("r.ViewDistanceScale"), ViewDistance[Quality]) ? 1 : 0;
+        Applied += SetCVarFloatAndVerify(TEXT("r.MipMapLODBias"), MipBias[Quality]) ? 1 : 0;
+        Applied += SetCVarIntAndVerify(TEXT("r.EffectsQuality"), Effects[Quality]) ? 1 : 0;
+        Applied += SetCVarIntAndVerify(TEXT("r.PostProcessQuality"), Effects[Quality]) ? 1 : 0;
+        Applied += SetCVarIntAndVerify(TEXT("r.MaxAnisotropy"), Aniso[Quality]) ? 1 : 0;
+        Applied += SetCVarIntAndVerify(TEXT("r.ShadowQuality"), Shadows[Quality]) ? 1 : 0;
+        Applied += SetCVarIntAndVerify(TEXT("r.Mobile.AmbientOcclusionQuality"), MobileAO[Quality]) ? 1 : 0;
 
-        UE_LOG(LogTemp, Log, TEXT("BMI Graphics Quality %d: 8 scalability groups requested at tier %d; %d/7 optional mobile CVars found."),
+        UE_LOG(LogTemp, Log, TEXT("BMI Graphics Quality %d: scalability tier %d requested; %d/7 optional CVars verified."),
             Quality, Group, Applied);
     }
 
@@ -201,14 +217,6 @@ namespace BMIGraphicsRuntime
             return;
         }
         SetCVarIntIfPresent(TEXT("bmi.Pipeline.HUD"), bEnabled ? 1 : 0);
-    }
-
-    static bool SetCVarIntAndVerify(const TCHAR* Name, int32 Value)
-    {
-        IConsoleVariable* CVar = FindCVar(Name);
-        if (!CVar) return false;
-        CVar->Set(Value, ECVF_SetByGameSetting);
-        return CVar->GetInt() == Value;
     }
 
     static void SetLowLatency(const TArray<FString>& Args)
